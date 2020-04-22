@@ -1,0 +1,31 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    faraday (1.0.1)
+      multipart-post (>= 1.2, < 3)
+    ffi (1.12.2)
+    google-protobuf (3.11.4)
+    grpc-tools (1.28.0)
+    metaclass (0.0.4)
+    minitest (5.14.0)
+    mocha (1.9.0)
+      metaclass (~> 0.0.1)
+    multipart-post (2.1.1)
+    mysql2 (0.5.3)
+    rbnacl (7.1.1)
+      ffi
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  faraday
+  google-protobuf
+  grpc-tools
+  minitest
+  mocha
+  mysql2
+  rbnacl
+
+BUNDLED WITH
+   2.1.4

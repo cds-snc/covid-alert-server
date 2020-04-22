@@ -1,0 +1,40 @@
+name: covidshield
+
+packages: |
+  with (import <nixpkgs> { });
+  rubyEnv {
+    name = "covidshield";
+    ruby = ruby_2_7;
+    lockfile = ./Gemfile.lock;
+    extra = [ golangci-lint gnumake ];
+  }
+
+up:
+  - homebrew:
+    - protobuf
+    - libsodium
+    - overmind
+  - go:
+      version: "1.14"
+      tools:
+        - github.com/golang/protobuf/protoc-gen-go
+  - railgun
+
+env:
+  KEY_CLAIM_TOKEN: test=ON
+  RETRIEVE_HMAC_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  DATABASE_URL: "root@tcp(covidshield.railgun)/covidshield"
+  DB_HOST: covidshield.railgun
+  DB_USER: root
+  DB_PASS: ''
+
+
+commands:
+  server:
+    build: true
+    run:   overmind start -f ./Procfile.dev
+  build:     make
+  test: make test
+  style: golangci-lint run
+  seed: scripts/create-seed-data
+  run-built: overmind start -f ./Procfile.dev

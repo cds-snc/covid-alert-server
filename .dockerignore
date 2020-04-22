@@ -1,0 +1,9 @@
+.dockerignore
+.git
+.dev
+.shadowenv.d
+/key-submission
+/key-retrieval
+/.generated
+/build
+/.vscode

@@ -1,0 +1,47 @@
+version: '3'
+services:
+  mysql:
+    image: mysql:5.7
+    command: "--explicit_defaults_for_timestamp"
+    volumes:
+      - ./tmp/db:/var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_USER: covidshield
+      MYSQL_DATABASE: covidshield
+      MYSQL_PASSWORD: covidshield
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+  key-retrieval:
+    build:
+      context: .
+      args:
+        component: key-retrieval
+    ports:
+      - "8001:8001"
+    cap_drop:
+      - ALL
+    depends_on:
+      - mysql
+    restart: always
+    environment:
+      DATABASE_URL: covidshield:covidshield@tcp(mysql)/covidshield
+      RETRIEVE_HMAC_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  key-submission:
+    build:
+      context: .
+      args:
+        component: key-submission
+    ports:
+      - "8000:8000"
+    cap_drop:
+      - ALL
+    ulimits:
+      nofile:
+        soft: 100000
+        hard: 100000
+    depends_on:
+      - mysql
+    restart: always
+    environment:
+      DATABASE_URL: covidshield:covidshield@tcp(mysql)/covidshield
+      KEY_CLAIM_TOKEN: test=1

@@ -1,0 +1,8 @@
+/key-submission
+/key-retrieval
+/.generated
+/build
+/tmp
+/.vscode
+config/terraform/*/.terraform/*
+config/terraform/*/terraform.tfstate*

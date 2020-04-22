@@ -1,0 +1,35 @@
+linters:
+  enable-all: true
+  disable:
+    - lll
+    - goerr113
+    - wsl
+
+
+issues:
+  exclude-rules:
+    # Exclude known linters from partially hard-vendored code,
+    # which is impossible to exclude via "nolint" comments.
+    - path: internal/hmac/
+      text: "weak cryptographic primitive"
+      linters:
+        - gosec
+
+    - path: cmd/generate-retrieval-format-example/
+      text: "G306: Expect WriteFile permissions to be 0600 or less"
+      linters: [gosec]
+
+    - linters: [gochecknoglobals]
+      text: "`log` is a global variable"
+
+    - linters: [gochecknoglobals]
+      text: "`migrations` is a global variable"
+      path: pkg/persistence/migrator.go
+
+    - linters: [interfacer]
+      text: "`ctx` can be"
+
+    # # Exclude lll issues for long lines with go:generate
+    # - linters:
+    #     - lll
+    #   source: "^//go:generate "

@@ -1,0 +1,102 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require('open3')
+require('mysql2')
+
+DIAGNOSIS_SERVER = File.expand_path('../diagnosis-server', __dir__)
+
+
+begin
+  DB_HOST = ENV.fetch('DB_HOST')
+  DB_USER = ENV.fetch('DB_USER')
+  DB_PASS = ENV.fetch('DB_PASS')
+  DB_NAME = ENV.fetch('DB_NAME', 'covidshield')
+rescue KeyError
+  raise('DB_HOST, DB_USER, and DB_PASS are all required environment variables')
+end
+
+DATABASE_URL = "#{DB_USER}#{DB_PASS}@tcp(#{DB_HOST})/#{DB_NAME}"
+
+class Seeder
+  class << self
+    def run
+      dbconn = Mysql2::Client.new(
+        host: DB_HOST, username: DB_USER, password: DB_PASS, database: DB_NAME,
+      )
+      @statement = dbconn.prepare(<<~SQL)
+        INSERT INTO diagnosis_keys
+        (key_data, rolling_start_number, rolling_period, risk_level, hour_of_submission, region)
+        VALUES (?, ?, 144, ?, ?, 1)
+      SQL
+
+      @count = 0
+
+      info("creating ~200k records...")
+      dbconn.query('BEGIN')
+      # data for the latest available hour
+      (168 * 2).times do |hour|
+        9.times do |risk|
+          14.times do |day|
+            5.times { seed(rsn_days_ago(day), risk, hour_ago(hour)) }
+          end
+        end
+      end
+      dbconn.query('COMMIT')
+      info("done")
+    end
+
+    private
+
+    def info(msg)
+      puts("\x1b[1;34m% #{msg}\x1b[0m")
+    end
+
+    def seed(rsn, risk, hour)
+      @statement.execute(next_data, rsn, risk, hour)
+    end
+
+    def next_data
+      @count += 1
+      data(@count)
+    end
+
+    def hour_ago(n)
+      current = Time.now.to_i / 3600
+      current - n
+    end
+
+    def rsn_days_ago(n)
+      current = (Time.now.to_i / 86400) * 144
+      current - (144 * n)
+    end
+
+    def data(count)
+      "qqqqwwww#{format("%08d", count)}"
+    end
+
+    def today_utc
+      Date.parse(Time.now.utc.strftime("%Y-%m-%d"))
+    end
+
+    def yesterday_utc
+      today_utc.prev_day
+    end
+
+    def time_in_date(time, date)
+      Time.parse("#{date.iso8601}T#{time}Z")
+    end
+
+    def purge_db
+      oe, stat = Open3.capture2e(
+        'mysqladmin', "--host=#{DB_HOST}", "--user=#{DB_USER}",
+        "--password=#{DB_PASS}", '-f', 'drop', DB_NAME
+      )
+      return if stat.success?
+      raise("purge_db failed: #{oe}") unless oe.include?("doesn't exist")
+    end
+
+  end
+end
+
+Seeder.run if __FILE__ == $PROGRAM_NAME

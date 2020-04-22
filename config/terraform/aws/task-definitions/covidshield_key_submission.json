@@ -1,0 +1,41 @@
+[
+    {
+      "name": "key-submission",
+      "image": "${image}",
+      "portMappings": [
+        {
+          "containerPort": 8000
+        }
+      ],
+      "ulimits": [
+          {
+            "name": "nofile",
+            "softLimit": 1000000,
+            "hardLimit": 1000000
+          }
+      ],
+      "linuxParameters": {
+        "capabilities": {
+          "drop": ["ALL"]
+        }
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "${awslogs-group}",
+          "awslogs-region": "${awslogs-region}",
+          "awslogs-stream-prefix": "${awslogs-stream-prefix}"
+        }
+      },
+      "secrets": [
+        {
+          "name": "KEY_CLAIM_TOKEN",
+          "valueFrom": "${key_claim_token}"
+        },
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "${database_url}"
+        }
+      ]
+    }
+  ]

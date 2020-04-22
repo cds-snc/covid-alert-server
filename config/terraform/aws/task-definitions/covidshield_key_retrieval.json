@@ -1,0 +1,34 @@
+[
+    {
+      "name": "key-retrieval",
+      "image": "${image}",
+      "portMappings": [
+        {
+          "containerPort": 8001
+        }
+      ],
+      "linuxParameters": {
+        "capabilities": {
+          "drop": ["ALL"]
+        }
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "${awslogs-group}",
+          "awslogs-region": "${awslogs-region}",
+          "awslogs-stream-prefix": "${awslogs-stream-prefix}"
+        }
+      },
+      "secrets": [
+        {
+          "name": "RETRIEVE_HMAC_KEY",
+          "valueFrom": "${retrieve_hmac_key}"
+        },
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "${database_url}"
+        }
+      ]
+    }
+  ]

@@ -1,0 +1,2 @@
+key-submission: PORT=8000 ./build/release/key-submission
+key-retrieval: PORT=8001 ./build/release/key-retrieval

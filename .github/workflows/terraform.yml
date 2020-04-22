@@ -1,0 +1,44 @@
+name: 'Terraform'
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: config/terraform/aws
+
+env:
+  AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: ca-central-1
+  TF_VAR_ecs_task_key_retrieval_env_hmac_key: ${{ secrets.TF_VAR_ecs_task_key_retrieval_env_hmac_key }}
+  TF_VAR_ecs_task_key_submission_env_key_claim_token: ${{ secrets.TF_VAR_ecs_task_key_submission_env_key_claim_token }}
+  TF_VAR_rds_backend_db_password: ${{ secrets.TF_VAR_rds_backend_db_password }}
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Format
+      run: terraform fmt -check
+
+    - name: Terraform Plan
+      run: terraform plan
+
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+      run: terraform apply -auto-approve
