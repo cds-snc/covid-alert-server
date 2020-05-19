@@ -3,12 +3,12 @@ name: 'Terraform'
 on:
   push:
     paths:
-    - 'config/terraform/aws'
+    - 'config/terraform/aws/*'
     branches:
     - master
   pull_request:
     paths:
-    - 'config/terraform/aws'
+    - 'config/terraform/aws/*'
 
 defaults:
   run:
