@@ -2,9 +2,13 @@ name: 'Terraform'
 
 on:
   push:
+    paths:
+    - 'config/terraform/aws/*'
     branches:
     - master
   pull_request:
+    paths:
+    - 'config/terraform/aws/*'
 
 defaults:
   run:
@@ -20,8 +24,8 @@ env:
   TF_VAR_rds_backend_db_password: ${{ secrets.TF_VAR_rds_backend_db_password }}
 
 jobs:
-  terraform:
-    name: 'Terraform'
+  terraform-plan:
+    if: github.repository_owner == 'CovidShield'
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -39,6 +43,33 @@ jobs:
     - name: Terraform Plan
       run: terraform plan
 
+  terraform-apply:
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push' && github.repository_owner == 'CovidShield'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Wait for container to be built and pushed
+      uses: fountainhead/action-wait-for-check@v1.0.0
+      id: wait-for-build
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        checkName: build-n-push
+        ref: ${{ github.sha }}
+
+    - name: Checkout
+      if: steps.wait-for-build.outputs.conclusion == 'success'
+      uses: actions/checkout@v2
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Format
+      run: terraform fmt -check
+
+    - name: Terraform Plan
+      run: terraform plan -out terraform.tfplan
+
     - name: Terraform Apply
-      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-      run: terraform apply -auto-approve
+      run: terraform apply -auto-approve terraform.tfplan

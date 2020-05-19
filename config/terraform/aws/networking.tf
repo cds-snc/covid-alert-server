@@ -36,7 +36,7 @@ resource "aws_subnet" "covidshield_private" {
   count = 3
 
   vpc_id            = aws_vpc.covidshield.id
-  cidr_block        = cidrsubnet("10.0.0.0/16", 8, count.index)
+  cidr_block        = cidrsubnet(var.vpc_cidr_block, 8, count.index)
   availability_zone = element(data.aws_availability_zones.available.names, count.index)
 
   tags = {
@@ -49,7 +49,7 @@ resource "aws_subnet" "covidshield_public" {
   count = 3
 
   vpc_id            = aws_vpc.covidshield.id
-  cidr_block        = cidrsubnet("10.0.0.0/16", 8, count.index + 3)
+  cidr_block        = cidrsubnet(var.vpc_cidr_block, 8, count.index + 3)
   availability_zone = element(data.aws_availability_zones.available.names, count.index)
 
   tags = {
@@ -184,21 +184,21 @@ resource "aws_security_group" "covidshield_load_balancer" {
     protocol    = "tcp"
     from_port   = 8001
     to_port     = 8001
-    cidr_blocks = ["10.0.0.0/16"]
+    cidr_blocks = [var.vpc_cidr_block]
   }
 
   egress {
     protocol    = "tcp"
     from_port   = 8000
     to_port     = 8000
-    cidr_blocks = ["10.0.0.0/16"]
+    cidr_blocks = [var.vpc_cidr_block]
   }
 
   egress {
     protocol    = "tcp"
     from_port   = 3000
     to_port     = 3000
-    cidr_blocks = ["10.0.0.0/16"]
+    cidr_blocks = [var.vpc_cidr_block]
   }
 
   tags = {
