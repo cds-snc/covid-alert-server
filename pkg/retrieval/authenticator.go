@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"CovidShield/pkg/timemath"
+	"github.com/CovidShield/backend/pkg/timemath"
 )
 
 type Authenticator interface {

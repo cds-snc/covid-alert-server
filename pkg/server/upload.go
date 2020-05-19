@@ -1,13 +1,13 @@
 package server
 
 import (
-	"CovidShield/pkg/persistence"
 	"context"
 	"io/ioutil"
 	"net/http"
 	"time"
 
-	pb "CovidShield/pkg/proto/covidshield"
+	"github.com/CovidShield/backend/pkg/persistence"
+	pb "github.com/CovidShield/backend/pkg/proto/covidshield"
 
 	"github.com/Shopify/goose/srvutil"
 	"github.com/gorilla/mux"

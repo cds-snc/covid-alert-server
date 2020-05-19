@@ -2,9 +2,9 @@
 FROM golang:1.14-alpine AS builder
 ARG component=${component:-key-retrieval}
 ENV GO111MODULE=on
-WORKDIR /backend
+WORKDIR /go/src/github.com/CovidShield/backend
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o ${component} ./cmd/${component}
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -o ${component} ./cmd/${component}
 
 # target stage
 FROM alpine:3

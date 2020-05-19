@@ -4,7 +4,7 @@ import (
 	"github.com/Shopify/goose/logger"
 	"github.com/Shopify/goose/safely"
 
-	"CovidShield/pkg/app"
+	"github.com/CovidShield/backend/pkg/app"
 )
 
 var log = logger.New("main")
