@@ -14,7 +14,7 @@ ARG APP_UID=${APP_UID:-2000}
 ARG APP_GID=${APP_GID:-2000}
 RUN addgroup -g ${APP_GID} -S ${component} && \
     adduser -u ${APP_UID} -S ${component} -G ${component}
-COPY --from=builder --chown=${APP_UID}:${APP_GID} /backend/${component} /usr/local/bin/${component}
+COPY --from=builder --chown=${APP_UID}:${APP_GID} /go/src/github.com/CovidShield/backend/${component} /usr/local/bin/${component}
 
 USER ${APP_UID}:${APP_GID}
 
