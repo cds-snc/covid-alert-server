@@ -3,6 +3,11 @@ provider "aws" {
   region  = var.region
 }
 
+provider "github" {
+  organization = "CovidShield"
+  anonymous    = true
+}
+
 terraform {
   required_version = "> 0.12.0"
 }

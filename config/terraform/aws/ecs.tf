@@ -15,6 +15,11 @@ resource "aws_ecs_cluster" "covidshield" {
   }
 }
 
+data "github_branch" "backend" {
+  repository = "backend"
+  branch     = "master"
+}
+
 ###
 # ECS - Key Retrieval
 ###
@@ -28,7 +33,7 @@ data "aws_ecr_repository" "covidshield_key_retrieval" {
 data "aws_ecr_image" "covidshield_key_retrieval" {
   registry_id     = data.aws_ecr_repository.covidshield_key_retrieval.registry_id
   repository_name = data.aws_ecr_repository.covidshield_key_retrieval.name
-  image_tag       = "latest"
+  image_tag       = coalesce(var.github_sha, data.github_branch.backend.sha)
 }
 
 data "template_file" "covidshield_key_retrieval_task" {
@@ -70,11 +75,11 @@ resource "aws_ecs_service" "covidshield_key_retrieval" {
   name            = var.ecs_key_retrieval_name
   cluster         = aws_ecs_cluster.covidshield.id
   task_definition = aws_ecs_task_definition.covidshield_key_retrieval.arn
-  desired_count   = 1
+  desired_count   = 2
   launch_type     = "FARGATE"
 
-  deployment_minimum_healthy_percent = 66
-  deployment_maximum_percent         = 100
+  deployment_minimum_healthy_percent = 50
+  deployment_maximum_percent         = 200
   health_check_grace_period_seconds  = 60
 
   network_configuration {
@@ -107,7 +112,7 @@ data "aws_ecr_repository" "covidshield_key_submission" {
 data "aws_ecr_image" "covidshield_key_submission" {
   registry_id     = data.aws_ecr_repository.covidshield_key_submission.registry_id
   repository_name = data.aws_ecr_repository.covidshield_key_submission.name
-  image_tag       = "latest"
+  image_tag       = coalesce(var.github_sha, data.github_branch.backend.sha)
 }
 
 data "template_file" "covidshield_key_submission_task" {
@@ -149,11 +154,11 @@ resource "aws_ecs_service" "covidshield_key_submission" {
   name            = var.ecs_key_submission_name
   cluster         = aws_ecs_cluster.covidshield.id
   task_definition = aws_ecs_task_definition.covidshield_key_submission.arn
-  desired_count   = 1
+  desired_count   = 2
   launch_type     = "FARGATE"
 
-  deployment_minimum_healthy_percent = 66
-  deployment_maximum_percent         = 100
+  deployment_minimum_healthy_percent = 50
+  deployment_maximum_percent         = 200
   health_check_grace_period_seconds  = 60
 
   network_configuration {

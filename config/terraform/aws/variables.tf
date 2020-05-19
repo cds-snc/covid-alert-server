@@ -23,6 +23,11 @@ variable "cloudwatch_log_group_name" {
 ###
 # AWS ECS - ecs.tf
 ###
+variable "github_sha" {
+  type    = string
+  default = ""
+}
+
 variable "ecs_name" {
   type = string
 }
