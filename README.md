@@ -44,7 +44,7 @@ The published _Diagnosis Keys_ are fetched—with some best-effort authenticatio
 Distribution Network (CDN), backed by `key-retrieval`. This allows a functionally-arbitrary number
 of concurrent users.
 
-### Retreiving Exposure Configuration
+### Retrieving Exposure Configuration
 
 [_Exposure Configuration_](https://developer.apple.com/documentation/exposurenotification/enexposureconfiguration),
 used to determine the risk of a given exposure, is also retrieved from the `key-retieval` server. A JSON
