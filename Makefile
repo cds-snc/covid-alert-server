@@ -1,4 +1,4 @@
-MODULE := CovidShield
+MODULE := github.com/CovidShield/backend
 
 CMDS := key-submission key-retrieval monolith
 
@@ -33,12 +33,12 @@ proto:    $(PROTO_GO) $(PROTO_RB) $(RPC_RB)
 build/debug/%: $(GOFILES) $(PROTO_GO)
 	@mkdir -p "$(@D)"
 	@echo "     \x1b[1;34mgo build \x1b[0;1m(debug)\x1b[0m  $@"
-	@$(GO) build -i -o "$@" -gcflags "$(GCFLAGS_DEBUG)" "$(MODULE)/cmd/$(@F)"
+	@$(GO) build -trimpath -i -o "$@" -gcflags "$(GCFLAGS_DEBUG)" "$(MODULE)/cmd/$(@F)"
 
 build/release/%: $(GOFILES) $(PROTO_GO)
 	@mkdir -p "$(@D)"
 	@echo "   \x1b[1;34mgo build \x1b[0;1m(release)\x1b[0m  $@"
-	@$(GO) build -i -o "$@" -gcflags "$(GCFLAGS_RELEASE)" "$(MODULE)/cmd/$(@F)"
+	@$(GO) build -trimpath -i -o "$@" -gcflags "$(GCFLAGS_RELEASE)" "$(MODULE)/cmd/$(@F)"
 
 pkg/proto/%/proto.pb.go: proto/%.proto
 	@mkdir -p "$(@D)"

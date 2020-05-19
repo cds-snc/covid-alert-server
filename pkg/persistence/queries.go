@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	pb "CovidShield/pkg/proto/covidshield"
-	"CovidShield/pkg/timemath"
+	pb "github.com/CovidShield/backend/pkg/proto/covidshield"
+	"github.com/CovidShield/backend/pkg/timemath"
 )
 
 // (Legal requirement: <21)

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"CovidShield/pkg/persistence"
+	"github.com/CovidShield/backend/pkg/persistence"
 
 	"github.com/Shopify/goose/genmain"
 	"github.com/Shopify/goose/logger"

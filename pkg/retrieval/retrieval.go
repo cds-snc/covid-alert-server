@@ -6,11 +6,10 @@ import (
 	"io"
 	"time"
 
-	pb "CovidShield/pkg/proto/covidshield"
-
-	"google.golang.org/protobuf/proto"
+	pb "github.com/CovidShield/backend/pkg/proto/covidshield"
 
 	"github.com/Shopify/goose/logger"
+	"google.golang.org/protobuf/proto"
 )
 
 var log = logger.New("retrieval")
