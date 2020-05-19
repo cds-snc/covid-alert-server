@@ -48,7 +48,16 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name == 'push' && github.repository_owner == 'CovidShield'
     runs-on: ubuntu-latest
     steps:
+    - name: Wait for container to be built and pushed
+      uses: fountainhead/action-wait-for-check@v1.0.0
+      id: wait-for-build
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        checkName: build-n-push
+        ref: ${{ github.sha }}
+
     - name: Checkout
+      if: steps.wait-for-build.outputs.conclusion == 'success'
       uses: actions/checkout@v2
 
     - name: Setup Terraform
