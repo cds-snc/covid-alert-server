@@ -25,7 +25,6 @@ env:
 
 jobs:
   terraform-plan:
-    name: 'Terraform'
     if: github.repository_owner == 'CovidShield'
     runs-on: ubuntu-latest
     steps:
@@ -43,8 +42,8 @@ jobs:
 
     - name: Terraform Plan
       run: terraform plan
+
   terraform-apply:
-    name: 'Terraform'
     if: github.ref == 'refs/heads/master' && github.event_name == 'push' && github.repository_owner == 'CovidShield'
     runs-on: ubuntu-latest
     steps:
