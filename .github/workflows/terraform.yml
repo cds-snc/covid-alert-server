@@ -2,8 +2,6 @@ name: 'Terraform'
 
 on:
   push:
-    paths:
-    - 'config/terraform/aws/*'
     branches:
     - master
   pull_request:
