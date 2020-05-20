@@ -27,13 +27,14 @@ const (
 	Android
 )
 
-func NewRetrieveServlet(db persistence.Conn, auth retrieval.Authenticator) srvutil.Servlet {
-	return &retrieveServlet{db: db, auth: auth}
+func NewRetrieveServlet(db persistence.Conn, auth retrieval.Authenticator, signer retrieval.Signer) srvutil.Servlet {
+	return &retrieveServlet{db: db, auth: auth, signer: signer}
 }
 
 type retrieveServlet struct {
-	db   persistence.Conn
-	auth retrieval.Authenticator
+	db     persistence.Conn
+	auth   retrieval.Authenticator
+	signer retrieval.Signer
 }
 
 func (s *retrieveServlet) RegisterRouting(r *mux.Router) {
@@ -131,7 +132,7 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request, platf
 	w.Header().Add("Cache-Control", "public, max-age=3600, max-stale=600")
 
 	// TODO new format
-	if err := retrieval.SerializeTo(ctx, w, keysByRegion, startTimestamp, endTimestamp); err != nil {
+	if err := retrieval.SerializeTo(ctx, w, keysByRegion, startTimestamp, endTimestamp, s.signer); err != nil {
 		log(ctx, err).Info("error writing response")
 	}
 	return result(struct{}{})
