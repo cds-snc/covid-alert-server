@@ -6,7 +6,7 @@ import (
 	"io"
 	"time"
 
-	pb "github.com/CovidShield/backend/pkg/proto/covidshield"
+	pb "github.com/CovidShield/server/pkg/proto/covidshield"
 
 	"github.com/Shopify/goose/logger"
 	"google.golang.org/protobuf/proto"

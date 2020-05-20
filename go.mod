@@ -1,4 +1,4 @@
-module github.com/CovidShield/backend
+module github.com/CovidShield/server
 
 go 1.14
 

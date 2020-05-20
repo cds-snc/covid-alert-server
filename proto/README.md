@@ -6,7 +6,7 @@ Commissioners](https://priv.gc.ca/en/opc-news/speeches/2020/s-d_20200507/) for b
 privacy concerns addressed by this protocol.*
 
 This repository contains the protocol definition for communication between the [COVID Shield
-Diagnosis Server](https://github.com/CovidShield/backend) and the soon-to-be-open-sourced COVID
+Diagnosis Server](https://github.com/CovidShield/server) and the soon-to-be-open-sourced COVID
 Shield Mobile Applications.
 
 Some of the protocol is defined by [Google Protocol
@@ -41,7 +41,7 @@ The response is an 8-digit plain-text UTF-8/ASCII-encoded numeric code.
 
 Since you, the reader, are more likely to be in a position of having to implement a client for this
 endpoint yourself, we've provided examples of this in a handful of languages at
-[`(backend)/examples/new-key-claim`](https://github.com/CovidShield/backend/tree/master/examples/new-key-claim).
+[`examples/new-key-claim`](https://github.com/CovidShield/server/tree/master/examples/new-key-claim).
 
 When implementing this, please be cautious with your authorization token: it shouldn't be sent to
 the user's browser (i.e. please don't implement this workflow in client-side javascript).
@@ -164,9 +164,8 @@ Since there is little value in retrieving historical data upon Application insta
 recommended to mark the previous 366 (number of hours in 14 days) hours as having already been
 fetched, immediately on first run.
 
-An example sketch of this suggested implementation can be found [in the
-CovidShield/backend](https://github.com/CovidShield/backend/blob/master/examples/retrieval/app.rb)
-repository.
+An example sketch of this suggested implementation can be found at
+[examples/retrieval/app.rb](https://github.com/CovidShield/server/blob/master/examples/retrieval/app.rb).
 
 ## Response format for /retrieve-*
 
@@ -184,7 +183,7 @@ stream if the keys from that region exceed 500kB (a framework-defined limit) for
 Or, if the EncryptedUploadResponse is only 5 bytes long somehow, and there's only one of them, you
 might see `00 00 00 05 xx xx xx xx xx`
 
-You can find a large-ish example of this format in https://github.com/CovidShield/backend at
+You can find a large-ish example of this format in this repository at
 `build/retrieve-example.proto-stream` after running `make test`.
 
 Note, as a special case, that if there are no keys at all in the requested range, the total content
