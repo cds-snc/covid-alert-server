@@ -30,14 +30,14 @@ class RetrieveTest < MiniTest::Test
   def test_retrieve_stuff
     active_at = time_in_date('10:00', today_utc.prev_day(8))
     add_key(active_at: active_at, submitted_at: time_in_date('03:00', yesterday_utc))
-    rsn = rolling_start_number(active_at)
+    rsin = rolling_start_interval_number(active_at)
 
     start_time = yesterday_utc.to_datetime.to_time.to_i
     end_time = start_time + 86400
 
     resp = get_day(yesterday_utc.iso8601)
     assert_response(resp, 200, 'application/x-protobuf; delimited=true')
-    expect_one_key(resp, rsn, 8, '1' * 16, start_time, end_time)
+    expect_one_key(resp, rsin, 8, '1' * 16, start_time, end_time)
   end
 
   def test_24_hour_span
@@ -52,7 +52,7 @@ class RetrieveTest < MiniTest::Test
     add_key(active_at: a, submitted_at: time_in_date("23:59:59", yesterday_utc), data: '3' * 16)
     add_key(active_at: a, submitted_at: time_in_date("00:00", today_utc), data: '4' * 16)
 
-    rsn = rolling_start_number(a)
+    rsin = rolling_start_interval_number(a)
 
     start_time = yesterday_utc.to_datetime.to_time.to_i
     end_time = start_time + 86400
@@ -62,26 +62,24 @@ class RetrieveTest < MiniTest::Test
     expect_retrieve_data(
       resp,
       [
-        Covidshield::File.new(
-          header: Covidshield::Header.new(
-            startTimestamp: start_time,
-            endTimestamp: end_time,
-            region: "ON",
-            batchNum: 1,
-            batchSize: 1
-          ),
-          key: [
-            Covidshield::Key.new(
-              keyData: "2222222222222222",
-              rollingStartNumber: rsn,
-              rollingPeriod: 144,
-              transmissionRiskLevel: 8
+        Covidshield::TemporaryExposureKeyExport.new(
+          start_timestamp: start_time,
+          end_timestamp: end_time,
+          region: "ON",
+          batch_num: 1,
+          batch_size: 1,
+          keys: [
+            Covidshield::TemporaryExposureKey.new(
+              key_data: "2222222222222222",
+              rolling_start_interval_number: rsin,
+              rolling_period: 144,
+              transmission_risk_level: 8
             ),
-            Covidshield::Key.new(
-              keyData: "3333333333333333",
-              rollingStartNumber: rsn,
-              rollingPeriod: 144,
-              transmissionRiskLevel: 8
+            Covidshield::TemporaryExposureKey.new(
+              key_data: "3333333333333333",
+              rolling_start_interval_number: rsin,
+              rolling_period: 144,
+              transmission_risk_level: 8
             )
           ]
         )
@@ -102,7 +100,7 @@ class RetrieveTest < MiniTest::Test
 
     resp = get_day(yesterday_utc.iso8601)
     assert_response(resp, 200, 'application/x-protobuf; delimited=true')
-    expect_one_key(resp, rolling_start_number(new), 8, '1' * 16, start_time, end_time)
+    expect_one_key(resp, rolling_start_interval_number(new), 8, '1' * 16, start_time, end_time)
   end
 
   def test_invalid_auth_for_day
@@ -250,15 +248,15 @@ class RetrieveTest < MiniTest::Test
 
     key_data = []
 
-    assert_equal(%w(BC ON ON), files.map { |f| f.header.region }.sort)
+    assert_equal(%w(BC ON ON), files.map { |f| f.region }.sort)
 
     files.each.with_index do |file, index|
-      assert_equal(start_time, file.header.startTimestamp)
-      assert_equal(end_time, file.header.endTimestamp)
-      assert_equal(index+1, file.header.batchNum)
-      assert_equal(3, file.header.batchSize)
+      assert_equal(start_time, file.start_timestamp)
+      assert_equal(end_time, file.end_timestamp)
+      assert_equal(index+1, file.batch_num)
+      assert_equal(3, file.batch_size)
 
-      key_data.concat(file.key.map(&:keyData))
+      key_data.concat(file.keys.map(&:key_data))
     end
 
     assert_equal(18001, key_data.size)
@@ -267,24 +265,22 @@ class RetrieveTest < MiniTest::Test
 
   private
 
-  def expect_one_key(resp, rsn, risk, data, start_time, end_time)
+  def expect_one_key(resp, rsin, risk, data, start_time, end_time)
     expect_retrieve_data(
       resp,
       [
-        Covidshield::File.new(
-          header: Covidshield::Header.new(
-            startTimestamp: start_time,
-            endTimestamp: end_time,
-            region: 'ON',
-            batchNum: 1,
-            batchSize: 1,
-          ),
-          key: [
-            Covidshield::Key.new(
-              keyData: data,
-              rollingStartNumber: rsn,
-              rollingPeriod: 144,
-              transmissionRiskLevel: risk,
+        Covidshield::TemporaryExposureKeyExport.new(
+          start_timestamp: start_time,
+          end_timestamp: end_time,
+          region: 'ON',
+          batch_num: 1,
+          batch_size: 1,
+          keys: [
+            Covidshield::TemporaryExposureKey.new(
+              key_data: data,
+              rolling_start_interval_number: rsin,
+              rolling_period: 144,
+              transmission_risk_level: risk,
             )
           ]
         )
@@ -299,12 +295,12 @@ class RetrieveTest < MiniTest::Test
     assert_equal([], files, "  (from #{caller[0]})")
   end
 
-  def add_key(data: '1' * 16, active_at:, submitted_at:, risk_level: 8, region: 'ON')
+  def add_key(data: '1' * 16, active_at:, submitted_at:, transmission_risk_level: 8, region: 'ON')
     add_key_explicit(
-      rsn: rolling_start_number(active_at),
+      rsin: rolling_start_interval_number(active_at),
       hour: hour_number(submitted_at),
       region: region,
-      risk_level: risk_level,
+      transmission_risk_level: transmission_risk_level,
       data: data
     )
   end
@@ -312,13 +308,13 @@ class RetrieveTest < MiniTest::Test
   def insert_key
     @insert_key ||= @dbconn.prepare(<<~SQL)
       INSERT INTO diagnosis_keys
-      (key_data, rolling_start_number, rolling_period, risk_level, hour_of_submission, region)
+      (key_data, rolling_start_interval_number, rolling_period, transmission_risk_level, hour_of_submission, region)
       VALUES (?, ?, ?, ?, ?, ?)
     SQL
   end
 
-  def add_key_explicit(data: '1' * 16, rsn:, risk_level: 8, hour:, region: 'ON', rolling_period: TEK_ROLLING_PERIOD)
-    insert_key.execute(data, rsn, rolling_period, risk_level, hour, region)
+  def add_key_explicit(data: '1' * 16, rsin:, transmission_risk_level: 8, hour:, region: 'ON', rolling_period: TEK_ROLLING_PERIOD)
+    insert_key.execute(data, rsin, rolling_period, transmission_risk_level, hour, region)
   end
 
   def hour_number(timestamp)
@@ -327,7 +323,7 @@ class RetrieveTest < MiniTest::Test
 
   TEK_ROLLING_PERIOD = 144
 
-  def rolling_start_number(timestamp)
+  def rolling_start_interval_number(timestamp)
     en_interval_number = timestamp.to_i / 600
     (en_interval_number / TEK_ROLLING_PERIOD) * TEK_ROLLING_PERIOD
   end

@@ -95,7 +95,7 @@ class UploadTest < MiniTest::Test
     resp = @sub_conn.post('/upload', req.to_proto)
     assert_result(resp, 400, :TOO_MANY_KEYS)
 
-    # rollingPeriod missing, too high
+    # rolling_period missing, too high
     assert_tek_fails(:INVALID_ROLLING_PERIOD, rolling_period: 0)
     assert_tek_fails(:INVALID_ROLLING_PERIOD, rolling_period: 144*14+1)
 
@@ -109,7 +109,7 @@ class UploadTest < MiniTest::Test
     assert_tek_fails(:INVALID_KEY_DATA, key_data: '1'*17)
 
     # key data absent, too long, too short
-    assert_tek_fails(:INVALID_ROLLING_START_NUMBER, rolling_start_number: 0)
+    assert_tek_fails(:INVALID_ROLLING_START_INTERVAL_NUMBER, rolling_start_interval_number: 0)
   end
 
   def test_key_limit
@@ -169,19 +169,19 @@ class UploadTest < MiniTest::Test
     encrypted_payload: box.encrypt(nonce, payload)
   )
     Covidshield::EncryptedUploadRequest.new(
-      serverPublicKey: server_public_to_send.to_s,
-      appPublicKey: app_public_to_send.to_s,
+      server_public_key: server_public_to_send.to_s,
+      app_public_key: app_public_to_send.to_s,
       nonce: nonce_to_send,
       payload: encrypted_payload,
     )
   end
 
-  def tek(key_data: '1' * 16, transmission_risk_level: 3, rolling_period: 144, rolling_start_number: Time.now.to_i / 86400)
-    Covidshield::Key.new(
-      keyData: key_data,
-      transmissionRiskLevel: transmission_risk_level,
-      rollingPeriod: rolling_period,
-      rollingStartNumber: rolling_start_number
+  def tek(key_data: '1' * 16, transmission_risk_level: 3, rolling_period: 144, rolling_start_interval_number: Time.now.to_i / 86400)
+    Covidshield::TemporaryExposureKey.new(
+      key_data: key_data,
+      transmission_risk_level: transmission_risk_level,
+      rolling_period: rolling_period,
+      rolling_start_interval_number: rolling_start_interval_number
     )
   end
 

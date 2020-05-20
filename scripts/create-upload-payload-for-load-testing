@@ -32,12 +32,12 @@ module CreateUploadPayloadForLoadTesting
     resp.body.chomp
   end
 
-  def tek(key_data: '1' * 16, transmission_risk_level: 3, rolling_period: 144, rolling_start_number: Time.now.to_i / 86400)
-    Covidshield::Key.new(
+  def tek(key_data: '1' * 16, transmission_risk_level: 3, rolling_period: 144, rolling_start_interval_number: Time.now.to_i / 86400)
+    Covidshield::TemporaryExposureKey.new(
       keyData: key_data,
       transmissionRiskLevel: transmission_risk_level,
       rollingPeriod: rolling_period,
-      rollingStartNumber: rolling_start_number
+      rollingStartIntervalNumber: rolling_start_interval_number
     )
   end
 

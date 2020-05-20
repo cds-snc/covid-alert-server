@@ -6,23 +6,23 @@ option go_package="pkg/proto/covidshield";
 
 // Clients will receive a One Time Code via some external channel (i.e. SMS or
 // verbal). Then, upon issuing THIS request, they will generate a new keypair.
-// If the response comes back successful, the appPublicKey (and the
-// corresponding private key) and the returned serverPublicKey will be kept in
+// If the response comes back successful, the app_public_key (and the
+// corresponding private key) and the returned server_public_key will be kept in
 // local storage for the duration of this reporting window (the next 14 days).
 //
-// appPublicKeys must not be re-used for new KeyClaimRequests, or the requests
+// app_public_keys must not be re-used for new KeyClaimRequests, or the requests
 // will fail.
 message KeyClaimRequest {
-  // oneTimeCode is the code received from the testing portal.
-  required string oneTimeCode = 1; // 8 numerical digits
-  // appPublicKey is generated locally and saved upon successful request
+  // one_time_code is the code received from the testing portal.
+  required string one_time_code = 1; // 8 numerical digits
+  // app_public_key is generated locally and saved upon successful request
   // completion.
-  required bytes appPublicKey = 2; // 32 bytes
+  required bytes app_public_key = 2; // 32 bytes
 }
 
 // KeyClaimResponse is received from the server in response to a
 // KeyClaimRequest. If the request was successful, error will be NONE and
-// serverPublicKey will be set.
+// server_public_key will be set.
 message KeyClaimResponse {
   enum ErrorCode {
     NONE = 0;
@@ -33,7 +33,7 @@ message KeyClaimResponse {
     INVALID_KEY = 4;
   }
   optional ErrorCode error = 1;
-  optional bytes serverPublicKey = 2; // 32 bytes
+  optional bytes server_public_key = 2; // 32 bytes
 }
 
 // We are using a NaCl Box (Curve25519+XSalsa20+Poly1305) to encrypt and
@@ -47,16 +47,16 @@ message KeyClaimResponse {
 //
 // See "Security Model" at https://nacl.cr.yp.to/box.html
 message EncryptedUploadRequest {
-  // serverPublicKey is provided by the Diagnosis Server to the App, and is
+  // server_public_key is provided by the Diagnosis Server to the App, and is
   // used to encrypt the payload. This key should be stored locally for 14
   // days, and used to submit the follow-up Diagnosis Key.
-  required bytes serverPublicKey = 1; // 32 bytes
-  // appPublicKey is the public side of a keypair generated once by the
-  // application and linked to the serverPublicKey. These are linked in the
-  // Diagnosis Server, so that only one appPublicKey is authorized to upload
-  // for a given serverPublicKey. If a new serverPublicKey is issued to an App
-  // (e.g. months later), a new appPublicKey should be generated.
-  required bytes appPublicKey = 2; // 32 bytes
+  required bytes server_public_key = 1; // 32 bytes
+  // app_public_key is the public side of a keypair generated once by the
+  // application and linked to the server_public_key. These are linked in the
+  // Diagnosis Server, so that only one app_public_key is authorized to upload
+  // for a given server_public_key. If a new server_public_key is issued to an App
+  // (e.g. months later), a new app_public_key should be generated.
+  required bytes app_public_key = 2; // 32 bytes
   // nonce must be 24 random bytes, and absolutely must NOT be re-used between
   // subsequent submissions of Diagnosis Keys. This nonce is passed to the
   // encryption library to generate the ciphertext.
@@ -84,7 +84,7 @@ message EncryptedUploadResponse {
     INVALID_TIMESTAMP = 8;
     INVALID_ROLLING_PERIOD = 10;
     INVALID_KEY_DATA = 11;
-    INVALID_ROLLING_START_NUMBER = 12;
+    INVALID_ROLLING_START_INTERVAL_NUMBER = 12;
     INVALID_TRANSMISSION_RISK_LEVEL = 13;
   }
   required ErrorCode error = 1;
@@ -103,7 +103,7 @@ message Upload {
 //
 // The format of the /keys endpoints is a stream of serialized File
 // messages, each length-prefixed with a big-endian uint32. Clients should take
-// care to verify that the batchSize from the headers matches the total number
+// care to verify that the batch_size from the headers matches the total number
 // of records received.
 //
 // Note, as a special case, that if there are no keys at all in the requested

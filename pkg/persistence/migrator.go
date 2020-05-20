@@ -25,18 +25,18 @@ var migrations = []migration{
 		id: "1",
 		statements: []string{`
 CREATE TABLE IF NOT EXISTS diagnosis_keys (
-	key_data             BINARY(16) NOT NULL UNIQUE,
-	rolling_start_number INT UNSIGNED NOT NULL,      -- uint32
-	rolling_period       INT UNSIGNED NOT NULL,      -- uint32
-	risk_level           SMALLINT UNSIGNED NOT NULL, -- uint16
-	hour_of_submission   INT UNSIGNED NOT NULL,      -- uint32
-	region               VARCHAR(32) NOT NULL,
+	key_data                      BINARY(16) NOT NULL UNIQUE,
+	rolling_start_interval_number INT NOT NULL,               -- int32
+	rolling_period                INT NOT NULL,               -- int32
+	transmission_risk_level       SMALLINT UNSIGNED NOT NULL, -- uint16
+	hour_of_submission            INT UNSIGNED NOT NULL,      -- uint32
+	region                        VARCHAR(32) NOT NULL,
 
-  UNIQUE INDEX (key_data, region),
-  INDEX (key_data),
-  INDEX (region),
-  INDEX (hour_of_submission),
-  INDEX (rolling_start_number)
+	UNIQUE INDEX (key_data, region),
+	INDEX (key_data),
+	INDEX (region),
+	INDEX (hour_of_submission),
+	INDEX (rolling_start_interval_number)
 )`, `
 CREATE TABLE IF NOT EXISTS encryption_keys (
 	server_private_key   BINARY(32) NOT NULL UNIQUE,

@@ -81,19 +81,19 @@ module Helper
       app_public_key  = app_private_key.public_key
 
       kcq = Covidshield::KeyClaimRequest.new(
-        oneTimeCode: otc,
-        appPublicKey: app_public_key.to_s,
+        one_time_code: otc,
+        app_public_key: app_public_key.to_s,
       )
       resp = @sub_conn.post('/claim-key', kcq.to_proto)
       assert_response(resp, 200, 'application/x-protobuf')
       kcr = Covidshield::KeyClaimResponse.decode(resp.body)
       assert_equal(:NONE, kcr.error)
-      assert_equal(32, kcr.serverPublicKey.each_byte.size)
+      assert_equal(32, kcr.server_public_key.each_byte.size)
 
       {
         app_public: app_public_key,
         app_private: app_private_key,
-        server_public: kcr.serverPublicKey
+        server_public: kcr.server_public_key
       }
     end
 
@@ -115,7 +115,7 @@ module Helper
       SQL
       @dbconn.prepare(<<~SQL).execute(hours, hours)
         UPDATE diagnosis_keys SET
-          rolling_start_number = rolling_start_number - (6 * ?),
+          rolling_start_interval_number = rolling_start_interval_number - (6 * ?),
           hour_of_submission = hour_of_submission - ?
       SQL
     end
@@ -166,7 +166,7 @@ module Helper
         len = read_uint32
         return [] if len == 0 && first
         first = false
-        files << Covidshield::File.decode(@buf.shift(len).map(&:chr).join)
+        files << Covidshield::TemporaryExposureKeyExport.decode(@buf.shift(len).map(&:chr).join)
       end
       files
     end

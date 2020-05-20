@@ -85,10 +85,6 @@ class ExpirationWorkerTest < MiniTest::Test
     @dbconn.query("SELECT COUNT(*) FROM encryption_keys").first.values.first
   end
 
-  def current_rsn(ts: Time.now)
-    (ts.to_i / 86400) * 144
-  end
-
   def dummy_payload(nkeys=1)
     Covidshield::Upload.new(timestamp: Time.now, keys: [tek]*nkeys).to_proto
   end
@@ -103,19 +99,19 @@ class ExpirationWorkerTest < MiniTest::Test
     encrypted_payload: box.encrypt(nonce, payload)
   )
     Covidshield::EncryptedUploadRequest.new(
-      serverPublicKey: server_public_to_send.to_s,
-      appPublicKey: app_public_to_send.to_s,
+      server_public_key: server_public_to_send.to_s,
+      app_public_key: app_public_to_send.to_s,
       nonce: nonce_to_send,
       payload: encrypted_payload,
     )
   end
 
-  def tek(data: '1' * 16, risk_level: 3, rolling_period: 144, rolling_start_number: 100000)
-    Covidshield::Key.new(
-      keyData: data,
-      transmissionRiskLevel: risk_level,
-      rollingPeriod: rolling_period,
-      rollingStartNumber: rolling_start_number
+  def tek(data: '1' * 16, transmission_risk_level: 3, rolling_period: 144, rolling_start_interval_number: 100000)
+    Covidshield::TemporaryExposureKey.new(
+      key_data: data,
+      transmission_risk_level: transmission_risk_level,
+      rolling_period: rolling_period,
+      rolling_start_interval_number: rolling_start_interval_number
     )
   end
 

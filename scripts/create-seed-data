@@ -26,7 +26,7 @@ class Seeder
       )
       @statement = dbconn.prepare(<<~SQL)
         INSERT INTO diagnosis_keys
-        (key_data, rolling_start_number, rolling_period, risk_level, hour_of_submission, region)
+        (key_data, rolling_start_interval_number, rolling_period, transmission_risk_level, hour_of_submission, region)
         VALUES (?, ?, 144, ?, ?, 1)
       SQL
 
@@ -38,7 +38,7 @@ class Seeder
       (168 * 2).times do |hour|
         9.times do |risk|
           14.times do |day|
-            5.times { seed(rsn_days_ago(day), risk, hour_ago(hour)) }
+            5.times { seed(rsin_days_ago(day), risk, hour_ago(hour)) }
           end
         end
       end
@@ -52,8 +52,8 @@ class Seeder
       puts("\x1b[1;34m% #{msg}\x1b[0m")
     end
 
-    def seed(rsn, risk, hour)
-      @statement.execute(next_data, rsn, risk, hour)
+    def seed(rsin, risk, hour)
+      @statement.execute(next_data, rsin, risk, hour)
     end
 
     def next_data
@@ -66,7 +66,7 @@ class Seeder
       current - n
     end
 
-    def rsn_days_ago(n)
+    def rsin_days_ago(n)
       current = (Time.now.to_i / 86400) * 144
       current - (144 * n)
     end

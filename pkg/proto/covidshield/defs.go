@@ -41,8 +41,8 @@ func IntoNonce(bytes []byte) (*[NonceLength]byte, error) {
 	return &arr, nil
 }
 
-func CurrentRollingStartNumber() uint32 {
+func CurrentRollingStartIntervalNumber() int32 {
 	epochTime := time.Now().Unix()
-	intervalNumber := uint32(epochTime / (60 * 10))
+	intervalNumber := int32(epochTime / (60 * 10))
 	return (intervalNumber / TEKRollingPeriod) * TEKRollingPeriod
 }

@@ -77,12 +77,12 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var keysByRegion map[string][]*pb.Key
+	var keysByRegion map[string][]*pb.TemporaryExposureKey
 
 	var startTimestamp time.Time
 	var endTimestamp time.Time
 
-	currentRSN := pb.CurrentRollingStartNumber()
+	currentRSIN := pb.CurrentRollingStartIntervalNumber()
 
 	if _, ok := vars["hour"]; ok {
 		hour, err := strconv.ParseUint(vars["hour"], 10, 32)
@@ -118,7 +118,7 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) {
 			endTimestamp = time.Unix(int64(requestedDate*86400)+int64((hour+1)*3600), 0)
 		}
 
-		keysByRegion, err = s.db.FetchKeysForHour(date, int(hour), currentRSN)
+		keysByRegion, err = s.db.FetchKeysForHour(date, int(hour), currentRSIN)
 		if err != nil {
 			s.fail(log(ctx, err), w, "database error", "", http.StatusInternalServerError)
 			return
@@ -142,7 +142,7 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) {
 			endTimestamp = time.Unix(int64((requested+1)*86400), 0)
 		}
 
-		keysByRegion, err = s.db.FetchKeysForDay(date, currentRSN)
+		keysByRegion, err = s.db.FetchKeysForDay(date, currentRSIN)
 		if err != nil {
 			s.fail(log(ctx, err), w, "database error", "", http.StatusInternalServerError)
 			return

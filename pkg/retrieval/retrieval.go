@@ -30,25 +30,23 @@ func min(a, b int) int {
 	return b
 }
 
-func SerializeTo(ctx context.Context, w io.Writer, keysByRegion map[string][]*pb.Key, startTimestamp, endTimestamp time.Time) error {
-	files := []*pb.File{}
+func SerializeTo(ctx context.Context, w io.Writer, keysByRegion map[string][]*pb.TemporaryExposureKey, startTimestamp, endTimestamp time.Time) error {
+	files := []*pb.TemporaryExposureKeyExport{}
 
-	start := startTimestamp.Unix()
-	end := endTimestamp.Unix()
+	start := uint64(startTimestamp.Unix())
+	end := uint64(endTimestamp.Unix())
 
 	batchNum := int32(1)
 	for region, keys := range keysByRegion {
 		for offset := 0; offset < len(keys); offset += maxKeysPerFile {
 			thisBatchNum := batchNum
 			thisRegion := region
-			files = append(files, &pb.File{
-				Header: &pb.Header{
-					StartTimestamp: &start,
-					EndTimestamp:   &end,
-					Region:         &thisRegion,
-					BatchNum:       &thisBatchNum,
-				},
-				Key: keys[offset:min(offset+maxKeysPerFile, len(keys))],
+			files = append(files, &pb.TemporaryExposureKeyExport{
+				StartTimestamp: &start,
+				EndTimestamp:   &end,
+				Region:         &thisRegion,
+				BatchNum:       &thisBatchNum,
+				Keys:           keys[offset:min(offset+maxKeysPerFile, len(keys))],
 			})
 			batchNum++
 		}
@@ -56,7 +54,7 @@ func SerializeTo(ctx context.Context, w io.Writer, keysByRegion map[string][]*pb
 
 	for _, file := range files {
 		l := int32(len(files))
-		file.Header.BatchSize = &l
+		file.BatchSize = &l
 	}
 
 	if len(files) == 0 {

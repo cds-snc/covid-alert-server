@@ -9,7 +9,7 @@ class RoundtripTest < MiniTest::Test
 
   def test_key_roundtrip
     keys = (0...14).map do |i|
-      tek(data: '1' * 15 + (i+97).chr, rolling_period: 144, rolling_start_number: current_rsn - 144 * i)
+      tek(data: '1' * 15 + (i+97).chr, rolling_period: 144, rolling_start_interval_number: current_rsin - 144 * i)
     end
     first_keys = keys.dup
 
@@ -25,7 +25,7 @@ class RoundtripTest < MiniTest::Test
 
     # Replace one of the 14 keys with a "new" one
     keys.pop
-    keys.unshift(tek(data: '1' * 15 + 'z', rolling_start_number: current_rsn))
+    keys.unshift(tek(data: '1' * 15 + 'z', rolling_start_interval_number: current_rsin))
     payload = Covidshield::Upload.new(timestamp: Time.now, keys: keys).to_proto
 
     resp = @sub_conn.post('/upload', encrypted_request(payload, credentials).to_proto)
@@ -77,22 +77,22 @@ class RoundtripTest < MiniTest::Test
       keys.concat(parse_keys(resp))
     end
 
-    have_key_ids =      keys.map { |k| k.keyData[-1] }.sort
-    want_key_ids = want_keys.map { |k| k.keyData[-1] }.sort
+    have_key_ids =      keys.map { |k| k.key_data[-1] }.sort
+    want_key_ids = want_keys.map { |k| k.key_data[-1] }.sort
     assert_equal(want_key_ids, have_key_ids, "  (from #{caller[0]})")
   end
 
   def parse_keys(resp)
     keys = []
     @buf = resp.body.each_byte.to_a
-    load_retrieve_stream.flat_map(&:key)
+    load_retrieve_stream.flat_map(&:keys)
   end
 
   def count_diagnosis_keys
     @dbconn.query("SELECT COUNT(*) FROM diagnosis_keys").first.values.first
   end
 
-  def current_rsn(ts: Time.now)
+  def current_rsin(ts: Time.now)
     (ts.to_i / 86400) * 144
   end
 
@@ -110,19 +110,19 @@ class RoundtripTest < MiniTest::Test
     encrypted_payload: box.encrypt(nonce, payload)
   )
     Covidshield::EncryptedUploadRequest.new(
-      serverPublicKey: server_public_to_send.to_s,
-      appPublicKey: app_public_to_send.to_s,
+      server_public_key: server_public_to_send.to_s,
+      app_public_key: app_public_to_send.to_s,
       nonce: nonce_to_send,
       payload: encrypted_payload,
     )
   end
 
-  def tek(data: '1' * 16, risk_level: 3, rolling_period: 144, rolling_start_number: 1234)
-    Covidshield::Key.new(
-      keyData: data,
-      transmissionRiskLevel: risk_level,
-      rollingPeriod: rolling_period,
-      rollingStartNumber: rolling_start_number
+  def tek(data: '1' * 16, transmission_risk_level: 3, rolling_period: 144, rolling_start_interval_number: 1234)
+    Covidshield::TemporaryExposureKey.new(
+      key_data: data,
+      transmission_risk_level: transmission_risk_level,
+      rolling_period: rolling_period,
+      rolling_start_interval_number: rolling_start_interval_number
     )
   end
 

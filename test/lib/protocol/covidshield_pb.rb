@@ -7,12 +7,12 @@ require 'google/protobuf/timestamp_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_file("covidshield.proto", :syntax => :proto2) do
     add_message "covidshield.KeyClaimRequest" do
-      required :oneTimeCode, :string, 1
-      required :appPublicKey, :bytes, 2
+      required :one_time_code, :string, 1
+      required :app_public_key, :bytes, 2
     end
     add_message "covidshield.KeyClaimResponse" do
       optional :error, :enum, 1, "covidshield.KeyClaimResponse.ErrorCode"
-      optional :serverPublicKey, :bytes, 2
+      optional :server_public_key, :bytes, 2
     end
     add_enum "covidshield.KeyClaimResponse.ErrorCode" do
       value :NONE, 0
@@ -22,8 +22,8 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       value :INVALID_KEY, 4
     end
     add_message "covidshield.EncryptedUploadRequest" do
-      required :serverPublicKey, :bytes, 1
-      required :appPublicKey, :bytes, 2
+      required :server_public_key, :bytes, 1
+      required :app_public_key, :bytes, 2
       required :nonce, :bytes, 3
       required :payload, :bytes, 4
     end
@@ -42,7 +42,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       value :INVALID_TIMESTAMP, 8
       value :INVALID_ROLLING_PERIOD, 10
       value :INVALID_KEY_DATA, 11
-      value :INVALID_ROLLING_START_NUMBER, 12
+      value :INVALID_ROLLING_START_INTERVAL_NUMBER, 12
       value :INVALID_TRANSMISSION_RISK_LEVEL, 13
     end
     add_message "covidshield.Upload" do
