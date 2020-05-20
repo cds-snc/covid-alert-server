@@ -14,6 +14,7 @@ GEM
     mysql2 (0.5.3)
     rbnacl (7.1.1)
       ffi
+    rubyzip (2.3.0)
 
 PLATFORMS
   ruby
@@ -26,6 +27,7 @@ DEPENDENCIES
   mocha
   mysql2
   rbnacl
+  rubyzip
 
 BUNDLED WITH
    2.1.4

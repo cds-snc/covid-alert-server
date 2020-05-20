@@ -9,6 +9,7 @@ require('open3')
 require('faraday')
 require('rbnacl')
 require('mysql2')
+require('zip')
 
 KEY_SUBMISSION_SERVER = File.expand_path('../../build/debug/key-submission', __dir__)
 KEY_RETRIEVAL_SERVER = File.expand_path('../../build/debug/key-retrieval', __dir__)
@@ -40,29 +41,37 @@ module Helper
       end
     end
 
+    def current_period
+      (Time.now.to_i / 3600 / 2) * 2
+    end
+
+    def next_rsin
+      @rsin ||= (Time.now.to_i / 600 / 144) * 144
+      ret = @rsin
+      @rsin -= 144
+      ret
+    end
+
     def get_exposure_config(region, method: :get)
       @ret_conn.send(method, "/exposure-configuration/#{region}.json")
     end
 
-    def get_day(day, method: :get)
-      date = day.is_a?(String) ? day : day.iso8601
+    def get_period(period, method: :get)
       hmac = OpenSSL::HMAC.hexdigest(
         "SHA256",
         [ENV.fetch("RETRIEVE_HMAC_KEY")].pack("H*"),
-        "#{date}:#{Time.now.to_i / 3600}"
+        "#{period}:#{Time.now.to_i / 3600}"
       )
-      @ret_conn.send(method, "/retrieve-day/#{date}/#{hmac}")
+      @ret_conn.send(method, "/retrieve/#{period}/#{hmac}")
     end
 
-    def get_hour(day, hour)
-      date = day.is_a?(String) ? day : day.iso8601
-      hour = format("%02d", hour)
-      hmac = OpenSSL::HMAC.hexdigest(
-        "SHA256",
-        [ENV.fetch("RETRIEVE_HMAC_KEY")].pack("H*"),
-        "#{date}:#{hour}:#{Time.now.to_i / 3600}"
+    def tek(data: '1' * 16, transmission_risk_level: 3, rolling_period: 144, rolling_start_interval_number: next_rsin)
+      Covidshield::TemporaryExposureKey.new(
+        key_data: data,
+        transmission_risk_level: transmission_risk_level,
+        rolling_period: rolling_period,
+        rolling_start_interval_number: rolling_start_interval_number
       )
-      @ret_conn.get("/retrieve-hour/#{date}/#{hour}/#{hmac}")
     end
 
     def new_valid_one_time_code
@@ -148,41 +157,21 @@ module Helper
       assert_equal(data, @buf.shift(data.size), "  (from #{caller_locations[0]})")
     end
 
-    BIG_ENDIAN_UINT32 = 'N'
-    BIG_ENDIAN_UINT16 = 'n'
-
-    def uint32(int)
-      [int].pack(BIG_ENDIAN_UINT32).bytes.to_a
-    end
-
-    def uint16(int)
-      [int].pack(BIG_ENDIAN_UINT16).bytes.to_a
-    end
-
-    def load_retrieve_stream
-      files = []
-      first = true
-      until @buf.empty?
-        len = read_uint32
-        return [] if len == 0 && first
-        first = false
-        files << Covidshield::TemporaryExposureKeyExport.decode(@buf.shift(len).map(&:chr).join)
+    def extract_zip(data)
+      tf = Tempfile.new
+      path = tf.path
+      tf.write(data)
+      tf.close
+      files = {}
+      Zip::File.open(path) do |zip|
+        zip.each do |entry|
+          files[entry.name] = entry.get_input_stream.read
+        end
       end
-      files
-    end
-
-    def expect_retrieve_data(resp, exp, depth=0)
-      @buf = resp.body.each_byte.to_a
-      files = load_retrieve_stream
-      assert_equal(exp, files, "  (from #{caller[depth]})")
-    end
-
-    def read_uint16
-      @buf.shift(2).map(&:chr).join.unpack(BIG_ENDIAN_UINT16).first
-    end
-
-    def read_uint32
-      @buf.shift(4).map(&:chr).join.unpack(BIG_ENDIAN_UINT32).first
+      assert_equal(%w(export.bin export.sig), files.keys)
+      [files['export.bin'], files['export.sig']]
+    ensure
+      File.unlink(tf.path)
     end
   end
 

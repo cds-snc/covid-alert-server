@@ -5,6 +5,9 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/x509"
+	"encoding/hex"
+	"os"
 )
 
 type Signer interface {
@@ -15,8 +18,22 @@ type signer struct {
 	privateKey *ecdsa.PrivateKey
 }
 
-func NewSigner(key *ecdsa.PrivateKey) Signer {
-	return &signer{privateKey: key}
+func NewSigner() Signer {
+	ecdsaKeyHex := os.Getenv("ECDSA_KEY")
+	if ecdsaKeyHex == "" {
+		panic("no ECDSA_KEY")
+	}
+	ecdsaKey, err := hex.DecodeString(ecdsaKeyHex)
+	if err != nil {
+		panic(err)
+	}
+
+	priv, err := x509.ParseECPrivateKey(ecdsaKey)
+	if err != nil {
+		panic(err)
+	}
+
+	return &signer{privateKey: priv}
 }
 
 func (s *signer) Sign(data []byte) ([]byte, error) {
@@ -27,8 +44,4 @@ func (s *signer) Sign(data []byte) ([]byte, error) {
 	}
 	signatureX962 := elliptic.Marshal(elliptic.P256(), a, b)
 	return signatureX962, nil
-}
-
-func DummyKey() (*ecdsa.PrivateKey, error) {
-	return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 }

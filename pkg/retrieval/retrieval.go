@@ -104,15 +104,23 @@ func SerializeTo(
 	if err != nil {
 		return err
 	}
-	if _, err := f.Write(exportBinData); err != nil {
+	n, err := f.Write(exportBinData)
+	if err != nil {
 		return err
+	}
+	if n != len(exportBinData) {
+		panic("len")
 	}
 	f, err = zipw.Create("export.sig")
 	if err != nil {
 		return err
 	}
-	if _, err := f.Write(exportSigData); err != nil {
+	n, err = f.Write(exportSigData)
+	if err != nil {
 		return err
+	}
+	if n != len(exportSigData) {
+		panic("len")
 	}
 
 	return zipw.Close()

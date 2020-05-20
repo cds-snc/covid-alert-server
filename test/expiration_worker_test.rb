@@ -106,15 +106,6 @@ class ExpirationWorkerTest < MiniTest::Test
     )
   end
 
-  def tek(data: '1' * 16, transmission_risk_level: 3, rolling_period: 144, rolling_start_interval_number: 100000)
-    Covidshield::TemporaryExposureKey.new(
-      key_data: data,
-      transmission_risk_level: transmission_risk_level,
-      rolling_period: rolling_period,
-      rolling_start_interval_number: rolling_start_interval_number
-    )
-  end
-
   def assert_result(resp, code, error)
     assert_response(resp, code, 'application/x-protobuf')
     assert_equal(

@@ -16,8 +16,7 @@ in this repository at [covidshield.proto](covidshield.proto).
 The Diagnosis Server implements five main endpoints:
 
 
-* `/retrieve-day`: Fetch a set of Diagnosis Keys for a given day
-* `/retrieve-hour`: Fetch a set of Diagnosis Keys for a specific hour in a day
+* `/retrieve`: Fetch a set of Diagnosis Keys for a given two-hour period
 * `/upload`: Upload a batch of Diagnosis Keys
 * `/new-key-claim`: Generate One-Time-Code to permit an app user to upload keys
 * `/claim-key`: Convert One-Time-Code into a credential that permits upload
@@ -87,107 +86,70 @@ positive diagnosis, and then should call it again each subsequent day, for days 
 Duplicate keys will be filtered by the server. Some time on day T+14, the keypairs used for
 encryption and authorization will become invalid and be purged.
 
-## `/retrieve-day/:date/:hmac`
+## `/retrieve/:period/:hmac`
+
+An "hour number" in this system is a UTC timestamp divided (using integer division) by 3600. This
+quantity increases by 1 each hour.
+
+A period is an hour number, rounded down to the next lower even number. So for example, the period
+for hours 3 and 2 is 2, in both cases. The period increases by 2 every 2 hours.
 
 the hmac parameter in this case must be a hex-encoded SHA256 HMAC (64 characters) of:
 
-    date + ":" + currentHour
+    period + ":" + currentHour
 
-where `date` is the ISO8601 datestamp from the URL (e.g. 2020-01-01), and `currentHour` is the
-current UTC hour number (i.e. `floor(unixtime / 3600)`). `currentHour` must be agree with the server
-to within +/- 1 hour in order for the request to be accepted.
+where `period` is provided in the URL (e.g. `441670`), and `currentHour` is the current UTC hour
+number (e.g. `441683`). `currentHour` must agree with the server to within +/- 1 hour in order for
+the request to be accepted.
 
 Of course there's no reliable way to truly authenticate these requests in an environment where
 millions of devices have immediate access to them upon downloading an Application: this scheme is
 purely to make it much more difficult to casually scrape these keys.
 
-Unlike the other endpoints, the retrieve endpoints don't return just a single serialized protobuf
-message, but rather a stream of them, each length-prefixed with a big-endian 32-bit integer. This is
-explained in a little more detail at the end of this document.
+#### Example Response
+    Content-Type: application/zip
+    Cache-Control: max-age=3600, max-stale=600
 
-#### Example Request (request data for the entire UTC date 2000-01-01)
-    GET /retrieve-day/2000-01-01/<hmac>
+    <zip-file>
 
-The date filter here corresponds to the time at which a Diagnosis Key was accepted by the Diagnosis
-Server, NOT the date for which the TemporaryExposure/Diagnosis Keys being fetched were active.
-However, the keys returned by this endpoint will only include key data from Keys active between 0
-and 14 days ago (relative to the current time upon handling this request).
+Unlike the other endpoints, the retrieve endpoint doesn't return just a single serialized protobuf
+message, but rather a zip file containing two files: `encoded.bin` contains a serialized
+`TemporaryKeyExport`, and `encoded.sig` contains a serialized `TEKSignatureList`. These are passed
+as-is to the Exposure Notification Framework.
+
+Note that the `period` provided to the retrieve endpoint corresponds to the time at which a
+Diagnosis Key was accepted by the Diagnosis Server, NOT the date for which the
+TemporaryExposure/Diagnosis Keys being fetched were active. However, the keys returned by this
+endpoint will only include key data from Keys active between 0 and 14 days ago (relative to the
+current time upon handling this request).
 
 The rationale for this is: a client should fetch the key data for the past 14 days initially.
 There's no need to cache historical keys locally, or to ever fetch them again or feed them into
-future ExposureSessions, as long as the application has recorded locally that keys have been
-fetched and checked for that range of historical time. This implementation is designed in a way that
-a device can check hourly for newly-available unprocessed data packs and expect to find one new one
-each hour to feed into an ExposureSession.
+future ExposureSessions, as long as the application has recorded locally that keys have been fetched
+and checked for that range of historical time. This implementation is designed in a way that a
+device can check every two hours for newly-available unprocessed data packs and expect to find one
+new one each two hours to feed into an ExposureSession.
 
 Note that, over time, historical packs will get smaller: the server will prune keys that, at the
 time of pack generation, are more than 14 days old. However, no new keys will ever be added to a
 historical pack, so there is no value in re-fetching old packs once they have been processed.
 
-## `/retrieve-day/:date/:hour/:hmac`
-
-the hmac parameter in this case must be a hex-encoded SHA256 HMAC (64 characters) of:
-
-    date + ":" + hour + ":" + currentHour
-
-where `date` is the ISO8601 datestamp from the URL (e.g. 2020-01-01), `hour` is the hour number from
-the URL padded to a width of two characters (e.g. "02"), and `currentHour` is the current UTC hour
-number (i.e. `floor(unixtime / 3600)`). `currentHour` must be agree with the server to within +/- 1 hour in
-order for the request to be accepted.
-
-#### Example Request (request data for the first hour of UTC date 2000-01-01)
-    GET /retrieve-hour/2000-01-01/00/<hmac>
-
-(note that valid values for `:hour` are 00–23, and must be padded to two digits)
-
-This is essentially identical to /retrieve-day, except that it returns only a single hour's
-contents. It will never return data for the current hour. This is useful for incremental checking
-during the current day, rather than waiting for the full-day pack at 8pm EDT.
-
-## How to Retrieve Keys
-
 Since the Exposure Notification Framework doesn't track keys before it is enabled, and since the
 Framework never allows extraction of a key that is still active, there is little value in retrieving
 data from before the App was installed.
 
-However, an implementor shouldn't assume that the device is always connected to the internet, and
-a full history of 14 days of keys will be relevant if the App has been installed for over 14 days.
-So, each time an Application checks for new keys, they should fetch every un-fetched pack in the
-previous 14 days, and mark a pack as completed once the Exposure Session has run successfully.
-
-`retrieve-hour` should be used for packs within the current UTC day, and `retrieve-day` should be
-used for previous days if a device has gone multiple days without an Internet connection (or without
-the app running, for any other reason). `retrieve-hour` will not work for times more than a day or
-so ago.
+However, an implementor shouldn't assume that the device is always connected to the internet, and a
+full history of 14 days of keys (168 periods) will be relevant if the App has been installed for
+over 14 days. So, each time an Application checks for new keys, they should fetch every un-fetched
+pack in the previous 14 days, and mark a pack as completed once the Exposure Session has run
+successfully.
 
 Since there is little value in retrieving historical data upon Application installation, it is
-recommended to mark the previous 366 (number of hours in 14 days) hours as having already been
-fetched, immediately on first run.
+recommended to mark the previous 168 periods as having already been fetched, immediately on first
+run.
 
 An example sketch of this suggested implementation can be found at
 [examples/retrieval/app.rb](https://github.com/CovidShield/server/blob/master/examples/retrieval/app.rb).
-
-## Response format for /retrieve-*
-
-These endpoints return a stream of serialized File messages, each prefixed with a big-endian uint32
-indicating the length of the following serialized message in bytes.
-
-Each File corresponds to a particular region, and a single region may have multiple Files in the
-stream if the keys from that region exceed 500kB (a framework-defined limit) for that snapshot.
-
-#### Example Response
-    Content-Type: application/x-protobuf; delimited=true
-
-    <length><serialized EncryptedUploadResponse><length><serialized EncryptedUploadResponse>
-
-Or, if the EncryptedUploadResponse is only 5 bytes long somehow, and there's only one of them, you
-might see `00 00 00 05 xx xx xx xx xx`
-
-You can find a large-ish example of this format in this repository at
-`build/retrieve-example.proto-stream` after running `make test`.
-
-Note, as a special case, that if there are no keys at all in the requested range, the total content
-of the response will be `00 00 00 00`; that is, a big-endian uint32 of zero.
 
 ## Who Built COVID Shield?
 

@@ -8,6 +8,7 @@ import (
 	"github.com/CovidShield/server/pkg/persistence"
 	pb "github.com/CovidShield/server/pkg/proto/covidshield"
 	"github.com/CovidShield/server/pkg/retrieval"
+	"github.com/CovidShield/server/pkg/timemath"
 
 	"github.com/sirupsen/logrus"
 
@@ -18,13 +19,8 @@ import (
 const (
 	numberOfDaysToServe = 14
 	hoursInDay          = 24
-)
-
-type Platform int
-
-const (
-	IOS Platform = iota
-	Android
+	hoursPerPeriod      = 2
+	availableHours      = numberOfDaysToServe * hoursInDay // 336
 )
 
 func NewRetrieveServlet(db persistence.Conn, auth retrieval.Authenticator, signer retrieval.Signer) srvutil.Servlet {
@@ -39,8 +35,7 @@ type retrieveServlet struct {
 
 func (s *retrieveServlet) RegisterRouting(r *mux.Router) {
 	// becomes 7 digits in 2084
-	r.HandleFunc("/retrieve/ios/{hour:[0-9]{6}}/{auth:.*}", s.retrieveIOS)
-	r.HandleFunc("/retrieve/android/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}/{auth:.*}", s.retrieveAndroid)
+	r.HandleFunc("/retrieve/{period:[0-9]{6}}/{auth:.*}", s.retrieveWrapper)
 }
 
 // returning this from s.fail and the s.retrieve makes it harder to call s.fail but forget to return.
@@ -60,19 +55,15 @@ func (s *retrieveServlet) fail(logger *logrus.Entry, w http.ResponseWriter, logM
 	return result(struct{}{})
 }
 
-func (s *retrieveServlet) retrieveIOS(w http.ResponseWriter, r *http.Request) {
-	_ = s.retrieve(w, r, IOS)
+func (s *retrieveServlet) retrieveWrapper(w http.ResponseWriter, r *http.Request) {
+	_ = s.retrieve(w, r)
 }
 
-func (s *retrieveServlet) retrieveAndroid(w http.ResponseWriter, r *http.Request) {
-	_ = s.retrieve(w, r, Android)
-}
-
-func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request, platform Platform) result {
+func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) result {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
-	if !s.auth.Authenticate(vars["hour"], vars["auth"]) {
+	if !s.auth.Authenticate(vars["period"], vars["auth"]) {
 		return s.fail(log(ctx, nil), w, "invalid auth parameter", "unauthorized", http.StatusUnauthorized)
 	}
 
@@ -80,55 +71,38 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request, platf
 		return s.fail(log(ctx, nil).WithField("method", r.Method), w, "method not allowed", "", http.StatusMethodNotAllowed)
 	}
 
-	hourNumber64, err := strconv.ParseInt(vars["hour"], 10, 32)
+	hourNumber64, err := strconv.ParseInt(vars["period"], 10, 32)
 	if err != nil {
-		return s.fail(log(ctx, err), w, "invalid hour parameter", "", http.StatusBadRequest)
+		return s.fail(log(ctx, err), w, "invalid period parameter", "", http.StatusBadRequest)
 	}
-	hourNumber := int32(hourNumber64)
+	period := int32(hourNumber64)
 
 	var keysByRegion map[string][]*pb.TemporaryExposureKey
 
-	startTimestamp := time.Unix(int64(hourNumber*3600), 0)
-	endTimestamp := time.Unix(int64((hourNumber+2)*3600), 0)
+	startTimestamp := time.Unix(int64(period*3600), 0)
+	endTimestamp := time.Unix(int64((period+2)*3600), 0)
 
 	currentRSIN := pb.CurrentRollingStartIntervalNumber()
+	currentPeriod := timemath.CurrentPeriod()
 
-	// TODO: reject requests for future slices
-	// TODO: reject requests for current slice
-	// TODO: reject requests for slices more than 14 days ago
-	// TODO: verify that period is and even number
+	if period%2 != 0 {
+		return s.fail(log(ctx, err), w, "odd period", "period must be even", http.StatusNotFound)
+	} else if period == currentPeriod {
+		return s.fail(log(ctx, err), w, "request for current period", "cannot serve data for current period for privacy reasons", http.StatusNotFound)
+	} else if period > currentPeriod {
+		return s.fail(log(ctx, err), w, "request for future data", "cannot request future data", http.StatusNotFound)
+	} else if period < (currentPeriod - availableHours) {
+		return s.fail(log(ctx, err), w, "request for too-old data", "requested data no longer valid", http.StatusGone)
+	}
 
-	// now := time.Now()
+	// TODO: Maybe implement multi-pack linked-list scheme depending on what we hear back from G/A
 
-	// requestedDate := timemath.DateNumber(date)
-	// currentDate := timemath.DateNumber(now)
-	// if requestedDate != currentDate && requestedDate != currentDate-1 {
-	// 	s.fail(log(ctx, err), w, "request for hour in too-old date", "use /retrieve-day for data not from today or yesterday", http.StatusNotFound)
-	// 	return
-	// }
-
-	// requested := timemath.DateNumber(date)
-	// current := timemath.DateNumber(time.Now())
-	// if requested == current {
-	// 	return s.fail(log(ctx, err), w, "request for current date", "use /retrieve-hour for today's data", http.StatusNotFound)
-	// } else if requested > current {
-	// 	return s.fail(log(ctx, err), w, "request for future data", "cannot request future data", http.StatusNotFound)
-	// } else if requested < (current - numberOfDaysToServe) {
-	// 	return s.fail(log(ctx, err), w, "request for too-old data", "requested data no longer valid", http.StatusGone)
-	// }
-
-	// if hour == currentHour {
-	// 	return s.fail(log(ctx, err), w, "request for current hour", "cannot serve data for current hour for privacy reasons", http.StatusNotFound)
-	// } else if hour > currentHour {
-	// 	return s.fail(log(ctx, err), w, "request for future data", "cannot request future data", http.StatusNotFound)
-	// }
-
-	keysByRegion, err = s.db.FetchKeysForPeriod(hourNumber, currentRSIN)
+	keysByRegion, err = s.db.FetchKeysForPeriod(period, currentRSIN)
 	if err != nil {
 		return s.fail(log(ctx, err), w, "database error", "", http.StatusInternalServerError)
 	}
 
-	w.Header().Add("Content-Type", "application/x-protobuf; delimited=true")
+	w.Header().Add("Content-Type", "application/zip")
 	w.Header().Add("Cache-Control", "public, max-age=3600, max-stale=600")
 
 	// TODO new format

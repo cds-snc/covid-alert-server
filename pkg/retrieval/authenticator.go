@@ -52,13 +52,13 @@ func (a *authenticator) Authenticate(requestedHour string, auth string) bool {
 
 	currentHour := int(timemath.HourNumber(time.Now()))
 
-	if validMAC([]byte(requestedHour+strconv.Itoa(currentHour)), dst, a.hmacKey) {
+	if validMAC([]byte(requestedHour+":"+strconv.Itoa(currentHour)), dst, a.hmacKey) {
 		return true
 	}
-	if validMAC([]byte(requestedHour+strconv.Itoa(currentHour-1)), dst, a.hmacKey) {
+	if validMAC([]byte(requestedHour+":"+strconv.Itoa(currentHour-1)), dst, a.hmacKey) {
 		return true
 	}
-	if validMAC([]byte(requestedHour+strconv.Itoa(currentHour+1)), dst, a.hmacKey) {
+	if validMAC([]byte(requestedHour+":"+strconv.Itoa(currentHour+1)), dst, a.hmacKey) {
 		return true
 	}
 	return false
