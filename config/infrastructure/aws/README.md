@@ -2,7 +2,7 @@
 
 :warning: This is not a fully featured production environment and aims to provide an accesible overview of the service.
 
-This document describes how to deploy and operate a **reference implmentation** of the Covid Shield web portal, along with the diagnosis key retrieval and submission services on [AWS](https://aws.amazon.com/).
+This document describes how to deploy and operate a **reference implementation** of the Covid Shield web portal, along with the diagnosis key retrieval and submission services on [AWS](https://aws.amazon.com/).
 
 There should be an illustration of the Covid Shield infrastructure deployed on AWS right here
 
