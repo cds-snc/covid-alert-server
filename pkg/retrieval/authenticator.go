@@ -12,7 +12,7 @@ import (
 )
 
 type Authenticator interface {
-	Authenticate(string, string, string) bool
+	Authenticate(string, string) bool
 }
 
 type authenticator struct {
@@ -36,16 +36,9 @@ func NewAuthenticator() Authenticator {
 	return &authenticator{hmacKey: hmacKey}
 }
 
-func (a *authenticator) Authenticate(date string, hour string, auth string) bool {
-	if len(date) != 10 || len(hour) > 2 || len(auth) != 64 {
+func (a *authenticator) Authenticate(requestedHour string, auth string) bool {
+	if len(requestedHour) != 6 || len(auth) != 64 {
 		return false
-	}
-
-	var messageBase string
-	if len(hour) > 0 {
-		messageBase = date + ":" + hour + ":"
-	} else {
-		messageBase = date + ":"
 	}
 
 	dst := make([]byte, hex.DecodedLen(len(auth)))
@@ -57,15 +50,15 @@ func (a *authenticator) Authenticate(date string, hour string, auth string) bool
 		return false
 	}
 
-	hourNumber := int(timemath.HourNumber(time.Now()))
+	currentHour := int(timemath.HourNumber(time.Now()))
 
-	if validMAC([]byte(messageBase+strconv.Itoa(hourNumber)), dst, a.hmacKey) {
+	if validMAC([]byte(requestedHour+strconv.Itoa(currentHour)), dst, a.hmacKey) {
 		return true
 	}
-	if validMAC([]byte(messageBase+strconv.Itoa(hourNumber-1)), dst, a.hmacKey) {
+	if validMAC([]byte(requestedHour+strconv.Itoa(currentHour-1)), dst, a.hmacKey) {
 		return true
 	}
-	if validMAC([]byte(messageBase+strconv.Itoa(hourNumber+1)), dst, a.hmacKey) {
+	if validMAC([]byte(requestedHour+strconv.Itoa(currentHour+1)), dst, a.hmacKey) {
 		return true
 	}
 	return false

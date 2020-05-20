@@ -25,17 +25,12 @@ var ErrTooManyKeys = errors.New("key limit for keypair exceeded")
 // method for each query we support. The one exception is database
 // creation/migrations, which are handled separately.
 type Conn interface {
-	// Return keys that were SUBMITTED to the Diagnosis Server on the provided `date`.
-	//
-	// Only return keys that correspond to a Key for a date
-	// less than 14 days ago.
-	FetchKeysForDay(time.Time, int32) (map[string][]*pb.TemporaryExposureKey, error)
 	// Return keys that were SUBMITTED to the Diagnosis Server during the specified
-	// hour within the specified date.
+	// two-hour period within the specified date.
 	//
-	// Only return keys that correspond to a Key for a date
+	// Only returns keys that correspond to a Key for a date
 	// less than 14 days ago.
-	FetchKeysForHour(time.Time, int, int32) (map[string][]*pb.TemporaryExposureKey, error)
+	FetchKeysForPeriod(int32, int32) (map[string][]*pb.TemporaryExposureKey, error)
 	StoreKeys(*[32]byte, []*pb.TemporaryExposureKey) error
 	NewKeyClaim(string) (string, error)
 	ClaimKey(string, []byte) ([]byte, error)
@@ -157,16 +152,8 @@ func (c *conn) StoreKeys(appPubKey *[32]byte, keys []*pb.TemporaryExposureKey) e
 	return registerDiagnosisKeys(c.db, appPubKey, keys)
 }
 
-func (c *conn) FetchKeysForDay(date time.Time, currentRSIN int32) (map[string][]*pb.TemporaryExposureKey, error) {
-	rows, err := diagnosisKeysForDay(c.db, currentRSIN, date)
-	if err != nil {
-		return nil, err
-	}
-	return handleKeysRows(rows)
-}
-
-func (c *conn) FetchKeysForHour(date time.Time, hour int, currentRSIN int32) (map[string][]*pb.TemporaryExposureKey, error) {
-	rows, err := diagnosisKeysForHour(c.db, currentRSIN, date, hour)
+func (c *conn) FetchKeysForPeriod(period int32, currentRSIN int32) (map[string][]*pb.TemporaryExposureKey, error) {
+	rows, err := diagnosisKeysForPeriod(c.db, period, currentRSIN)
 	if err != nil {
 		return nil, err
 	}

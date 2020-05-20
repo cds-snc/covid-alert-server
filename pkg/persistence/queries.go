@@ -182,37 +182,21 @@ func privForPub(db *sql.DB, pub []byte) *sql.Row {
 	)
 }
 
-// Return keys that were SUBMITTED to the Diagnosis Server on the provided `date`.
-//
-// Only return keys that correspond to a Key valid for a date less than 14 days ago.
-func diagnosisKeysForDay(db *sql.DB, currentRollingStartIntervalNumber int32, date time.Time) (*sql.Rows, error) {
-	minHour := timemath.HourNumberAtStartOfDate(timemath.DateNumber(date))
-	maxHour := timemath.HourNumberPlusDays(minHour, 1)
-	minRollingStartIntervalNumber := timemath.RollingStartIntervalNumberPlusDays(currentRollingStartIntervalNumber, -14)
-
-	return db.Query(
-		`SELECT region, key_data, rolling_start_interval_number, rolling_period, transmission_risk_level FROM diagnosis_keys
-		WHERE hour_of_submission < ? AND hour_of_submission >= ? AND rolling_start_interval_number > ?
-		ORDER BY key_data
-		`,
-		maxHour, minHour, minRollingStartIntervalNumber,
-	)
-}
-
 // Return keys that were SUBMITTED to the Diagnosis Server during the specified
-// hour within the specified date.
+// period within the specified date.
 //
 // Only return keys that correspond to a Key valid for a date less than 14 days ago.
-func diagnosisKeysForHour(db *sql.DB, currentRollingStartIntervalNumber int32, date time.Time, hour int) (*sql.Rows, error) {
-	onlyHour := timemath.HourNumberAtStartOfDate(timemath.DateNumber(date)) + uint32(hour)
+func diagnosisKeysForPeriod(db *sql.DB, period int32, currentRollingStartIntervalNumber int32) (*sql.Rows, error) {
+	startHour := period
+	endHour := startHour + 1
 	minRollingStartIntervalNumber := timemath.RollingStartIntervalNumberPlusDays(currentRollingStartIntervalNumber, -14)
 
 	return db.Query(
 		`SELECT region, key_data, rolling_start_interval_number, rolling_period, transmission_risk_level FROM diagnosis_keys
-		WHERE hour_of_submission = ? AND rolling_start_interval_number > ?
+		WHERE hour_of_submission >= ? AND hour_of_submission <= ? AND rolling_start_interval_number > ?
 		ORDER BY key_data
 		`, // don't implicitly order by insertion date: for privacy
-		onlyHour, minRollingStartIntervalNumber,
+		startHour, endHour, minRollingStartIntervalNumber,
 	)
 }
 

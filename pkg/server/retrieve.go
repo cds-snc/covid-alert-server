@@ -8,7 +8,6 @@ import (
 	"github.com/CovidShield/server/pkg/persistence"
 	pb "github.com/CovidShield/server/pkg/proto/covidshield"
 	"github.com/CovidShield/server/pkg/retrieval"
-	"github.com/CovidShield/server/pkg/timemath"
 
 	"github.com/sirupsen/logrus"
 
@@ -21,6 +20,13 @@ const (
 	hoursInDay          = 24
 )
 
+type Platform int
+
+const (
+	IOS Platform = iota
+	Android
+)
+
 func NewRetrieveServlet(db persistence.Conn, auth retrieval.Authenticator) srvutil.Servlet {
 	return &retrieveServlet{db: db, auth: auth}
 }
@@ -31,11 +37,15 @@ type retrieveServlet struct {
 }
 
 func (s *retrieveServlet) RegisterRouting(r *mux.Router) {
-	r.HandleFunc("/retrieve-day/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}/{auth:.*}", s.retrieve)
-	r.HandleFunc("/retrieve-hour/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}/{hour:[0-9]{2}}/{auth:.*}", s.retrieve)
+	// becomes 7 digits in 2084
+	r.HandleFunc("/retrieve/ios/{hour:[0-9]{6}}/{auth:.*}", s.retrieveIOS)
+	r.HandleFunc("/retrieve/android/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}/{auth:.*}", s.retrieveAndroid)
 }
 
-func (s *retrieveServlet) fail(logger *logrus.Entry, w http.ResponseWriter, logMsg string, responseMsg string, responseCode int) {
+// returning this from s.fail and the s.retrieve makes it harder to call s.fail but forget to return.
+type result struct{}
+
+func (s *retrieveServlet) fail(logger *logrus.Entry, w http.ResponseWriter, logMsg string, responseMsg string, responseCode int) result {
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	if responseCode == http.StatusInternalServerError {
 		logger.Error(logMsg)
@@ -46,113 +56,83 @@ func (s *retrieveServlet) fail(logger *logrus.Entry, w http.ResponseWriter, logM
 		responseMsg = logMsg
 	}
 	http.Error(w, responseMsg, responseCode)
+	return result(struct{}{})
 }
 
-// For a provided `?date=`, return all of the Diagnosis Keys which were
-// ACCEPTED by the server on *that date* (NOT the keys that correspond to
-// Keys for that date).
-//
-// The set of keys returned, however, only includes Keys for
-// dates in the range of 0-14 days ago from NOW (though, because of the way
-// client frameworks are implemented, there will never be keys for the actual
-// current date).
-func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) {
+func (s *retrieveServlet) retrieveIOS(w http.ResponseWriter, r *http.Request) {
+	_ = s.retrieve(w, r, IOS)
+}
+
+func (s *retrieveServlet) retrieveAndroid(w http.ResponseWriter, r *http.Request) {
+	_ = s.retrieve(w, r, Android)
+}
+
+func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request, platform Platform) result {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
-	if !s.auth.Authenticate(vars["date"], vars["hour"], vars["auth"]) {
-		log(ctx, nil).Info("invalid auth parameter")
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	date, err := time.Parse("2006-01-02", vars["date"])
-	if err != nil {
-		s.fail(log(ctx, err), w, "invalid date parameter", "", http.StatusBadRequest)
-		return
+	if !s.auth.Authenticate(vars["hour"], vars["auth"]) {
+		return s.fail(log(ctx, nil), w, "invalid auth parameter", "unauthorized", http.StatusUnauthorized)
 	}
 
 	if r.Method != "GET" {
-		s.fail(log(ctx, err).WithField("method", r.Method), w, "method not allowed", "", http.StatusMethodNotAllowed)
-		return
+		return s.fail(log(ctx, nil).WithField("method", r.Method), w, "method not allowed", "", http.StatusMethodNotAllowed)
 	}
+
+	hourNumber64, err := strconv.ParseInt(vars["hour"], 10, 32)
+	if err != nil {
+		return s.fail(log(ctx, err), w, "invalid hour parameter", "", http.StatusBadRequest)
+	}
+	hourNumber := int32(hourNumber64)
 
 	var keysByRegion map[string][]*pb.TemporaryExposureKey
 
-	var startTimestamp time.Time
-	var endTimestamp time.Time
+	startTimestamp := time.Unix(int64(hourNumber*3600), 0)
+	endTimestamp := time.Unix(int64((hourNumber+2)*3600), 0)
 
 	currentRSIN := pb.CurrentRollingStartIntervalNumber()
 
-	if _, ok := vars["hour"]; ok {
-		hour, err := strconv.ParseUint(vars["hour"], 10, 32)
-		if err != nil {
-			s.fail(log(ctx, err), w, "invalid hour parameter", "", http.StatusBadRequest)
-			return
-		}
+	// TODO: reject requests for future slices
+	// TODO: reject requests for current slice
+	// TODO: reject requests for slices more than 14 days ago
+	// TODO: verify that period is and even number
 
-		if hour >= hoursInDay { // uint64, so can't be < 0
-			s.fail(log(ctx, err), w, "invalid hour number", "", http.StatusBadRequest)
-			return
-		}
+	// now := time.Now()
 
-		{
-			now := time.Now()
-			requestedDate := timemath.DateNumber(date)
-			currentDate := timemath.DateNumber(now)
-			if requestedDate != currentDate && requestedDate != currentDate-1 {
-				s.fail(log(ctx, err), w, "request for hour in too-old date", "use /retrieve-day for data not from today or yesterday", http.StatusNotFound)
-				return
-			}
+	// requestedDate := timemath.DateNumber(date)
+	// currentDate := timemath.DateNumber(now)
+	// if requestedDate != currentDate && requestedDate != currentDate-1 {
+	// 	s.fail(log(ctx, err), w, "request for hour in too-old date", "use /retrieve-day for data not from today or yesterday", http.StatusNotFound)
+	// 	return
+	// }
 
-			currentHour := uint64(timemath.HourNumber(now) - hoursInDay*requestedDate)
-			if hour == currentHour {
-				s.fail(log(ctx, err), w, "request for current hour", "cannot serve data for current hour for privacy reasons", http.StatusNotFound)
-				return
-			} else if hour > currentHour {
-				s.fail(log(ctx, err), w, "request for future data", "cannot request future data", http.StatusNotFound)
-				return
-			}
+	// requested := timemath.DateNumber(date)
+	// current := timemath.DateNumber(time.Now())
+	// if requested == current {
+	// 	return s.fail(log(ctx, err), w, "request for current date", "use /retrieve-hour for today's data", http.StatusNotFound)
+	// } else if requested > current {
+	// 	return s.fail(log(ctx, err), w, "request for future data", "cannot request future data", http.StatusNotFound)
+	// } else if requested < (current - numberOfDaysToServe) {
+	// 	return s.fail(log(ctx, err), w, "request for too-old data", "requested data no longer valid", http.StatusGone)
+	// }
 
-			startTimestamp = time.Unix(int64(requestedDate*86400)+int64(hour*3600), 0)
-			endTimestamp = time.Unix(int64(requestedDate*86400)+int64((hour+1)*3600), 0)
-		}
+	// if hour == currentHour {
+	// 	return s.fail(log(ctx, err), w, "request for current hour", "cannot serve data for current hour for privacy reasons", http.StatusNotFound)
+	// } else if hour > currentHour {
+	// 	return s.fail(log(ctx, err), w, "request for future data", "cannot request future data", http.StatusNotFound)
+	// }
 
-		keysByRegion, err = s.db.FetchKeysForHour(date, int(hour), currentRSIN)
-		if err != nil {
-			s.fail(log(ctx, err), w, "database error", "", http.StatusInternalServerError)
-			return
-		}
-	} else {
-		{
-			requested := timemath.DateNumber(date)
-			current := timemath.DateNumber(time.Now())
-			if requested == current {
-				s.fail(log(ctx, err), w, "request for current date", "use /retrieve-hour for today's data", http.StatusNotFound)
-				return
-			} else if requested > current {
-				s.fail(log(ctx, err), w, "request for future data", "cannot request future data", http.StatusNotFound)
-				return
-			} else if requested < (current - numberOfDaysToServe) {
-				s.fail(log(ctx, err), w, "request for too-old data", "requested data no longer valid", http.StatusGone)
-				return
-			}
-
-			startTimestamp = time.Unix(int64(requested*86400), 0)
-			endTimestamp = time.Unix(int64((requested+1)*86400), 0)
-		}
-
-		keysByRegion, err = s.db.FetchKeysForDay(date, currentRSIN)
-		if err != nil {
-			s.fail(log(ctx, err), w, "database error", "", http.StatusInternalServerError)
-			return
-		}
+	keysByRegion, err = s.db.FetchKeysForPeriod(hourNumber, currentRSIN)
+	if err != nil {
+		return s.fail(log(ctx, err), w, "database error", "", http.StatusInternalServerError)
 	}
 
 	w.Header().Add("Content-Type", "application/x-protobuf; delimited=true")
 	w.Header().Add("Cache-Control", "public, max-age=3600, max-stale=600")
 
+	// TODO new format
 	if err := retrieval.SerializeTo(ctx, w, keysByRegion, startTimestamp, endTimestamp); err != nil {
 		log(ctx, err).Info("error writing response")
 	}
+	return result(struct{}{})
 }
