@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/CovidShield/backend/pkg/persistence"
-	pb "github.com/CovidShield/backend/pkg/proto/covidshield"
-	"github.com/CovidShield/backend/pkg/retrieval"
-	"github.com/CovidShield/backend/pkg/timemath"
+	"github.com/CovidShield/server/pkg/persistence"
+	pb "github.com/CovidShield/server/pkg/proto/covidshield"
+	"github.com/CovidShield/server/pkg/retrieval"
+	"github.com/CovidShield/server/pkg/timemath"
 
 	"github.com/sirupsen/logrus"
 

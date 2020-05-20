@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/CovidShield/backend/pkg/persistence"
-	pb "github.com/CovidShield/backend/pkg/proto/covidshield"
+	"github.com/CovidShield/server/pkg/persistence"
+	pb "github.com/CovidShield/server/pkg/proto/covidshield"
 
 	"github.com/Shopify/goose/srvutil"
 	"github.com/gorilla/mux"

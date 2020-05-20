@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/CovidShield/backend/pkg/proto/covidshield"
+	pb "github.com/CovidShield/server/pkg/proto/covidshield"
 
 	"github.com/Shopify/goose/logger"
 	// inject mysql support for database/sql

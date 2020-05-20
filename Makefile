@@ -1,4 +1,4 @@
-MODULE := github.com/CovidShield/backend
+MODULE := github.com/CovidShield/server
 
 CMDS := key-submission key-retrieval monolith
 

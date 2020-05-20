@@ -41,7 +41,7 @@ code to your fork, then open a PR against this repository.
 
 ### Building
 
-Run `make` or `make release` to build a release version of the backend server.
+Run `make` or `make release` to build a release version of the servers.
 
 ### Running
 

@@ -1,8 +1,8 @@
 # COVID Shield Diagnosis Server
 
-![Container Build](https://github.com/CovidShield/backend/workflows/Container%20Builds/badge.svg)
+![Container Build](https://github.com/CovidShield/server/workflows/Container%20Builds/badge.svg)
 
-This repository implements a *Diagnosis Server* to use as a backend for Apple/Google's [Exposure
+This repository implements a *Diagnosis Server* to use as a server for Apple/Google's [Exposure
 Notification](https://www.apple.com/covid19/contacttracing) framework, informed by the [guidance
 provided by Canada's Privacy
 Commissioners](https://priv.gc.ca/en/opc-news/speeches/2020/s-d_20200507/).
@@ -128,7 +128,7 @@ This depends on a separate service, holding credentials to talk to this (`key-su
 We have a sample implementation we will open source soon, but we anticipate that health authorities
 will prefer to integrate this feature into their existing systems. The integration is extremely
 straightforward, and we have [minimal examples in several
-languages](https://github.com/CovidShield/backend/tree/master/examples/new-key-claim). Most
+languages](https://github.com/CovidShield/server/tree/master/examples/new-key-claim). Most
 minimally:
 
 ```bash
