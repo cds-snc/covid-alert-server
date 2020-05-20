@@ -47,24 +47,38 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     end
     add_message "covidshield.Upload" do
       required :timestamp, :message, 1, "google.protobuf.Timestamp"
-      repeated :keys, :message, 2, "covidshield.Key"
+      repeated :keys, :message, 2, "covidshield.TemporaryExposureKey"
     end
-    add_message "covidshield.File" do
-      optional :header, :message, 1, "covidshield.Header"
-      repeated :key, :message, 2, "covidshield.Key"
-    end
-    add_message "covidshield.Header" do
-      optional :startTimestamp, :int64, 1
-      optional :endTimestamp, :int64, 2
+    add_message "covidshield.TemporaryExposureKeyExport" do
+      optional :start_timestamp, :fixed64, 1
+      optional :end_timestamp, :fixed64, 2
       optional :region, :string, 3
-      optional :batchNum, :int32, 4
-      optional :batchSize, :int32, 5
+      optional :batch_num, :int32, 4
+      optional :batch_size, :int32, 5
+      repeated :signature_infos, :message, 6, "covidshield.SignatureInfo"
+      repeated :keys, :message, 7, "covidshield.TemporaryExposureKey"
     end
-    add_message "covidshield.Key" do
-      optional :keyData, :bytes, 1
-      optional :rollingStartNumber, :uint32, 2
-      optional :rollingPeriod, :uint32, 3
-      optional :transmissionRiskLevel, :int32, 4
+    add_message "covidshield.SignatureInfo" do
+      optional :app_bundle_id, :string, 1
+      optional :android_package, :string, 2
+      optional :verification_key_version, :string, 3
+      optional :verification_key_id, :string, 4
+      optional :signature_algorithm, :string, 5
+    end
+    add_message "covidshield.TemporaryExposureKey" do
+      optional :key_data, :bytes, 1
+      optional :transmission_risk_level, :int32, 2
+      optional :rolling_start_interval_number, :int32, 3
+      optional :rolling_period, :int32, 4, default: 144
+    end
+    add_message "covidshield.TEKSignatureList" do
+      repeated :signatures, :message, 1, "covidshield.TEKSignature"
+    end
+    add_message "covidshield.TEKSignature" do
+      optional :signature_info, :message, 1, "covidshield.SignatureInfo"
+      optional :batch_num, :int32, 2
+      optional :batch_size, :int32, 3
+      optional :signature, :bytes, 4
     end
   end
 end
@@ -77,7 +91,9 @@ module Covidshield
   EncryptedUploadResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.EncryptedUploadResponse").msgclass
   EncryptedUploadResponse::ErrorCode = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.EncryptedUploadResponse.ErrorCode").enummodule
   Upload = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.Upload").msgclass
-  File = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.File").msgclass
-  Header = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.Header").msgclass
-  Key = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.Key").msgclass
+  TemporaryExposureKeyExport = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.TemporaryExposureKeyExport").msgclass
+  SignatureInfo = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.SignatureInfo").msgclass
+  TemporaryExposureKey = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.TemporaryExposureKey").msgclass
+  TEKSignatureList = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.TEKSignatureList").msgclass
+  TEKSignature = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.TEKSignature").msgclass
 end
