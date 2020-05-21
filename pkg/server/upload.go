@@ -3,7 +3,9 @@ package server
 import (
 	"context"
 	"io/ioutil"
+	"math"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/CovidShield/server/pkg/persistence"
@@ -129,7 +131,7 @@ func (s *uploadServlet) upload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ts := time.Unix(upload.GetTimestamp().Seconds, 0)
-	if time.Since(ts) > time.Hour {
+	if math.Abs(time.Since(ts).Seconds()) > 3600 {
 		requestError(
 			ctx, w, err, "invalid timestamp",
 			http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_INVALID_TIMESTAMP),
@@ -215,26 +217,23 @@ func validateKeys(ctx context.Context, w http.ResponseWriter, keys []*pb.Tempora
 		}
 	}
 
-	found := make(map[int32]struct{})
+	var ints []int
 	for _, key := range keys {
-		rsn := key.GetRollingStartIntervalNumber()
-		if _, ok := found[rsn]; ok {
+		ints = append(ints, int(key.GetRollingStartIntervalNumber()))
+	}
+
+	sort.Ints(ints)
+
+	base := ints[0]
+	for index, rsn := range ints {
+		if rsn != base+(144*index) {
 			requestError(
-				ctx, w, nil, "duplicate RollingStartIntervalNumbers",
+				ctx, w, nil, "invalid sequence of rollingStartIntervalNumbers",
 				http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_INVALID_ROLLING_START_INTERVAL_NUMBER),
 			)
 			return false
 		}
-		found[rsn] = struct{}{}
 	}
-
-	// Any ENIntervalNumber values from the same user are not unique
-
-	// There are any gaps in the ENIntervalNumber values for a user
-
-	// Any keys in the file have overlapping time windows
-
-	// The period of time covered by the data file exceeds 14 days
 
 	return true
 }

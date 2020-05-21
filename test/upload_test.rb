@@ -113,6 +113,54 @@ class UploadTest < MiniTest::Test
     assert_tek_fails(:INVALID_ROLLING_START_INTERVAL_NUMBER, rolling_start_interval_number: 0)
   end
 
+  def test_invalid_sequencing
+    teks = 14.times.map { tek }
+    resp = post_teks(teks)
+    assert_result(resp, 200, :NONE)
+
+    # non-consecutive
+    resp = post_teks(teks[0..3] + teks[5..-1])
+    assert_result(resp, 400, :INVALID_ROLLING_START_INTERVAL_NUMBER)
+
+    # shifted off of midnight
+    resp = post_teks(teks.map { |tek| tek.rolling_start_interval_number += 1; tek })
+    assert_result(resp, 200, :NONE)
+
+    # only one tek shifted off of midnight
+    resp = post_teks(teks.map.with_index { |tek, index| tek.rolling_start_interval_number += 1 if index == 4; tek })
+    assert_result(resp, 400, :INVALID_ROLLING_START_INTERVAL_NUMBER)
+  end
+
+  def test_invalid_timestamp
+    resp = post_timestamp(Time.now)
+    assert_result(resp, 200, :NONE)
+
+    resp = post_timestamp(Time.now - 3595)
+    assert_result(resp, 200, :NONE)
+
+    resp = post_timestamp(Time.now - 3605)
+    assert_result(resp, 400, :INVALID_TIMESTAMP)
+
+    resp = post_timestamp(Time.now + 3595)
+    assert_result(resp, 200, :NONE)
+
+    resp = post_timestamp(Time.now + 3605)
+    assert_result(resp, 400, :INVALID_TIMESTAMP)
+  end
+
+  def post_timestamp(ts)
+    payload = Covidshield::Upload.new(timestamp: ts, keys: [tek]).to_proto
+    req = encrypted_request(payload, new_valid_keyset)
+    @sub_conn.post('/upload', req.to_proto)
+  end
+
+  def post_teks(teks)
+    ts = Time.now
+    payload = Covidshield::Upload.new(timestamp: ts, keys: teks).to_proto
+    req = encrypted_request(payload, new_valid_keyset)
+    @sub_conn.post('/upload', req.to_proto)
+  end
+
   def test_key_limit
     keys = (1..50).map { |n| key_n(n) }
 

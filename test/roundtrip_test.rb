@@ -34,15 +34,12 @@ class RoundtripTest < MiniTest::Test
     expect_keys(first_keys[0..-2])
 
     move_forward_hours(1) # total: +1 day & 1 hour
-    # keys.each { |k| k.rolling_start_interval_number -= 6 }
     expect_keys(first_keys[0..-2] + [keys.first])
 
     move_forward_hours(1) # total: +1 day & 2 hours
-    # keys.each { |k| k.rolling_start_interval_number -= 6 }
     expect_keys(first_keys[0..-2] + [keys.first])
 
     move_forward_hours(12 * 24 + 21) # total: +13 days & 23 hours
-    # keys.each { |k| k.rolling_start_interval_number -= 144 * 12 + 6 * 21 }
     expect_keys(first_keys[0..0] + [keys.first])
 
     resp = @sub_conn.post('/upload', encrypted_request(payload, credentials).to_proto)
@@ -50,7 +47,6 @@ class RoundtripTest < MiniTest::Test
     expect_keys(first_keys[0..0] + [keys.first])
 
     move_forward_hours(1) # total: +14 days
-    # keys.each { |k| k.rolling_start_interval_number -= 6 }
 
     # In this range, the credentials could be valid or invalid, depending on
     # how far we were into the UTC date when we created the keypair.
@@ -60,7 +56,6 @@ class RoundtripTest < MiniTest::Test
     # diagnosis. (i.e. 14 total days, starting on diagnosis day)
 
     move_forward_days(1) # total: +15 days
-    # keys.each { |k| k.rolling_start_interval_number -= 144 }
 
     resp = @sub_conn.post('/upload', encrypted_request(payload, credentials).to_proto)
     assert_result(resp, 401, :INVALID_KEYPAIR, 15)
