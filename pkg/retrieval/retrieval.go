@@ -21,7 +21,7 @@ const (
 
 var (
 	appBundleID            = "com.shopify.covid-shield"
-	androidPackage         = ""
+	androidPackage         = "com.covidshield"
 	signatureAlgorithm     = "ecdsa-with-SHA256" // required by protocol
 	verificationKeyVersion = "v1"
 	verificationKeyID      = "key-0"
