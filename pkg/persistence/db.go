@@ -25,18 +25,13 @@ var ErrTooManyKeys = errors.New("key limit for keypair exceeded")
 // method for each query we support. The one exception is database
 // creation/migrations, which are handled separately.
 type Conn interface {
-	// Return keys that were SUBMITTED to the Diagnosis Server on the provided `date`.
-	//
-	// Only return keys that correspond to a Key for a date
-	// less than 14 days ago.
-	FetchKeysForDay(time.Time, uint32) (map[string][]*pb.Key, error)
 	// Return keys that were SUBMITTED to the Diagnosis Server during the specified
-	// hour within the specified date.
+	// two-hour period within the specified date.
 	//
-	// Only return keys that correspond to a Key for a date
+	// Only returns keys that correspond to a Key for a date
 	// less than 14 days ago.
-	FetchKeysForHour(time.Time, int, uint32) (map[string][]*pb.Key, error)
-	StoreKeys(*[32]byte, []*pb.Key) error
+	FetchKeysForPeriod(int32, int32) (map[string][]*pb.TemporaryExposureKey, error)
+	StoreKeys(*[32]byte, []*pb.TemporaryExposureKey) error
 	NewKeyClaim(string) (string, error)
 	ClaimKey(string, []byte) ([]byte, error)
 	PrivForPub([]byte) ([]byte, error)
@@ -153,43 +148,35 @@ func (c *conn) PrivForPub(pub []byte) ([]byte, error) {
 	}
 }
 
-func (c *conn) StoreKeys(appPubKey *[32]byte, keys []*pb.Key) error {
+func (c *conn) StoreKeys(appPubKey *[32]byte, keys []*pb.TemporaryExposureKey) error {
 	return registerDiagnosisKeys(c.db, appPubKey, keys)
 }
 
-func (c *conn) FetchKeysForDay(date time.Time, currentRSN uint32) (map[string][]*pb.Key, error) {
-	rows, err := diagnosisKeysForDay(c.db, currentRSN, date)
+func (c *conn) FetchKeysForPeriod(period int32, currentRSIN int32) (map[string][]*pb.TemporaryExposureKey, error) {
+	rows, err := diagnosisKeysForPeriod(c.db, period, currentRSIN)
 	if err != nil {
 		return nil, err
 	}
 	return handleKeysRows(rows)
 }
 
-func (c *conn) FetchKeysForHour(date time.Time, hour int, currentRSN uint32) (map[string][]*pb.Key, error) {
-	rows, err := diagnosisKeysForHour(c.db, currentRSN, date, hour)
-	if err != nil {
-		return nil, err
-	}
-	return handleKeysRows(rows)
-}
-
-func handleKeysRows(rows *sql.Rows) (map[string][]*pb.Key, error) {
-	keysByRegion := make(map[string][]*pb.Key)
+func handleKeysRows(rows *sql.Rows) (map[string][]*pb.TemporaryExposureKey, error) {
+	keysByRegion := make(map[string][]*pb.TemporaryExposureKey)
 	for rows.Next() {
 		var key []byte
-		var rollingStartNumber uint32
-		var rollingPeriod uint32
+		var rollingStartIntervalNumber int32
+		var rollingPeriod int32
 		var transmissionRiskLevel int32
 		var region string
-		err := rows.Scan(&region, &key, &rollingStartNumber, &rollingPeriod, &transmissionRiskLevel)
+		err := rows.Scan(&region, &key, &rollingStartIntervalNumber, &rollingPeriod, &transmissionRiskLevel)
 		if err != nil {
 			return nil, err
 		}
-		keysByRegion[region] = append(keysByRegion[region], &pb.Key{
-			KeyData:               key,
-			RollingStartNumber:    &rollingStartNumber,
-			RollingPeriod:         &rollingPeriod,
-			TransmissionRiskLevel: &transmissionRiskLevel,
+		keysByRegion[region] = append(keysByRegion[region], &pb.TemporaryExposureKey{
+			KeyData:                    key,
+			RollingStartIntervalNumber: &rollingStartIntervalNumber,
+			RollingPeriod:              &rollingPeriod,
+			TransmissionRiskLevel:      &transmissionRiskLevel,
 		})
 	}
 	return keysByRegion, nil

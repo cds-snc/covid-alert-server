@@ -6,7 +6,7 @@ require('openssl')
 require_relative('../../test/lib/protocol/covidshield_pb')
 
 class Database
-  Fetch = Struct.new(:date, :hour)
+  Fetch = Struct.new(:period)
 
   def initialize
     @fetches = []
@@ -17,21 +17,13 @@ class Database
     @fetches.reject! { |fetch| fetch.date < min_date }
   end
 
-  def has_all_hours?(date)
-    (0..23).all? { |hour| has_hour?(date, hour) }
+  def fetched?(period)
+    @fetches.include?(Fetch.new(period))
   end
 
-  def has_hour?(date, hour)
-    @fetches.include?(Fetch.new(date, hour))
-  end
-
-  def mark_hours_fetched(date)
-    (0..23).each { |hour| mark_hour_fetched(date, hour) }
-  end
-
-  def mark_hour_fetched(date, hour)
-    return if @fetches.include?(Fetch.new(date, hour))
-    @fetches << Fetch.new(date, hour)
+  def mark_fetched(period)
+    return if @fetches.include?(Fetch.new(period))
+    @fetches << Fetch.new(period)
   end
 
   private
@@ -89,15 +81,10 @@ class App
 
     @database.drop_old_data
 
-    (1..14).to_a.reverse.each do |days_ago| # [1, 14] => 14,13,...,2,1
-      date = today_utc.prev_day(days_ago)
-      fetch_date(date) unless @database.has_all_hours?(date)
-    end
-
-    # ... is exclusive range -- [0, hour)
-    (0...current_hour_number_within_utc_day).each do |hour|
-      date = today_utc
-      fetch_hour(date, hour) unless @database.has_hour?(date, hour)
+    curr = current_period
+    168.times do |n|
+      period = curr - (2 * (n + 1))
+      fetch_period(period) unless @database.fetched?(period)
     end
   end
 
@@ -108,40 +95,25 @@ class App
     raise("failed") unless resp['Content-Type'] == 'application/json'
   end
 
-  def fetch_date(date)
-    puts "Fetching date: #{date}"
-    resp = Faraday.get(date_url(date))
+  def fetch_period(period)
+    puts "Fetching period: #{period}"
+    resp = Faraday.get(period_url(period))
     raise("failed") unless resp.status == 200
-    raise("failed") unless resp['Content-Type'] == 'application/x-protobuf; delimited=true'
+    raise("failed") unless resp['Content-Type'] == 'application/zip'
     db_transaction do
-      keys = parse_and_save_keys_from(resp)
-      puts("retrieved #{keys.size} keys")
-      @database.mark_hours_fetched(date)
+      keys = send_to_framework(resp)
+      puts("retrieved pack")
+      @database.mark_fetched(period)
     end
   end
 
-  def fetch_hour(date, hour)
-    puts "Fetching hour: #{date} // #{hour}"
-    resp = Faraday.get(hour_url(date, hour))
-    raise("failed") unless resp.status == 200
-    raise("failed") unless resp['Content-Type'] == 'application/x-protobuf; delimited=true'
-    db_transaction do
-      keys = parse_and_save_keys_from(resp)
-      puts("retrieved #{keys.size} keys")
-      @database.mark_hour_fetched(date, hour)
-    end
+  def current_period
+    (Time.now.to_i / 3600 / 2) * 2
   end
 
-  BIG_ENDIAN_UINT32 = 'N'
-
-  def parse_and_save_keys_from(resp)
-    buf = resp.body.each_byte.to_a
-    files = []
-    until buf.empty?
-      len = buf.shift(4).map(&:chr).join.unpack(BIG_ENDIAN_UINT32).first
-      files << Covidshield::File.decode(buf.shift(len).map(&:chr).join)
-    end
-    files.flat_map(&:key)
+  def send_to_framework(resp)
+    # See retrieve_test.rb for a ruby example of how to load this format, but probably,
+    # you'll just be feeding the response body to the EN framework.
   end
 
   def db_transaction
@@ -152,23 +124,11 @@ class App
     "#{KEY_RETRIEVAL_URL}/exposure-configuration/#{region}.json"
   end
 
-  def date_url(date)
-    message = "#{date.iso8601}:#{format("%02d", hour_number)}"
+  def period_url(period)
+    message = "#{period}:#{hour_number}"
     key = [ENV.fetch("RETRIEVE_HMAC_KEY")].pack("H*")
     hmac = OpenSSL::HMAC.hexdigest("SHA256", key, message)
-    "#{KEY_RETRIEVAL_URL}/retrieve-day/#{date.iso8601}/#{hmac}"
-  end
-
-  def hour_url(date, hour)
-    hour = format("%02d", hour)
-    message = "#{date.iso8601}:#{hour}:#{format("%02d", hour_number)}"
-    key = [ENV.fetch("RETRIEVE_HMAC_KEY")].pack("H*")
-    hmac = OpenSSL::HMAC.hexdigest("SHA256", key, message)
-    "#{KEY_RETRIEVAL_URL}/retrieve-hour/#{date.iso8601}/#{hour}/#{hmac}"
-  end
-
-  def current_hour_number_within_utc_day
-    (Time.now.to_i % 86400) / 3600
+    "#{KEY_RETRIEVAL_URL}/retrieve/#{period}/#{hmac}"
   end
 
   def hour_number(at = Time.now)

@@ -9,7 +9,7 @@ class RoundtripTest < MiniTest::Test
 
   def test_key_roundtrip
     keys = (0...14).map do |i|
-      tek(data: '1' * 15 + (i+97).chr, rolling_period: 144, rolling_start_number: current_rsn - 144 * i)
+      tek(data: '1' * 15 + (i+97).chr, rolling_period: 144, rolling_start_interval_number: current_rsin - 144 * i)
     end
     first_keys = keys.dup
 
@@ -25,7 +25,8 @@ class RoundtripTest < MiniTest::Test
 
     # Replace one of the 14 keys with a "new" one
     keys.pop
-    keys.unshift(tek(data: '1' * 15 + 'z', rolling_start_number: current_rsn))
+    keys.each { |k| k.rolling_start_interval_number -= 144 }
+    keys.unshift(tek(data: '1' * 15 + 'z', rolling_start_interval_number: current_rsin))
     payload = Covidshield::Upload.new(timestamp: Time.now, keys: keys).to_proto
 
     resp = @sub_conn.post('/upload', encrypted_request(payload, credentials).to_proto)
@@ -35,7 +36,10 @@ class RoundtripTest < MiniTest::Test
     move_forward_hours(1) # total: +1 day & 1 hour
     expect_keys(first_keys[0..-2] + [keys.first])
 
-    move_forward_hours(12 * 24 + 22) # total: +13 days & 23 hours
+    move_forward_hours(1) # total: +1 day & 2 hours
+    expect_keys(first_keys[0..-2] + [keys.first])
+
+    move_forward_hours(12 * 24 + 21) # total: +13 days & 23 hours
     expect_keys(first_keys[0..0] + [keys.first])
 
     resp = @sub_conn.post('/upload', encrypted_request(payload, credentials).to_proto)
@@ -63,36 +67,30 @@ class RoundtripTest < MiniTest::Test
   def expect_keys(want_keys)
     keys = []
 
-    # inclusive: ask for the 14th day prior
-    (1..14).each do |days_ago|
-      resp = get_day(today_utc.prev_day(days_ago))
-      assert_response(resp, 200, 'application/x-protobuf; delimited=true')
+    number_of_periods = 168
+    number_of_periods.times do |n|
+      period = current_period - (2 * (n + 1))
+      resp = get_period(period)
+      assert_response(resp, 200, 'application/zip')
       keys.concat(parse_keys(resp))
     end
 
-    # exclusive: don't ask for the current hour
-    (0...(Time.now.utc.hour)).each do |hour|
-      resp = get_hour(today_utc, hour)
-      assert_response(resp, 200, 'application/x-protobuf; delimited=true')
-      keys.concat(parse_keys(resp))
-    end
-
-    have_key_ids =      keys.map { |k| k.keyData[-1] }.sort
-    want_key_ids = want_keys.map { |k| k.keyData[-1] }.sort
+    have_key_ids =      keys.map { |k| k.key_data[-1] }.sort
+    want_key_ids = want_keys.map { |k| k.key_data[-1] }.sort
     assert_equal(want_key_ids, have_key_ids, "  (from #{caller[0]})")
   end
 
   def parse_keys(resp)
-    keys = []
-    @buf = resp.body.each_byte.to_a
-    load_retrieve_stream.flat_map(&:key)
+    export_proto, siglist_proto = extract_zip(resp.body)
+    export = Covidshield::TemporaryExposureKeyExport.decode(export_proto)
+    export.keys
   end
 
   def count_diagnosis_keys
     @dbconn.query("SELECT COUNT(*) FROM diagnosis_keys").first.values.first
   end
 
-  def current_rsn(ts: Time.now)
+  def current_rsin(ts: Time.now)
     (ts.to_i / 86400) * 144
   end
 
@@ -110,19 +108,10 @@ class RoundtripTest < MiniTest::Test
     encrypted_payload: box.encrypt(nonce, payload)
   )
     Covidshield::EncryptedUploadRequest.new(
-      serverPublicKey: server_public_to_send.to_s,
-      appPublicKey: app_public_to_send.to_s,
+      server_public_key: server_public_to_send.to_s,
+      app_public_key: app_public_to_send.to_s,
       nonce: nonce_to_send,
       payload: encrypted_payload,
-    )
-  end
-
-  def tek(data: '1' * 16, risk_level: 3, rolling_period: 144, rolling_start_number: 1234)
-    Covidshield::Key.new(
-      keyData: data,
-      transmissionRiskLevel: risk_level,
-      rollingPeriod: rolling_period,
-      rollingStartNumber: rolling_start_number
     )
   end
 

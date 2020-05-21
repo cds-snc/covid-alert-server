@@ -95,9 +95,10 @@ class UploadTest < MiniTest::Test
     resp = @sub_conn.post('/upload', req.to_proto)
     assert_result(resp, 400, :TOO_MANY_KEYS)
 
-    # rollingPeriod missing, too high
+    # rolling_period missing, too high, too low
     assert_tek_fails(:INVALID_ROLLING_PERIOD, rolling_period: 0)
-    assert_tek_fails(:INVALID_ROLLING_PERIOD, rolling_period: 144*14+1)
+    assert_tek_fails(:INVALID_ROLLING_PERIOD, rolling_period: 143)
+    assert_tek_fails(:INVALID_ROLLING_PERIOD, rolling_period: 145)
 
     # risk level too high, too low
     assert_tek_fails(:INVALID_TRANSMISSION_RISK_LEVEL, transmission_risk_level: 9)
@@ -109,7 +110,55 @@ class UploadTest < MiniTest::Test
     assert_tek_fails(:INVALID_KEY_DATA, key_data: '1'*17)
 
     # key data absent, too long, too short
-    assert_tek_fails(:INVALID_ROLLING_START_NUMBER, rolling_start_number: 0)
+    assert_tek_fails(:INVALID_ROLLING_START_INTERVAL_NUMBER, rolling_start_interval_number: 0)
+  end
+
+  def test_invalid_sequencing
+    teks = 14.times.map { tek }
+    resp = post_teks(teks)
+    assert_result(resp, 200, :NONE)
+
+    # non-consecutive
+    resp = post_teks(teks[0..3] + teks[5..-1])
+    assert_result(resp, 400, :INVALID_ROLLING_START_INTERVAL_NUMBER)
+
+    # shifted off of midnight
+    resp = post_teks(teks.map { |tek| tek.rolling_start_interval_number += 1; tek })
+    assert_result(resp, 200, :NONE)
+
+    # only one tek shifted off of midnight
+    resp = post_teks(teks.map.with_index { |tek, index| tek.rolling_start_interval_number += 1 if index == 4; tek })
+    assert_result(resp, 400, :INVALID_ROLLING_START_INTERVAL_NUMBER)
+  end
+
+  def test_invalid_timestamp
+    resp = post_timestamp(Time.now)
+    assert_result(resp, 200, :NONE)
+
+    resp = post_timestamp(Time.now - 3595)
+    assert_result(resp, 200, :NONE)
+
+    resp = post_timestamp(Time.now - 3605)
+    assert_result(resp, 400, :INVALID_TIMESTAMP)
+
+    resp = post_timestamp(Time.now + 3595)
+    assert_result(resp, 200, :NONE)
+
+    resp = post_timestamp(Time.now + 3605)
+    assert_result(resp, 400, :INVALID_TIMESTAMP)
+  end
+
+  def post_timestamp(ts)
+    payload = Covidshield::Upload.new(timestamp: ts, keys: [tek]).to_proto
+    req = encrypted_request(payload, new_valid_keyset)
+    @sub_conn.post('/upload', req.to_proto)
+  end
+
+  def post_teks(teks)
+    ts = Time.now
+    payload = Covidshield::Upload.new(timestamp: ts, keys: teks).to_proto
+    req = encrypted_request(payload, new_valid_keyset)
+    @sub_conn.post('/upload', req.to_proto)
   end
 
   def test_key_limit
@@ -156,7 +205,7 @@ class UploadTest < MiniTest::Test
   end
 
   def dummy_payload(nkeys=1, timestamp: Time.now)
-    Covidshield::Upload.new(timestamp: timestamp, keys: [tek]*nkeys).to_proto
+    Covidshield::Upload.new(timestamp: timestamp, keys: nkeys.times.map{tek}).to_proto
   end
 
   def encrypted_request(
@@ -169,19 +218,19 @@ class UploadTest < MiniTest::Test
     encrypted_payload: box.encrypt(nonce, payload)
   )
     Covidshield::EncryptedUploadRequest.new(
-      serverPublicKey: server_public_to_send.to_s,
-      appPublicKey: app_public_to_send.to_s,
+      server_public_key: server_public_to_send.to_s,
+      app_public_key: app_public_to_send.to_s,
       nonce: nonce_to_send,
       payload: encrypted_payload,
     )
   end
 
-  def tek(key_data: '1' * 16, transmission_risk_level: 3, rolling_period: 144, rolling_start_number: Time.now.to_i / 86400)
-    Covidshield::Key.new(
-      keyData: key_data,
-      transmissionRiskLevel: transmission_risk_level,
-      rollingPeriod: rolling_period,
-      rollingStartNumber: rolling_start_number
+  def tek(key_data: '1' * 16, transmission_risk_level: 3, rolling_period: 144, rolling_start_interval_number: next_rsin)
+    Covidshield::TemporaryExposureKey.new(
+      key_data: key_data,
+      transmission_risk_level: transmission_risk_level,
+      rolling_period: rolling_period,
+      rolling_start_interval_number: rolling_start_interval_number
     )
   end
 

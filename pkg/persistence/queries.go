@@ -182,41 +182,41 @@ func privForPub(db *sql.DB, pub []byte) *sql.Row {
 	)
 }
 
-// Return keys that were SUBMITTED to the Diagnosis Server on the provided `date`.
-//
-// Only return keys that correspond to a Key valid for a date less than 14 days ago.
-func diagnosisKeysForDay(db *sql.DB, currentRollingStartNumber uint32, date time.Time) (*sql.Rows, error) {
-	minHour := timemath.HourNumberAtStartOfDate(timemath.DateNumber(date))
-	maxHour := timemath.HourNumberPlusDays(minHour, 1)
-	minRollingStartNumber := timemath.RollingStartNumberPlusDays(currentRollingStartNumber, -14)
-
-	return db.Query(
-		`SELECT region, key_data, rolling_start_number, rolling_period, risk_level FROM diagnosis_keys
-		WHERE hour_of_submission < ? AND hour_of_submission >= ? AND rolling_start_number > ?
-		ORDER BY key_data
-		`,
-		maxHour, minHour, minRollingStartNumber,
-	)
-}
-
 // Return keys that were SUBMITTED to the Diagnosis Server during the specified
-// hour within the specified date.
+// period within the specified date.
 //
 // Only return keys that correspond to a Key valid for a date less than 14 days ago.
-func diagnosisKeysForHour(db *sql.DB, currentRollingStartNumber uint32, date time.Time, hour int) (*sql.Rows, error) {
-	onlyHour := timemath.HourNumberAtStartOfDate(timemath.DateNumber(date)) + uint32(hour)
-	minRollingStartNumber := timemath.RollingStartNumberPlusDays(currentRollingStartNumber, -14)
+func diagnosisKeysForPeriod(db *sql.DB, period int32, currentRollingStartIntervalNumber int32) (*sql.Rows, error) {
+	startHour := period
+	endHour := startHour + 1
+	minRollingStartIntervalNumber := timemath.RollingStartIntervalNumberPlusDays(currentRollingStartIntervalNumber, -14)
 
 	return db.Query(
-		`SELECT region, key_data, rolling_start_number, rolling_period, risk_level FROM diagnosis_keys
-		WHERE hour_of_submission = ? AND rolling_start_number > ?
+		`SELECT region, key_data, rolling_start_interval_number, rolling_period, transmission_risk_level FROM diagnosis_keys
+		WHERE hour_of_submission >= ? AND hour_of_submission <= ? AND rolling_start_interval_number > ?
 		ORDER BY key_data
 		`, // don't implicitly order by insertion date: for privacy
-		onlyHour, minRollingStartNumber,
+		startHour, endHour, minRollingStartIntervalNumber,
 	)
 }
 
-func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Key) error {
+func postDateKeyIfNecessary(hourOfSubmission uint32, key *pb.TemporaryExposureKey) uint32 {
+	// ENIntervalNumber at which the key became inactive
+	keyEnd := key.GetRollingStartIntervalNumber() + key.GetRollingPeriod()
+
+	// ENIntervalNumber at which we can safely serve the key
+	canServeAt := keyEnd + (144/24)*2
+
+	// interval to hour
+	minBoundForHour := uint32(canServeAt / 6)
+	if minBoundForHour > hourOfSubmission {
+		log(nil, nil).WithField("distance", minBoundForHour-hourOfSubmission).Info("post-dating key")
+		return minBoundForHour
+	}
+	return hourOfSubmission
+}
+
+func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.TemporaryExposureKey) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -232,7 +232,7 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Key) erro
 
 	s, err := tx.Prepare(`
 		INSERT IGNORE INTO diagnosis_keys
-		(region, key_data, rolling_start_number, rolling_period, risk_level, hour_of_submission)
+		(region, key_data, rolling_start_interval_number, rolling_period, transmission_risk_level, hour_of_submission)
 		VALUES (?, ?, ?, ?, ?, ?)`,
 	)
 	if err != nil {
@@ -247,7 +247,9 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Key) erro
 	var keysInserted int64
 
 	for _, key := range keys {
-		result, err := s.Exec(region, key.GetKeyData(), key.GetRollingStartNumber(), key.GetRollingPeriod(), key.GetTransmissionRiskLevel(), hourOfSubmission)
+		hourForKey := postDateKeyIfNecessary(hourOfSubmission, key)
+
+		result, err := s.Exec(region, key.GetKeyData(), key.GetRollingStartIntervalNumber(), key.GetRollingPeriod(), key.GetTransmissionRiskLevel(), hourForKey)
 		if err != nil {
 			if err := tx.Rollback(); err != nil {
 				return err

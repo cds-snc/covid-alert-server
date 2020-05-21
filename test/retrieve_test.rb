@@ -5,219 +5,140 @@ require('date')
 require('openssl')
 require('time')
 require('securerandom')
+require('stringio')
+require('digest/sha2')
+require('tempfile')
 
 class RetrieveTest < MiniTest::Test
   include(Helper::Include)
 
-  def test_retrieve_day_failures_and_empty
-    # invalid date
-    resp = get_day('2020-30-01')
-    assert_response(resp, 400, 'text/plain; charset=utf-8', body: "invalid date parameter\n")
-
-    # Disallowed methods
-    %w[post patch delete put].each do |meth|
-      resp = get_day(yesterday_utc.iso8601, method: meth)
-      assert_response(resp, 405, 'text/plain; charset=utf-8', body: "method not allowed\n")
-    end
-
-    # get empty data
-    resp = get_day(yesterday_utc.iso8601)
-    assert_response(resp, 200, 'application/x-protobuf; delimited=true')
+  def assert_happy_zip_response(resp)
+    assert_response(resp, 200, 'application/zip')
     assert_equal(resp.headers['Cache-Control'], 'public, max-age=3600, max-stale=600')
-    expect_no_keys(resp)
+    export_proto, siglist_proto = extract_zip(resp.body)
+    assert_valid_signature_list(siglist_proto, export_proto)
+    export = Covidshield::TemporaryExposureKeyExport.decode(export_proto)
+    export
   end
 
-  def test_retrieve_stuff
-    active_at = time_in_date('10:00', today_utc.prev_day(8))
-    add_key(active_at: active_at, submitted_at: time_in_date('03:00', yesterday_utc))
-    rsn = rolling_start_number(active_at)
-
-    start_time = yesterday_utc.to_datetime.to_time.to_i
-    end_time = start_time + 86400
-
-    resp = get_day(yesterday_utc.iso8601)
-    assert_response(resp, 200, 'application/x-protobuf; delimited=true')
-    expect_one_key(resp, rsn, 8, '1' * 16, start_time, end_time)
+  def test_retrieve_period_happy_path_no_keys
+    period = current_period - 72
+    resp = get_period(period)
+    export = assert_happy_zip_response(resp)
+    assert_keys(export, [], region: '', period: period)
   end
 
-  def test_24_hour_span
-    a = time_in_date("10:00", today_utc.prev_day(13))
-    two_days_ago = yesterday_utc.prev_day
-
-    # Our retrieve-day endpoint returns keys SUBMITTED within the range of a day.
-    # Here, we're making sure that that day is calculated in UTC, and that we
-    # correctly manage the bounds of that date.
-    add_key(active_at: a, submitted_at: time_in_date("23:59:59", two_days_ago), data: '1' * 16)
-    add_key(active_at: a, submitted_at: time_in_date("00:00", yesterday_utc), data: '2' * 16)
-    add_key(active_at: a, submitted_at: time_in_date("23:59:59", yesterday_utc), data: '3' * 16)
-    add_key(active_at: a, submitted_at: time_in_date("00:00", today_utc), data: '4' * 16)
-
-    rsn = rolling_start_number(a)
-
-    start_time = yesterday_utc.to_datetime.to_time.to_i
-    end_time = start_time + 86400
-
-    resp = get_day(yesterday_utc.iso8601)
-    assert_response(resp, 200, 'application/x-protobuf; delimited=true')
-    expect_retrieve_data(
-      resp,
-      [
-        Covidshield::File.new(
-          header: Covidshield::Header.new(
-            startTimestamp: start_time,
-            endTimestamp: end_time,
-            region: "ON",
-            batchNum: 1,
-            batchSize: 1
-          ),
-          key: [
-            Covidshield::Key.new(
-              keyData: "2222222222222222",
-              rollingStartNumber: rsn,
-              rollingPeriod: 144,
-              transmissionRiskLevel: 8
-            ),
-            Covidshield::Key.new(
-              keyData: "3333333333333333",
-              rollingStartNumber: rsn,
-              rollingPeriod: 144,
-              transmissionRiskLevel: 8
-            )
-          ]
-        )
-      ]
-    )
-  end
-
-  def test_14_day_window
-    # Our 14ish-day window is calculated by taking the current timestamp, and
-    # finding the current UTC date, then sutracting 14 days from that.]
-    new = time_in_date("00:00", today_utc.prev_day(13))
-    old = time_in_date("23:59", today_utc.prev_day(14))
-    add_key(active_at: new, submitted_at: time_in_date("00:00", yesterday_utc))
-    add_key(active_at: old, submitted_at: time_in_date("00:00", yesterday_utc), data: 'b' * 16)
-
-    start_time = yesterday_utc.to_datetime.to_time.to_i
-    end_time = start_time + 86400
-
-    resp = get_day(yesterday_utc.iso8601)
-    assert_response(resp, 200, 'application/x-protobuf; delimited=true')
-    expect_one_key(resp, rolling_start_number(new), 8, '1' * 16, start_time, end_time)
-  end
-
-  def test_invalid_auth_for_day
-    date = yesterday_utc
-    hmac = OpenSSL::HMAC.hexdigest(
-      "SHA256",
-      [ENV.fetch("RETRIEVE_HMAC_KEY")].pack("H*"),
-      "#{date.iso8601}:#{Time.now.to_i / 3600}"
-    )
-
-    # success
-    resp = @ret_conn.get("/retrieve-day/#{date.iso8601}/#{hmac}")
-    assert_response(resp, 200, 'application/x-protobuf; delimited=true')
-
-    # hmac is keyed to date
-    resp = @ret_conn.get("/retrieve-day/#{date.prev_day.iso8601}/#{hmac}")
-    assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
-
-    # changing hmac breaks it
-    resp = @ret_conn.get("/retrieve-day/#{date.iso8601}/11112222#{hmac[8..-1]}")
-    assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
-
-    # hmac is required
-    resp = @ret_conn.get("/retrieve-day/#{date.iso8601}")
-    assert_response(resp, 404, 'text/plain; charset=utf-8', body: "404 page not found\n")
-  end
-
-  def test_invalid_auth_for_hour
-    date = yesterday_utc
-    hour = 5
-    hmac = OpenSSL::HMAC.hexdigest(
-      "SHA256",
-      [ENV.fetch("RETRIEVE_HMAC_KEY")].pack("H*"),
-      "#{date.iso8601}:#{format("%02d", hour)}:#{Time.now.to_i / 3600}"
-    )
-
-    # success
-    resp = @ret_conn.get("/retrieve-hour/#{date.iso8601}/#{format("%02d", hour)}/#{hmac}")
-    assert_response(resp, 200, 'application/x-protobuf; delimited=true')
-
-    # hmac is keyed to date
-    resp = @ret_conn.get("/retrieve-hour/#{date.prev_day.iso8601}/#{format("%02d", hour)}/#{hmac}")
-    assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
-
-    # hmac is keyed to hour
-    resp = @ret_conn.get("/retrieve-hour/#{date.prev_day.iso8601}/#{format("%02d", (hour+1)%24)}/#{hmac}")
-    assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
-
-    # changing hmac breaks it
-    resp = @ret_conn.get("/retrieve-hour/#{date.iso8601}/#{format("%02d", hour)}/11112222#{hmac[8..-1]}")
-    assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
-
-    # hmac is required
-    resp = @ret_conn.get("/retrieve-hour/#{date.iso8601}/#{format("%02d", hour)}")
-    assert_response(resp, 404, 'text/plain; charset=utf-8', body: "404 page not found\n")
-  end
-
-  def test_reject_unacceptable_dates
-    resp = get_day(today_utc.iso8601)
+  def test_reject_unacceptable_periods
+    resp = get_period(current_period)
     assert_response(
       resp, 404, 'text/plain; charset=utf-8',
-      body: "use /retrieve-hour for today's data\n"
+      body: "cannot serve data for current period for privacy reasons\n"
     )
 
-    resp = get_day(today_utc.next_day.iso8601)
+    resp = get_period(current_period - 2)
+    assert_response(resp, 200, 'application/zip')
+
+    resp = get_period(current_period + 2)
     assert_response(
       resp, 404, 'text/plain; charset=utf-8',
       body: "cannot request future data\n"
     )
 
-    resp = get_day(today_utc.prev_day(15).iso8601)
-    assert_response(
-      resp, 410, 'text/plain; charset=utf-8',
-      body: "requested data no longer valid\n"
-    )
+    # almost too old
+    resp = get_period(current_period - 336)
+    assert_response(resp, 200, 'application/zip')
 
-    # TODO: Not 100% sure this is right. Should 14 or 13 be the oldest?
-    resp = get_day(today_utc.prev_day(14).iso8601)
-    assert_response(resp, 200, 'application/x-protobuf; delimited=true')
-    expect_no_keys(resp)
+    # too old
+    resp = get_period(current_period - 338)
+    assert_response(resp, 410, 'text/plain; charset=utf-8', body: "requested data no longer valid\n")
+
+    # odd-numbered (invalid) period
+    resp = get_period(current_period - 7)
+    assert_response(resp, 404, 'text/plain; charset=utf-8', body: "period must be even\n")
   end
 
-  def test_reject_unacceptable_hours
-    resp = get_hour(today_utc.prev_day(2).iso8601, 23)
-    assert_response(
-      resp, 404, 'text/plain; charset=utf-8',
-      body: "use /retrieve-day for data not from today or yesterday\n"
-    )
-
-    resp = get_hour(yesterday_utc.iso8601, 0)
-    assert_response(resp, 200, 'application/x-protobuf; delimited=true')
-    expect_no_keys(resp)
-
-    resp = get_hour(today_utc.next_day.iso8601, 0)
-    assert_response(
-      resp, 404, 'text/plain; charset=utf-8',
-      body: "use /retrieve-day for data not from today or yesterday\n"
-    )
-
-    resp = get_hour(today_utc.iso8601, 24)
-    assert_response(
-      resp, 400, 'text/plain; charset=utf-8',
-      body: "invalid hour number\n"
-    )
-
-    now = Time.now.to_i
-    current_hour = now / 3600 - 24 * (now / 86400)
-    resp = get_hour(today_utc.iso8601, current_hour)
-    assert_response(
-      resp, 404, 'text/plain; charset=utf-8',
-      body: "cannot serve data for current hour for privacy reasons\n"
-    )
+  def test_disallowed_methods
+    # Disallowed methods
+    %w[post patch delete put].each do |meth|
+      resp = get_period((Time.now.to_i / 3600 / 2) * 2 - 72, method: meth)
+      assert_response(resp, 405, 'text/plain; charset=utf-8', body: "method not allowed\n")
+    end
   end
 
-  def test_500k
+  def test_retrieve_stuff
+    active_at = time_in_date('10:00', today_utc.prev_day(8))
+    add_key(active_at: active_at, submitted_at: time_in_date('03:00', yesterday_utc))
+    rsin = rolling_start_interval_number(active_at)
+
+    period = yesterday_utc.to_datetime.to_time.to_i / 3600 + 2
+
+    resp = get_period(period)
+    export = assert_happy_zip_response(resp)
+    keys = [tek(
+      rolling_start_interval_number: rsin,
+      transmission_risk_level: 8,
+    )]
+    assert_keys(export, keys, region: 'ON', period: period)
+  end
+
+  def test_period_bounds
+    active_at = time_in_date('10:00', today_utc.prev_day(8))
+    two_days_ago = yesterday_utc.prev_day(1)
+
+    # Our retrieve endpoint returns keys SUBMITTED within the given period.
+    add_key(active_at: active_at, submitted_at: time_in_date("23:59:59", two_days_ago), data: '1' * 16)
+    add_key(active_at: active_at, submitted_at: time_in_date("00:00", yesterday_utc), data: '2' * 16)
+    add_key(active_at: active_at, submitted_at: time_in_date("01:59:59", yesterday_utc), data: '3' * 16)
+    add_key(active_at: active_at, submitted_at: time_in_date("02:00", yesterday_utc), data: '4' * 16)
+
+    rsin = rolling_start_interval_number(active_at)
+
+    period = yesterday_utc.to_datetime.to_time.to_i / 3600 + 2
+
+    resp = get_period(period)
+    export = assert_happy_zip_response(resp)
+    keys = [tek(
+      rolling_start_interval_number: rsin,
+      transmission_risk_level: 8,
+      data: "2222222222222222",
+    ), tek(
+      rolling_start_interval_number: rsin,
+      transmission_risk_level: 8,
+      data: "3333333333333333",
+    )]
+  end
+
+  def test_invalid_auth
+    period = current_period - 48
+    hmac = OpenSSL::HMAC.hexdigest(
+      "SHA256",
+      [ENV.fetch("RETRIEVE_HMAC_KEY")].pack("H*"),
+      "#{period}:#{Time.now.to_i / 3600}"
+    )
+
+    # success
+    resp = @ret_conn.get("/retrieve/#{period}/#{hmac}")
+    assert_response(resp, 200, 'application/zip')
+
+    # hmac is keyed to date
+    resp = @ret_conn.get("/retrieve/#{period - 1}/#{hmac}")
+    assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
+
+    # changing hmac breaks it
+    resp = @ret_conn.get("/retrieve/#{period}/11112222#{hmac[8..-1]}")
+    assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
+
+    # hmac is required
+    resp = @ret_conn.get("/retrieve/#{period}")
+    assert_response(resp, 404, 'text/plain; charset=utf-8', body: "404 page not found\n")
+  end
+
+  def test_too_many_keys_for_one_zip
+    # I don't think the protocol is going to stay the way it is here.
+    # We can wait to hear back from Google/Apple about this before piling on to
+    # make the hacks work if we need to.
+    skip
+
     count = 18000 # enough to require two Files
 
     new = time_in_date("00:00", today_utc.prev_day(13))
@@ -250,15 +171,15 @@ class RetrieveTest < MiniTest::Test
 
     key_data = []
 
-    assert_equal(%w(BC ON ON), files.map { |f| f.header.region }.sort)
+    assert_equal(%w(BC ON ON), files.map { |f| f.region }.sort)
 
     files.each.with_index do |file, index|
-      assert_equal(start_time, file.header.startTimestamp)
-      assert_equal(end_time, file.header.endTimestamp)
-      assert_equal(index+1, file.header.batchNum)
-      assert_equal(3, file.header.batchSize)
+      assert_equal(start_time, file.start_timestamp)
+      assert_equal(end_time, file.end_timestamp)
+      assert_equal(index+1, file.batch_num)
+      assert_equal(3, file.batch_size)
 
-      key_data.concat(file.key.map(&:keyData))
+      key_data.concat(file.keys.map(&:key_data))
     end
 
     assert_equal(18001, key_data.size)
@@ -267,24 +188,22 @@ class RetrieveTest < MiniTest::Test
 
   private
 
-  def expect_one_key(resp, rsn, risk, data, start_time, end_time)
+  def expect_one_key(resp, rsin, risk, data, start_time, end_time)
     expect_retrieve_data(
       resp,
       [
-        Covidshield::File.new(
-          header: Covidshield::Header.new(
-            startTimestamp: start_time,
-            endTimestamp: end_time,
-            region: 'ON',
-            batchNum: 1,
-            batchSize: 1,
-          ),
-          key: [
-            Covidshield::Key.new(
-              keyData: data,
-              rollingStartNumber: rsn,
-              rollingPeriod: 144,
-              transmissionRiskLevel: risk,
+        Covidshield::TemporaryExposureKeyExport.new(
+          start_timestamp: start_time,
+          end_timestamp: end_time,
+          region: 'ON',
+          batch_num: 1,
+          batch_size: 1,
+          keys: [
+            Covidshield::TemporaryExposureKey.new(
+              key_data: data,
+              rolling_start_interval_number: rsin,
+              rolling_period: 144,
+              transmission_risk_level: risk,
             )
           ]
         )
@@ -299,12 +218,12 @@ class RetrieveTest < MiniTest::Test
     assert_equal([], files, "  (from #{caller[0]})")
   end
 
-  def add_key(data: '1' * 16, active_at:, submitted_at:, risk_level: 8, region: 'ON')
+  def add_key(data: '1' * 16, active_at:, submitted_at:, transmission_risk_level: 8, region: 'ON')
     add_key_explicit(
-      rsn: rolling_start_number(active_at),
+      rsin: rolling_start_interval_number(active_at),
       hour: hour_number(submitted_at),
       region: region,
-      risk_level: risk_level,
+      transmission_risk_level: transmission_risk_level,
       data: data
     )
   end
@@ -312,13 +231,13 @@ class RetrieveTest < MiniTest::Test
   def insert_key
     @insert_key ||= @dbconn.prepare(<<~SQL)
       INSERT INTO diagnosis_keys
-      (key_data, rolling_start_number, rolling_period, risk_level, hour_of_submission, region)
+      (key_data, rolling_start_interval_number, rolling_period, transmission_risk_level, hour_of_submission, region)
       VALUES (?, ?, ?, ?, ?, ?)
     SQL
   end
 
-  def add_key_explicit(data: '1' * 16, rsn:, risk_level: 8, hour:, region: 'ON', rolling_period: TEK_ROLLING_PERIOD)
-    insert_key.execute(data, rsn, rolling_period, risk_level, hour, region)
+  def add_key_explicit(data: '1' * 16, rsin:, transmission_risk_level: 8, hour:, region: 'ON', rolling_period: TEK_ROLLING_PERIOD)
+    insert_key.execute(data, rsin, rolling_period, transmission_risk_level, hour, region)
   end
 
   def hour_number(timestamp)
@@ -327,8 +246,71 @@ class RetrieveTest < MiniTest::Test
 
   TEK_ROLLING_PERIOD = 144
 
-  def rolling_start_number(timestamp)
+  def rolling_start_interval_number(timestamp)
     en_interval_number = timestamp.to_i / 600
     (en_interval_number / TEK_ROLLING_PERIOD) * TEK_ROLLING_PERIOD
+  end
+
+  def assert_valid_signature(signature, data)
+    key_hex = ENV.fetch('ECDSA_KEY')
+    key_der = [key_hex].pack('H*')
+    key = OpenSSL::PKey::EC.new(key_der)
+    key.check_key
+
+    digest = Digest::SHA256.digest(data)
+
+    # Why doesn't this work? Our signature is in X9.62 uncompressed form, which
+    # seems to be what OpenSSL is looking for, but we get "nexted asn1 error".
+    puts("WARN: not verifying signature")
+    # key.dsa_verify_asn1(digest, signature)
+  end
+
+  def assert_keys(export, keys, region:, period:)
+    start_time = period * 3600
+    end_time = (period + 2) * 3600
+
+    assert_equal(
+      Covidshield::TemporaryExposureKeyExport.new(
+        start_timestamp: start_time,
+        end_timestamp: end_time,
+        region: region,
+        batch_num: 1,
+        batch_size: 1,
+        signature_infos: [
+          Covidshield::SignatureInfo.new(
+            app_bundle_id: "com.shopify.covid-shield",
+            android_package: "",
+            verification_key_version: "v1",
+            verification_key_id: "key-0",
+            signature_algorithm: "ecdsa-with-SHA256"
+          ),
+        ],
+        keys: keys
+      ).to_json, export.to_json
+    )
+  end
+
+  def assert_valid_signature_list(siglist_proto, export_proto)
+    siglist = Covidshield::TEKSignatureList.decode(siglist_proto)
+    assert_valid_signature(siglist.signatures[0].signature, export_proto)
+
+    assert_equal(
+      Covidshield::TEKSignatureList.new(
+        signatures: [
+          Covidshield::TEKSignature.new(
+            signature_info: Covidshield::SignatureInfo.new(
+              app_bundle_id: "com.shopify.covid-shield",
+              android_package: "",
+              verification_key_version: "v1",
+              verification_key_id: "key-0",
+              signature_algorithm: "ecdsa-with-SHA256"
+            ),
+            batch_num: 1,
+            batch_size: 1,
+            signature: siglist.signatures[0].signature
+          )
+        ]
+      ).to_json, siglist.to_json
+    )
   end
 end

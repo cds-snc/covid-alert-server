@@ -58,10 +58,11 @@ func (a *AppBuilder) WithRetrieval() *AppBuilder {
 
 	a.defaultServerPort = defaultRetrievalServerPort
 
-	a.servlets = append(a.servlets, server.NewConfigServlet())
-	a.servlets = append(a.servlets, server.NewRetrieveServlet(a.database, retrieval.NewAuthenticator()))
-
 	a.components = append(a.components, newExpirationWorker(a.database))
+
+	a.servlets = append(a.servlets, server.NewConfigServlet())
+	a.servlets = append(a.servlets, server.NewRetrieveServlet(a.database, retrieval.NewAuthenticator(), retrieval.NewSigner()))
+
 	return a
 }
 

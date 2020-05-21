@@ -3,7 +3,9 @@ package server
 import (
 	"context"
 	"io/ioutil"
+	"math"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/CovidShield/server/pkg/persistence"
@@ -129,7 +131,7 @@ func (s *uploadServlet) upload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ts := time.Unix(upload.GetTimestamp().Seconds, 0)
-	if time.Since(ts) > time.Hour {
+	if math.Abs(time.Since(ts).Seconds()) > 3600 {
 		requestError(
 			ctx, w, err, "invalid timestamp",
 			http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_INVALID_TIMESTAMP),
@@ -137,10 +139,8 @@ func (s *uploadServlet) upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, key := range upload.GetKeys() {
-		if ok := validateKey(ctx, w, key); !ok {
-			return // requestError done by validateKey
-		}
+	if ok := validateKeys(ctx, w, upload.GetKeys()); !ok {
+		return // requestError done by validateKeys
 	}
 
 	err = s.db.StoreKeys(appPubKey, upload.GetKeys())
@@ -173,8 +173,8 @@ func (s *uploadServlet) upload(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func validateKey(ctx context.Context, w http.ResponseWriter, key *pb.Key) bool {
-	if key.GetRollingPeriod() == 0 || key.GetRollingPeriod() > 144*14 {
+func validateKey(ctx context.Context, w http.ResponseWriter, key *pb.TemporaryExposureKey) bool {
+	if key.GetRollingPeriod() != 144 {
 		requestError(
 			ctx, w, nil, "missing or invalid rollingPeriod",
 			http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_INVALID_ROLLING_PERIOD),
@@ -190,10 +190,10 @@ func validateKey(ctx context.Context, w http.ResponseWriter, key *pb.Key) bool {
 		return false
 	}
 
-	if key.GetRollingStartNumber() == 0 {
+	if key.GetRollingStartIntervalNumber() == 0 {
 		requestError(
 			ctx, w, nil, "invalid rolling start number",
-			http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_INVALID_ROLLING_START_NUMBER),
+			http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_INVALID_ROLLING_START_INTERVAL_NUMBER),
 		)
 		return false
 	}
@@ -205,6 +205,34 @@ func validateKey(ctx context.Context, w http.ResponseWriter, key *pb.Key) bool {
 			http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_INVALID_TRANSMISSION_RISK_LEVEL),
 		)
 		return false
+	}
+
+	return true
+}
+
+func validateKeys(ctx context.Context, w http.ResponseWriter, keys []*pb.TemporaryExposureKey) bool {
+	for _, key := range keys {
+		if ok := validateKey(ctx, w, key); !ok {
+			return false
+		}
+	}
+
+	var ints []int
+	for _, key := range keys {
+		ints = append(ints, int(key.GetRollingStartIntervalNumber()))
+	}
+
+	sort.Ints(ints)
+
+	base := ints[0]
+	for index, rsn := range ints {
+		if rsn != base+(144*index) {
+			requestError(
+				ctx, w, nil, "invalid sequence of rollingStartIntervalNumbers",
+				http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_INVALID_ROLLING_START_INTERVAL_NUMBER),
+			)
+			return false
+		}
 	}
 
 	return true

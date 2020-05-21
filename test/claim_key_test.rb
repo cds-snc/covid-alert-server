@@ -9,63 +9,63 @@ class ClaimKeyTest < MiniTest::Test
     # too much post data
     resp = @sub_conn.post('/claim-key', 'a'*500)
     assert_response(resp, 400, 'application/x-protobuf')
-    assert_fields(resp, error: :UNKNOWN, serverPublicKey: nil)
+    assert_fields(resp, error: :UNKNOWN, server_public_key: nil)
 
     # incomprehensible post data
     resp = @sub_conn.post('/claim-key', 'a'*100)
     assert_response(resp, 400, 'application/x-protobuf')
-    assert_fields(resp, error: :UNKNOWN, serverPublicKey: nil)
+    assert_fields(resp, error: :UNKNOWN, server_public_key: nil)
 
     # invalid OneTimeCode
     kcq = Covidshield::KeyClaimRequest.new(
-      oneTimeCode: '12341234',
-      appPublicKey: '00001111222233334444555566667777'
+      one_time_code: '12341234',
+      app_public_key: '00001111222233334444555566667777'
     )
     resp = @sub_conn.post('/claim-key', kcq.to_proto)
     assert_response(resp, 401, 'application/x-protobuf')
-    assert_fields(resp, error: :INVALID_ONE_TIME_CODE, serverPublicKey: nil)
+    assert_fields(resp, error: :INVALID_ONE_TIME_CODE, server_public_key: nil)
 
-    # appPublicKey too short
+    # app_public_key too short
     otc = new_valid_one_time_code
     kcq = Covidshield::KeyClaimRequest.new(
-      oneTimeCode: new_valid_one_time_code,
-      appPublicKey: '0000111122223333'
+      one_time_code: new_valid_one_time_code,
+      app_public_key: '0000111122223333'
     )
     resp = @sub_conn.post('/claim-key', kcq.to_proto)
     assert_response(resp, 400, 'application/x-protobuf')
     kcr = Covidshield::KeyClaimResponse.decode(resp.body)
-    assert_fields(resp, error: :INVALID_KEY, serverPublicKey: nil)
+    assert_fields(resp, error: :INVALID_KEY, server_public_key: nil)
 
-    # appPublicKey too long
+    # app_public_key too long
     otc = new_valid_one_time_code
     kcq = Covidshield::KeyClaimRequest.new(
-      oneTimeCode: new_valid_one_time_code,
-      appPublicKey: '000011112222333344445555666677778888'
+      one_time_code: new_valid_one_time_code,
+      app_public_key: '000011112222333344445555666677778888'
     )
     resp = @sub_conn.post('/claim-key', kcq.to_proto)
     assert_response(resp, 400, 'application/x-protobuf')
     kcr = Covidshield::KeyClaimResponse.decode(resp.body)
-    assert_fields(resp, error: :INVALID_KEY, serverPublicKey: nil)
+    assert_fields(resp, error: :INVALID_KEY, server_public_key: nil)
 
     # happy path
     5.times do |i|
       otc = new_valid_one_time_code
       kcq = Covidshield::KeyClaimRequest.new(
-        oneTimeCode: new_valid_one_time_code,
-        appPublicKey: "0000111122223333444455556666770#{i}"
+        one_time_code: new_valid_one_time_code,
+        app_public_key: "0000111122223333444455556666770#{i}"
       )
       resp = @sub_conn.post('/claim-key', kcq.to_proto)
       assert_response(resp, 200, 'application/x-protobuf')
       kcr = Covidshield::KeyClaimResponse.decode(resp.body)
       assert_equal(:NONE, kcr.error)
-      assert_equal(32, kcr.serverPublicKey.each_byte.size)
+      assert_equal(32, kcr.server_public_key.each_byte.size)
     end
 
-    # appPublicKey already exists
+    # app_public_key already exists
     otc = new_valid_one_time_code
     kcq = Covidshield::KeyClaimRequest.new(
-      oneTimeCode: new_valid_one_time_code,
-      appPublicKey: '00001111222233334444555566667701'
+      one_time_code: new_valid_one_time_code,
+      app_public_key: '00001111222233334444555566667701'
     )
     resp = @sub_conn.post('/claim-key', kcq.to_proto)
     assert_response(resp, 401, 'application/x-protobuf')
