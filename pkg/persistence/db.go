@@ -36,8 +36,13 @@ type Conn interface {
 	ClaimKey(string, []byte) ([]byte, error)
 	PrivForPub([]byte) ([]byte, error)
 
+	CheckClaimKeyBan(string) (triesRemaining int, banDuration time.Duration, err error)
+	ClaimKeySuccess(string) error
+	ClaimKeyFailure(string) (triesRemaining int, banDuration time.Duration, err error)
+
 	DeleteOldDiagnosisKeys() (int64, error)
 	DeleteOldEncryptionKeys() (int64, error)
+	DeleteOldFailedClaimKeyAttempts() (int64, error)
 
 	Close() error
 }
@@ -180,6 +185,22 @@ func handleKeysRows(rows *sql.Rows) ([]*pb.TemporaryExposureKey, error) {
 		})
 	}
 	return keys, nil
+}
+
+func (c *conn) CheckClaimKeyBan(identifier string) (triesRemaining int, banDuration time.Duration, err error) {
+	return checkClaimKeyBan(c.db, identifier)
+}
+
+func (c *conn) ClaimKeySuccess(identifier string) error {
+	return registerClaimKeySuccess(c.db, identifier)
+}
+
+func (c *conn) ClaimKeyFailure(identifier string) (int, time.Duration, error) {
+	return registerClaimKeyFailure(c.db, identifier)
+}
+
+func (c *conn) DeleteOldFailedClaimKeyAttempts() (int64, error) {
+	return deleteOldFailedClaimKeyAttempts(c.db)
 }
 
 func (c *conn) Close() error {
