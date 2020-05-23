@@ -30,7 +30,7 @@ resource "aws_wafregional_rate_based_rule" "key_submission_claim_key_uri" {
 }
 
 ###
-# AWS WAF - Key Submission - /new-claim-key
+# AWS WAF - Key Submission - /new-key-claim
 ###
 
 resource "aws_wafregional_byte_match_set" "key_submission_new_key_claim_uri" {
