@@ -6,4 +6,4 @@
 /.vscode
 config/terraform/*/.terraform/*
 config/terraform/*/terraform.tfstate*
-covidshield-server
+/server
