@@ -23,7 +23,7 @@ rescue KeyError
   raise('DB_HOST, DB_USER, and DB_PASS are all required environment variables')
 end
 
-DATABASE_URL = "#{DB_USER}#{DB_PASS}@tcp(#{DB_HOST})/#{DB_NAME}"
+DATABASE_URL = "#{DB_USER}:#{DB_PASS}@tcp(#{DB_HOST})/#{DB_NAME}"
 
 SUBMISSION_SERVER_ADDR = "127.0.0.1:18481"
 RETRIEVAL_SERVER_ADDR = "127.0.0.1:18482"

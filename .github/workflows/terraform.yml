@@ -76,3 +76,36 @@ jobs:
       env:
         TF_VAR_github_sha: ${{ github.sha }}
       run: terraform apply -auto-approve terraform.tfplan
+
+    - name: Check For New Deployments
+      env:
+        GITHUB_SHA: ${{ github.sha }}
+      run: |
+        count=0
+        finished=0
+
+        while [ $count -le 60 ] && [ $finished -ne 2 ]
+        do
+          echo "Watching for new deployments - loop ${count}"
+
+          kr_deployed_revision=$(curl -s https://retrieval.covidshield.app/services/version.json | jq -r .revision)
+          if [ "${kr_deployed_revision}" == "${GITHUB_SHA}" ]; then
+            echo "Key Retrieval was successfully updated"
+            finished=$(( $finished + 1 ))
+          fi
+
+          ks_deployed_revision=$(curl -s https://submission.covidshield.app/services/version.json | jq -r .revision)
+          if [ "${ks_deployed_revision}" == "${GITHUB_SHA}" ]; then
+            echo "Key Submission was successfully updated"
+            finished=$(( $finished + 1 ))
+          fi
+
+          count=$(( $count + 1 ))
+          sleep 1
+          if [ $count -eq 60 ]; then
+            echo "Deployment failed"
+            exit 1
+          fi
+        done
+
+        exit 0

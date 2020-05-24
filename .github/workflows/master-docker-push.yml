@@ -18,9 +18,9 @@ jobs:
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
-      
+
     - name: Build the key submission image
-      run: docker build --build-arg component=key-submission -t key-submission:${{ github.sha }} .
+      run: docker build --build-arg branch=${{ github.ref }} --build-arg revision=${{ github.sha }} --build-arg component=key-submission -t key-submission:${{ github.sha }} .
 
     - uses: Azure/container-scan@v0
       with:
@@ -37,7 +37,7 @@ jobs:
         docker push $ECR_REGISTRY/key-submission:latest
 
     - name: Build the key retrieval image
-      run: docker build --build-arg component=key-retrieval -t key-retrieval:${{ github.sha }} .
+      run: docker build --build-arg branch=${{ github.ref }} --build-arg revision=${{ github.sha }} --build-arg component=key-retrieval -t key-retrieval:${{ github.sha }} .
 
     - uses: Azure/container-scan@v0
       with:
