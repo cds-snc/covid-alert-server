@@ -47,7 +47,7 @@ of concurrent users.
 ### Retrieving Exposure Configuration
 
 [_Exposure Configuration_](https://developer.apple.com/documentation/exposurenotification/enexposureconfiguration),
-used to determine the risk of a given exposure, is also retrieved from the `key-retieval` server. A JSON
+used to determine the risk of a given exposure, is also retrieved from the `key-retrieval` server. A JSON
 document describing the current exposure configuration for a given region is available at the path
 `/exposure-configuration/<region>.json`, e.g. for Ontario (region `ON`):
 
