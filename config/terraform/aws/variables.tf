@@ -41,6 +41,10 @@ variable "ecs_task_key_retrieval_env_hmac_key" {
   type = string
 }
 
+variable "ecs_task_key_retrieval_env_ecdsa_key" {
+  type = string
+}
+
 # Task Key Submission
 variable "ecs_key_submission_name" {
   type = string

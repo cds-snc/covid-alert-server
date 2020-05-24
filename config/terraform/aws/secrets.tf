@@ -20,6 +20,15 @@ resource "aws_secretsmanager_secret_version" "key_retrieval_env_hmac_key" {
   secret_string = var.ecs_task_key_retrieval_env_hmac_key
 }
 
+resource "aws_secretsmanager_secret" "key_retrieval_env_ecdsa_key" {
+  name = "key-retrieval-env-ecdsa-key"
+}
+
+resource "aws_secretsmanager_secret_version" "key_retrieval_env_ecdsa_key" {
+  secret_id     = aws_secretsmanager_secret.key_retrieval_env_ecdsa_key.id
+  secret_string = var.ecs_task_key_retrieval_env_ecdsa_key
+}
+
 ###
 # AWS Secret Manager - Key Submission
 ###

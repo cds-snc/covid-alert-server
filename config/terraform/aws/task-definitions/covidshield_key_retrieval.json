@@ -26,6 +26,10 @@
           "valueFrom": "${retrieve_hmac_key}"
         },
         {
+          "name": "ECDSA_KEY",
+          "valueFrom": "${ecdsa_key}"
+        },
+        {
           "name": "DATABASE_URL",
           "valueFrom": "${database_url}"
         }

@@ -45,6 +45,7 @@ data "template_file" "covidshield_key_retrieval_task" {
     awslogs-region        = var.region
     awslogs-stream-prefix = "ecs-${var.ecs_key_retrieval_name}"
     retrieve_hmac_key     = aws_secretsmanager_secret_version.key_retrieval_env_hmac_key.arn
+    ecdsa_key             = aws_secretsmanager_secret_version.key_retrieval_env_ecdsa_key.arn
     database_url          = aws_secretsmanager_secret_version.backend_database_url.arn
   }
 }
