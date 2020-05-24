@@ -22,6 +22,8 @@ ecs_name = "CovidShield"
 ecs_key_retrieval_name = "KeyRetrieval"
 # Comes from a Github Secret
 # ecs_task_key_retrieval_env_hmac_key = ""
+# Comes from a Github Secret
+# ecs_task_key_retrieval_env_ecdsa_key = ""
 
 # Key Submission
 ecs_key_submission_name = "KeySubmission"

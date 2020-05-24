@@ -23,6 +23,7 @@ data "aws_iam_policy_document" "covidshield_secrets_manager_key_retrieval" {
 
     resources = [
       aws_secretsmanager_secret.key_retrieval_env_hmac_key.arn,
+      aws_secretsmanager_secret.key_retrieval_env_ecdsa_key.arn,
       aws_secretsmanager_secret.backend_database_url.arn,
     ]
   }
