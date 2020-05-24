@@ -24,6 +24,10 @@ GCFLAGS_DEBUG   := $(GCFLAGS) -N -l
 # You may need/want to set this to "bundle exec grpc_tools_ruby_protoc"
 GRPC_TOOLS_RUBY_PROTOC := grpc_tools_ruby_protoc
 
+BRANCH=`git rev-parse --abbrev-ref HEAD`
+REVISION=`git rev-parse HEAD`
+GOLDFLAGS="-X $(MODULE)/pkg/server.branch=$(BRANCH) -X $(MODULE)/pkg/server.revision=$(REVISION)"
+
 default:  release
 release:  $(PROTO_GO) $(RELEASE_BUILDS)
 debug:    $(PROTO_GO) $(DEBUG_BUILDS)
@@ -33,12 +37,12 @@ proto:    $(PROTO_GO) $(PROTO_RB) $(RPC_RB)
 build/debug/%: $(GOFILES) $(PROTO_GO)
 	@mkdir -p "$(@D)"
 	@echo "     \x1b[1;34mgo build \x1b[0;1m(debug)\x1b[0m  $@"
-	@$(GO) build -trimpath -i -o "$@" -gcflags "$(GCFLAGS_DEBUG)" "$(MODULE)/cmd/$(@F)"
+	@$(GO) build -trimpath -i -ldflags=$(GOLDFLAGS) -o "$@" -gcflags "$(GCFLAGS_DEBUG)" "$(MODULE)/cmd/$(@F)"
 
 build/release/%: $(GOFILES) $(PROTO_GO)
 	@mkdir -p "$(@D)"
 	@echo "   \x1b[1;34mgo build \x1b[0;1m(release)\x1b[0m  $@"
-	@$(GO) build -trimpath -i -o "$@" -gcflags "$(GCFLAGS_RELEASE)" "$(MODULE)/cmd/$(@F)"
+	@$(GO) build -trimpath -i -ldflags=$(GOLDFLAGS) -o "$@" -gcflags "$(GCFLAGS_RELEASE)" "$(MODULE)/cmd/$(@F)"
 
 pkg/proto/%/proto.pb.go: proto/%.proto
 	@mkdir -p "$(@D)"
