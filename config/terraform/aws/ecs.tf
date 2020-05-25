@@ -26,21 +26,11 @@ data "github_branch" "backend" {
 
 # Task Definition
 
-data "aws_ecr_repository" "covidshield_key_retrieval" {
-  name = "key-retrieval"
-}
-
-data "aws_ecr_image" "covidshield_key_retrieval" {
-  registry_id     = data.aws_ecr_repository.covidshield_key_retrieval.registry_id
-  repository_name = data.aws_ecr_repository.covidshield_key_retrieval.name
-  image_tag       = coalesce(var.github_sha, data.github_branch.backend.sha)
-}
-
 data "template_file" "covidshield_key_retrieval_task" {
   template = file("task-definitions/covidshield_key_retrieval.json")
 
   vars = {
-    image                 = "${data.aws_ecr_repository.covidshield_key_retrieval.repository_url}:${element(sort(data.aws_ecr_image.covidshield_key_retrieval.image_tags), 0)}"
+    image                 = "covidshield/key-retrieval:${coalesce(var.github_sha, data.github_branch.backend.sha)}"
     awslogs-group         = aws_cloudwatch_log_group.covidshield.name
     awslogs-region        = var.region
     awslogs-stream-prefix = "ecs-${var.ecs_key_retrieval_name}"
@@ -106,21 +96,11 @@ resource "aws_ecs_service" "covidshield_key_retrieval" {
 
 # Task Definition
 
-data "aws_ecr_repository" "covidshield_key_submission" {
-  name = "key-submission"
-}
-
-data "aws_ecr_image" "covidshield_key_submission" {
-  registry_id     = data.aws_ecr_repository.covidshield_key_submission.registry_id
-  repository_name = data.aws_ecr_repository.covidshield_key_submission.name
-  image_tag       = coalesce(var.github_sha, data.github_branch.backend.sha)
-}
-
 data "template_file" "covidshield_key_submission_task" {
   template = file("task-definitions/covidshield_key_submission.json")
 
   vars = {
-    image                 = "${data.aws_ecr_repository.covidshield_key_submission.repository_url}:${element(sort(data.aws_ecr_image.covidshield_key_submission.image_tags), 0)}"
+    image                 = "covidshield/key-submission:${coalesce(var.github_sha, data.github_branch.backend.sha)}"
     awslogs-group         = aws_cloudwatch_log_group.covidshield.name
     awslogs-region        = var.region
     awslogs-stream-prefix = "ecs-${var.ecs_key_submission_name}"
