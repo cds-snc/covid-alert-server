@@ -151,7 +151,7 @@ We hope to provide reference implementations on AWS, GCP, and Azure via [Hashico
 
 [AWS Reference Implementation](config/infrastructure/aws) 
 
-## Building / Usage / Hacking
+## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
 
