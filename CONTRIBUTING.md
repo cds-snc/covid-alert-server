@@ -28,6 +28,17 @@ as you'd expect.
 Once you're happy with your changes, please fork the repository and push your
 code to your fork, then open a PR against this repository.
 
+## Development Environment via docker-compose
+
+1. Fork https://github.com/CovidShield/server to your account
+1. Clone your fork of CovidShield/server repo locally by running `git clone https://github.com/<username>/server.git`
+1. Enter the repo directory `cd server`
+1. Run `docker-compose up`
+
+Note: It is normal to see a few errors from the retrieval service exiting initially while the MySQL database is instantiated
+
+## Developing Locally
+
 ### Prerequisites
 
 * Go (tested with 1.14)
