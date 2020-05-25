@@ -27,7 +27,7 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         repository: covidshield/key-submission
         tags: latest,${{ github.sha }}
-        build_args: branch=${{ github.ref }},revision=${{ github.sha }},component=key-retrieval
+        build_args: branch=${{ github.ref }},revision=${{ github.sha }},component=key-submission
 
     - name: Build Monolith
       uses: docker/build-push-action@v1
