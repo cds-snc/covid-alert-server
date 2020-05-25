@@ -30,6 +30,7 @@ func (s *servicesServlet) RegisterRouting(r *mux.Router) {
 func (s *servicesServlet) ping(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	w.Header().Add("Cache-Control", "no-store")
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	if _, err := w.Write([]byte("OK\n")); err != nil {
 		log(ctx, err).Info("error writing response")
@@ -39,6 +40,7 @@ func (s *servicesServlet) ping(w http.ResponseWriter, r *http.Request) {
 func (s *servicesServlet) version(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	w.Header().Add("Cache-Control", "no-store")
 	w.Header().Add("Content-Type", "application/json; charset=utf-8")
 
 	version := version{
