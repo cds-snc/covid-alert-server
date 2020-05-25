@@ -27,7 +27,7 @@ resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
 
     forwarded_values {
       query_string = true
-      headers      = ["*"]
+      headers      = ["Host"]
 
       cookies {
         forward = "all"
