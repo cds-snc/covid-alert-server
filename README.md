@@ -147,6 +147,10 @@ WAF](https://aws.amazon.com/waf/)), aggressively throttling users with 400 and 4
 
 `key-retrieval` assumes it will be deployed behind a caching reverse proxy.
 
+We hope to provide reference implementations on AWS, GCP, and Azure via [Hashicorp Terraform](https://www.terraform.io/).
+
+[AWS Reference Implementation](config/infrastructure/aws) 
+
 ## Building / Usage / Hacking
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).

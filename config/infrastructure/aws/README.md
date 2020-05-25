@@ -36,9 +36,30 @@ While this infrastructure may be deployed in a number of different ways, this do
 
 - [`ecs-cli`](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ECS_CLI.html) installed and available in your path
 
-## Deploying containers to Fargate with Terraform
+## Deploying to AWS with Terraform
 
-TODO: :smile:
+The credentials for the AWS Terraform provider are expected to be provided through the standard AWS credential environment variables.
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY_ID`
+
+All Terraform variables are defined in `config/terraform/aws/variables.tf` & their values are set in `config/terraform/aws/variables.auto.tfvars`. There are **four** secret variables that should be set through the following environment variables as to not commit plain text secrets to version control.
+
+- `TF_VAR_ecs_task_key_retrieval_env_ecdsa_key`
+- `TF_VAR_ecs_task_key_retrieval_env_hmac_key`
+- `TF_VAR_ecs_task_key_submission_env_key_claim_token`
+- `TF_VAR_rds_backend_db_password`
+
+If you are using Terraform in Github actions the above can be set as Github secrets, and set as environment variables in your YAML file (see `.github/workflows/terraform.yml`).
+
+There is an optional Terraform variable that can be set to control which container to deploy. It should match a container tag that both Key Retrieval & Key Submission share. By default Terraform will deploy the latest commit on the master branch.
+
+- `TF_VAR_github_sha`
+
+To run manually:
+1. Go to the AWS Terraform directory - `cd config/terraform/aws`
+2. Run 
+> TF_VAR_ecs_task_key_retrieval_env_ecdsa_key="******" TF_VAR_ecs_task_key_retrieval_env_hmac_key="******" TF_VAR_ecs_task_key_submission_env_key_claim_token="******" TF_VAR_rds_backend_db_password="******" AWS_ACCESS_KEY_ID="******" AWS_SECRET_ACCESS_KEY="******" terraform [init|plan|apply]
 
 ## Building and releasing applications with GitHub and Docker :whale:
 
