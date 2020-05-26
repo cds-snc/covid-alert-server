@@ -19,7 +19,7 @@ import (
 const (
 	numberOfDaysToServe = 14
 	hoursInDay          = 24
-	hoursPerPeriod      = 2
+	hoursPerPeriod      = 6
 	availableHours      = numberOfDaysToServe * hoursInDay // 336
 )
 
@@ -80,12 +80,12 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) resul
 	var keysByRegion map[string][]*pb.TemporaryExposureKey
 
 	startTimestamp := time.Unix(int64(period*3600), 0)
-	endTimestamp := time.Unix(int64((period+2)*3600), 0)
+	endTimestamp := time.Unix(int64((period+hoursPerPeriod)*3600), 0)
 
 	currentRSIN := pb.CurrentRollingStartIntervalNumber()
 	currentPeriod := timemath.CurrentPeriod()
 
-	if period%2 != 0 {
+	if period%hoursPerPeriod != 0 {
 		return s.fail(log(ctx, err), w, "odd period", "period must be even", http.StatusNotFound)
 	} else if period == currentPeriod {
 		return s.fail(log(ctx, err), w, "request for current period", "cannot serve data for current period for privacy reasons", http.StatusNotFound)

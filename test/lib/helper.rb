@@ -28,6 +28,8 @@ DATABASE_URL = "#{DB_USER}:#{DB_PASS}@tcp(#{DB_HOST})/#{DB_NAME}"
 SUBMISSION_SERVER_ADDR = "127.0.0.1:18481"
 RETRIEVAL_SERVER_ADDR = "127.0.0.1:18482"
 
+PERIOD_HOURS = 6
+
 module Helper
   module Include
     def run
@@ -42,7 +44,7 @@ module Helper
     end
 
     def current_period
-      (Time.now.to_i / 3600 / 2) * 2
+      (Time.now.to_i / 3600 / PERIOD_HOURS) * PERIOD_HOURS
     end
 
     def next_rsin
