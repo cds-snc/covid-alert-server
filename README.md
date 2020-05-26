@@ -149,7 +149,7 @@ WAF](https://aws.amazon.com/waf/)), aggressively throttling users with 400 and 4
 
 We hope to provide reference implementations on AWS, GCP, and Azure via [Hashicorp Terraform](https://www.terraform.io/).
 
-[AWS Reference Implementation](config/infrastructure/aws) 
+[AWS Reference Implementation](config/infrastructure/aws/README.md) 
 
 ## Contributing
 
