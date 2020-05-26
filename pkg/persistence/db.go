@@ -30,7 +30,7 @@ type Conn interface {
 	//
 	// Only returns keys that correspond to a Key for a date
 	// less than 14 days ago.
-	FetchKeysForPeriod(int32, int32) (map[string][]*pb.TemporaryExposureKey, error)
+	FetchKeysForPeriod(string, int32, int32) ([]*pb.TemporaryExposureKey, error)
 	StoreKeys(*[32]byte, []*pb.TemporaryExposureKey) error
 	NewKeyClaim(string) (string, error)
 	ClaimKey(string, []byte) ([]byte, error)
@@ -152,16 +152,16 @@ func (c *conn) StoreKeys(appPubKey *[32]byte, keys []*pb.TemporaryExposureKey) e
 	return registerDiagnosisKeys(c.db, appPubKey, keys)
 }
 
-func (c *conn) FetchKeysForPeriod(period int32, currentRSIN int32) (map[string][]*pb.TemporaryExposureKey, error) {
-	rows, err := diagnosisKeysForPeriod(c.db, period, currentRSIN)
+func (c *conn) FetchKeysForPeriod(region string, period int32, currentRSIN int32) ([]*pb.TemporaryExposureKey, error) {
+	rows, err := diagnosisKeysForPeriod(c.db, region, period, currentRSIN)
 	if err != nil {
 		return nil, err
 	}
 	return handleKeysRows(rows)
 }
 
-func handleKeysRows(rows *sql.Rows) (map[string][]*pb.TemporaryExposureKey, error) {
-	keysByRegion := make(map[string][]*pb.TemporaryExposureKey)
+func handleKeysRows(rows *sql.Rows) ([]*pb.TemporaryExposureKey, error) {
+	var keys []*pb.TemporaryExposureKey
 	for rows.Next() {
 		var key []byte
 		var rollingStartIntervalNumber int32
@@ -172,14 +172,14 @@ func handleKeysRows(rows *sql.Rows) (map[string][]*pb.TemporaryExposureKey, erro
 		if err != nil {
 			return nil, err
 		}
-		keysByRegion[region] = append(keysByRegion[region], &pb.TemporaryExposureKey{
+		keys = append(keys, &pb.TemporaryExposureKey{
 			KeyData:                    key,
 			RollingStartIntervalNumber: &rollingStartIntervalNumber,
 			RollingPeriod:              &rollingPeriod,
 			TransmissionRiskLevel:      &transmissionRiskLevel,
 		})
 	}
-	return keysByRegion, nil
+	return keys, nil
 }
 
 func (c *conn) Close() error {

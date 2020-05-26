@@ -25,7 +25,7 @@ class RetrieveTest < MiniTest::Test
     period = current_period - 72
     resp = get_period(period)
     export = assert_happy_zip_response(resp)
-    assert_keys(export, [], region: '', period: period)
+    assert_keys(export, [], region: '302', period: period)
   end
 
   def test_reject_unacceptable_periods
@@ -113,23 +113,23 @@ class RetrieveTest < MiniTest::Test
     hmac = OpenSSL::HMAC.hexdigest(
       "SHA256",
       [ENV.fetch("RETRIEVE_HMAC_KEY")].pack("H*"),
-      "#{period}:#{Time.now.to_i / 3600}"
+      "302:#{period}:#{Time.now.to_i / 3600}"
     )
 
     # success
-    resp = @ret_conn.get("/retrieve/#{period}/#{hmac}")
+    resp = @ret_conn.get("/retrieve/302/#{period}/#{hmac}")
     assert_response(resp, 200, 'application/zip')
 
     # hmac is keyed to date
-    resp = @ret_conn.get("/retrieve/#{period - 1}/#{hmac}")
+    resp = @ret_conn.get("/retrieve/302/#{period - 1}/#{hmac}")
     assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
 
     # changing hmac breaks it
-    resp = @ret_conn.get("/retrieve/#{period}/11112222#{hmac[8..-1]}")
+    resp = @ret_conn.get("/retrieve/302/#{period}/11112222#{hmac[8..-1]}")
     assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
 
     # hmac is required
-    resp = @ret_conn.get("/retrieve/#{period}")
+    resp = @ret_conn.get("/retrieve/302/#{period}")
     assert_response(resp, 404, 'text/plain; charset=utf-8', body: "404 page not found\n")
   end
 
