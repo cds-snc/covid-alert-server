@@ -59,13 +59,15 @@ Run `make` or `make release` to build a release version of the servers.
 ```bash
 # example...
 export DATABASE_URL="root@tcp(localhost)/covidshield"
-export KEY_CLAIM_TOKEN=thisisatoken=ON
+export KEY_CLAIM_TOKEN=thisisatoken=302
 
 ./key-retrieval migrate-db
 
 PORT=8000 ./key-submission
 PORT=8001 ./key-retrieval
 ```
+
+Note that 302 is a [MCC](https://www.mcc-mnc.com/): 302 represents Canada.
 
 ### Running Tests
 

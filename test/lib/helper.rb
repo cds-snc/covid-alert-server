@@ -194,7 +194,7 @@ module Helper
       pid = Process.spawn(
         {
           'BIND_ADDR' => addr,
-          'KEY_CLAIM_TOKEN' => 'first-token=ON:second-token=PE',
+          'KEY_CLAIM_TOKEN' => 'first-token=302:second-token=302',
           'DATABASE_URL' => DATABASE_URL,
         },
         bin, STDERR => File.open('/dev/null')
