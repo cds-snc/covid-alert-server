@@ -72,7 +72,7 @@ class App
 
   def check_for_exposure
     puts "checking for exposure"
-    fetch_exposure_config("ON")
+    fetch_exposure_config('302')
     puts "running exposure checks"
   end
 

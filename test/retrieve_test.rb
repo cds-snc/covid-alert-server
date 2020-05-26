@@ -78,7 +78,7 @@ class RetrieveTest < MiniTest::Test
       rolling_start_interval_number: rsin,
       transmission_risk_level: 8,
     )]
-    assert_keys(export, keys, region: 'ON', period: period)
+    assert_keys(export, keys, region: '302', period: period)
   end
 
   def test_period_bounds
@@ -195,7 +195,7 @@ class RetrieveTest < MiniTest::Test
         Covidshield::TemporaryExposureKeyExport.new(
           start_timestamp: start_time,
           end_timestamp: end_time,
-          region: 'ON',
+          region: '302',
           batch_num: 1,
           batch_size: 1,
           keys: [
@@ -218,7 +218,7 @@ class RetrieveTest < MiniTest::Test
     assert_equal([], files, "  (from #{caller[0]})")
   end
 
-  def add_key(data: '1' * 16, active_at:, submitted_at:, transmission_risk_level: 8, region: 'ON')
+  def add_key(data: '1' * 16, active_at:, submitted_at:, transmission_risk_level: 8, region: '302')
     add_key_explicit(
       rsin: rolling_start_interval_number(active_at),
       hour: hour_number(submitted_at),
@@ -236,7 +236,7 @@ class RetrieveTest < MiniTest::Test
     SQL
   end
 
-  def add_key_explicit(data: '1' * 16, rsin:, transmission_risk_level: 8, hour:, region: 'ON', rolling_period: TEK_ROLLING_PERIOD)
+  def add_key_explicit(data: '1' * 16, rsin:, transmission_risk_level: 8, hour:, region: '302', rolling_period: TEK_ROLLING_PERIOD)
     insert_key.execute(data, rsin, rolling_period, transmission_risk_level, hour, region)
   end
 
