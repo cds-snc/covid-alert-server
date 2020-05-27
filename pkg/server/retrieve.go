@@ -35,7 +35,7 @@ type retrieveServlet struct {
 
 func (s *retrieveServlet) RegisterRouting(r *mux.Router) {
 	// becomes 7 digits in 2084
-	r.HandleFunc("/retrieve/{period:[0-9]{6}}/{auth:.*}", s.retrieveWrapper)
+	r.HandleFunc("/retrieve/{region:[0-9]{3}}/{period:[0-9]{6}}/{auth:.*}", s.retrieveWrapper)
 }
 
 // returning this from s.fail and the s.retrieve makes it harder to call s.fail but forget to return.
@@ -63,7 +63,8 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) resul
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
-	if !s.auth.Authenticate(vars["period"], vars["auth"]) {
+	region := vars["region"]
+	if !s.auth.Authenticate(region, vars["period"], vars["auth"]) {
 		return s.fail(log(ctx, nil), w, "invalid auth parameter", "unauthorized", http.StatusUnauthorized)
 	}
 
@@ -76,8 +77,6 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) resul
 		return s.fail(log(ctx, err), w, "invalid period parameter", "", http.StatusBadRequest)
 	}
 	period := int32(hourNumber64)
-
-	var keysByRegion map[string][]*pb.TemporaryExposureKey
 
 	startTimestamp := time.Unix(int64(period*3600), 0)
 	endTimestamp := time.Unix(int64((period+hoursPerPeriod)*3600), 0)
@@ -97,7 +96,7 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) resul
 
 	// TODO: Maybe implement multi-pack linked-list scheme depending on what we hear back from G/A
 
-	keysByRegion, err = s.db.FetchKeysForPeriod(period, currentRSIN)
+	keys, err := s.db.FetchKeysForPeriod(region, period, currentRSIN)
 	if err != nil {
 		return s.fail(log(ctx, err), w, "database error", "", http.StatusInternalServerError)
 	}
@@ -106,7 +105,7 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) resul
 	w.Header().Add("Cache-Control", "public, max-age=3600, max-stale=600")
 
 	// TODO new format
-	if err := retrieval.SerializeTo(ctx, w, keysByRegion, startTimestamp, endTimestamp, s.signer); err != nil {
+	if err := retrieval.SerializeTo(ctx, w, keys, region, startTimestamp, endTimestamp, s.signer); err != nil {
 		log(ctx, err).Info("error writing response")
 	}
 	return result(struct{}{})

@@ -49,4 +49,4 @@ services:
     restart: always
     environment:
       DATABASE_URL: covidshield:covidshield@tcp(mysql)/covidshield
-      KEY_CLAIM_TOKEN: test=1
+      KEY_CLAIM_TOKEN: thisisatoken=302
