@@ -2,7 +2,8 @@
 # Global
 ###
 
-region            = "ca-central-1"
+region = "ca-central-1"
+# Enable the new ARN format to propagate tags to containers (see config/terraform/aws/README.md)
 billing_tag_key   = "CostCentre"
 billing_tag_value = "CovidShield"
 
@@ -20,15 +21,15 @@ ecs_name = "CovidShield"
 
 # Key Retrieval
 ecs_key_retrieval_name = "KeyRetrieval"
-# Comes from a Github Secret
+# Value should come from a TF_VAR environment variable (e.g. set in a Github Secret)
 # ecs_task_key_retrieval_env_hmac_key = ""
-# Comes from a Github Secret
+# Value should come from a TF_VAR environment variable (e.g. set in a Github Secret)
 # ecs_task_key_retrieval_env_ecdsa_key = ""
 
 # Key Submission
 ecs_key_submission_name = "KeySubmission"
-# Must be a string of the form <secret1>=<region_id1>:<secret2=region_id2> etc.
-# Comes from a Github Secret
+# Value should come from a TF_VAR environment variable (e.g. set in a Github Secret)
+# Must be a string of the form <secret1>=<MMC_code>:<secret2=MMC_code> - https://www.mcc-mnc.com
 # ecs_task_key_submission_env_key_claim_token = ""
 
 ###
@@ -42,15 +43,15 @@ vpc_name       = "CovidShield"
 # AWS RDS - rds.tf
 ###
 
-rds_db_subnet_group_name = "backend"
+rds_db_subnet_group_name = "server"
 
 # Key Retrieval/Submission
-rds_backend_db_name = "backend"
-rds_backend_db_user = "root"
-# Comes from a Github Secret
-# rds_backend_db_password       = ""
-rds_backend_allocated_storage = "5"
-rds_backend_instance_class    = "db.t3.small"
+rds_server_db_name = "server"
+rds_server_db_user = "root"
+# Value should come from a TF_VAR environment variable (e.g. set in a Github Secret)
+# rds_server_db_password       = ""
+rds_server_allocated_storage = "5"
+rds_server_instance_class    = "db.t3.small"
 
 ###
 # AWS Route 53 - route53.tf

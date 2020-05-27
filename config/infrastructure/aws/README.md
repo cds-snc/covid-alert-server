@@ -43,6 +43,14 @@ The credentials for the AWS Terraform provider are expected to be provided throu
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY_ID`
 
+If it's not already done, and before applying. You will need to enable the new ARN format to propagate tags to containers.
+
+```
+aws ecs put-account-setting-default --name serviceLongArnFormat --value enabled
+aws ecs put-account-setting-default --name taskLongArnFormat --value enabled
+aws ecs put-account-setting-default --name containerInstanceLongArnFormat --value enabled
+```
+
 All Terraform variables are defined in `config/terraform/aws/variables.tf` & their values are set in `config/terraform/aws/variables.auto.tfvars`. There are **four** secret variables that should be set through the following environment variables as to not commit plain text secrets to version control.
 
 - `TF_VAR_ecs_task_key_retrieval_env_ecdsa_key`
@@ -58,7 +66,7 @@ There is an optional Terraform variable that can be set to control which contain
 
 To run manually:
 1. Go to the AWS Terraform directory - `cd config/terraform/aws`
-2. Run 
+2. Run
 > TF_VAR_ecs_task_key_retrieval_env_ecdsa_key="******" TF_VAR_ecs_task_key_retrieval_env_hmac_key="******" TF_VAR_ecs_task_key_submission_env_key_claim_token="******" TF_VAR_rds_backend_db_password="******" AWS_ACCESS_KEY_ID="******" AWS_SECRET_ACCESS_KEY="******" terraform [init|plan|apply]
 
 ## Building and releasing applications with GitHub and Docker :whale:
