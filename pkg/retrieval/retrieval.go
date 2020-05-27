@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"context"
 	"io"
-	"strings"
 	"time"
 
 	pb "github.com/CovidShield/server/pkg/proto/covidshield"
@@ -36,19 +35,14 @@ func min(a, b int) int {
 
 func SerializeTo(
 	ctx context.Context, w io.Writer,
-	keysByRegion map[string][]*pb.TemporaryExposureKey,
+	keys []*pb.TemporaryExposureKey,
+	region string,
 	startTimestamp, endTimestamp time.Time,
 	signer Signer,
 ) error {
 	zipw := zip.NewWriter(w)
 
 	one := int32(1)
-
-	var regions []string
-	for region, _ := range keysByRegion {
-		regions = append(regions, region)
-	}
-	regionSpec := strings.Join(regions, "+")
 
 	start := uint64(startTimestamp.Unix())
 	end := uint64(endTimestamp.Unix())
@@ -64,17 +58,11 @@ func SerializeTo(
 	tekExport := &pb.TemporaryExposureKeyExport{
 		StartTimestamp: &start,
 		EndTimestamp:   &end,
-		Region:         &regionSpec,
+		Region:         &region,
 		BatchNum:       &one,
 		BatchSize:      &one,
 		SignatureInfos: []*pb.SignatureInfo{sigInfo},
-	}
-
-	// TODO: What on earth are we supposed to do if we have more than 750,000
-	// keys? I *have* to assume G/A is going to revise this protocol again in the
-	// next few days.
-	for _, keys := range keysByRegion {
-		tekExport.Keys = append(tekExport.Keys, keys...)
+		Keys:           keys,
 	}
 
 	exportBinData, err := proto.Marshal(tekExport)

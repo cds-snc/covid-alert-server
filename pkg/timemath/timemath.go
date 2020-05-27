@@ -7,9 +7,10 @@ import (
 )
 
 const (
-	SecondsInHour = 3600
-	SecondsInDay  = 86400
-	HoursInDay    = 24
+	SecondsInHour  = 3600
+	SecondsInDay   = 86400
+	HoursPerPeriod = 6
+	HoursInDay     = 24
 )
 
 func HourNumber(t time.Time) uint32 {
@@ -37,5 +38,5 @@ func RollingStartIntervalNumberPlusDays(rsin int32, days int) int32 {
 }
 
 func CurrentPeriod() int32 {
-	return int32((HourNumber(time.Now()) / 2) * 2)
+	return int32((HourNumber(time.Now()) / HoursPerPeriod) * HoursPerPeriod)
 }

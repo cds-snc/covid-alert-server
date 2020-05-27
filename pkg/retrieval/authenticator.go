@@ -12,7 +12,7 @@ import (
 )
 
 type Authenticator interface {
-	Authenticate(string, string) bool
+	Authenticate(string, string, string) bool
 }
 
 type authenticator struct {
@@ -36,8 +36,8 @@ func NewAuthenticator() Authenticator {
 	return &authenticator{hmacKey: hmacKey}
 }
 
-func (a *authenticator) Authenticate(requestedHour string, auth string) bool {
-	if len(requestedHour) != 6 || len(auth) != 64 {
+func (a *authenticator) Authenticate(region, requestedHour, auth string) bool {
+	if len(region) != 3 || len(requestedHour) != 6 || len(auth) != 64 {
 		return false
 	}
 
@@ -52,13 +52,15 @@ func (a *authenticator) Authenticate(requestedHour string, auth string) bool {
 
 	currentHour := int(timemath.HourNumber(time.Now()))
 
-	if validMAC([]byte(requestedHour+":"+strconv.Itoa(currentHour)), dst, a.hmacKey) {
+	base := region + ":" + requestedHour + ":"
+
+	if validMAC([]byte(base+strconv.Itoa(currentHour)), dst, a.hmacKey) {
 		return true
 	}
-	if validMAC([]byte(requestedHour+":"+strconv.Itoa(currentHour-1)), dst, a.hmacKey) {
+	if validMAC([]byte(base+strconv.Itoa(currentHour-1)), dst, a.hmacKey) {
 		return true
 	}
-	if validMAC([]byte(requestedHour+":"+strconv.Itoa(currentHour+1)), dst, a.hmacKey) {
+	if validMAC([]byte(base+strconv.Itoa(currentHour+1)), dst, a.hmacKey) {
 		return true
 	}
 	return false

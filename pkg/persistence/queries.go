@@ -186,17 +186,22 @@ func privForPub(db *sql.DB, pub []byte) *sql.Row {
 // period within the specified date.
 //
 // Only return keys that correspond to a Key valid for a date less than 14 days ago.
-func diagnosisKeysForPeriod(db *sql.DB, period int32, currentRollingStartIntervalNumber int32) (*sql.Rows, error) {
+//
+// TODO: this might be the right place to pad inappropriately small batches
+func diagnosisKeysForPeriod(db *sql.DB, region string, period int32, currentRollingStartIntervalNumber int32) (*sql.Rows, error) {
 	startHour := period
-	endHour := startHour + 1
+	endHour := startHour + timemath.HoursPerPeriod
 	minRollingStartIntervalNumber := timemath.RollingStartIntervalNumberPlusDays(currentRollingStartIntervalNumber, -14)
 
 	return db.Query(
 		`SELECT region, key_data, rolling_start_interval_number, rolling_period, transmission_risk_level FROM diagnosis_keys
-		WHERE hour_of_submission >= ? AND hour_of_submission <= ? AND rolling_start_interval_number > ?
+		WHERE hour_of_submission >= ?
+		AND hour_of_submission < ?
+		AND rolling_start_interval_number > ?
+		AND region = ?
 		ORDER BY key_data
 		`, // don't implicitly order by insertion date: for privacy
-		startHour, endHour, minRollingStartIntervalNumber,
+		startHour, endHour, minRollingStartIntervalNumber, region,
 	)
 }
 

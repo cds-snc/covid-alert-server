@@ -28,6 +28,8 @@ DATABASE_URL = "#{DB_USER}:#{DB_PASS}@tcp(#{DB_HOST})/#{DB_NAME}"
 SUBMISSION_SERVER_ADDR = "127.0.0.1:18481"
 RETRIEVAL_SERVER_ADDR = "127.0.0.1:18482"
 
+PERIOD_HOURS = 6
+
 module Helper
   module Include
     def run
@@ -42,7 +44,7 @@ module Helper
     end
 
     def current_period
-      (Time.now.to_i / 3600 / 2) * 2
+      (Time.now.to_i / 3600 / PERIOD_HOURS) * PERIOD_HOURS
     end
 
     def next_rsin
@@ -60,9 +62,9 @@ module Helper
       hmac = OpenSSL::HMAC.hexdigest(
         "SHA256",
         [ENV.fetch("RETRIEVE_HMAC_KEY")].pack("H*"),
-        "#{period}:#{Time.now.to_i / 3600}"
+        "302:#{period}:#{Time.now.to_i / 3600}"
       )
-      @ret_conn.send(method, "/retrieve/#{period}/#{hmac}")
+      @ret_conn.send(method, "/retrieve/302/#{period}/#{hmac}")
     end
 
     def tek(data: '1' * 16, transmission_risk_level: 3, rolling_period: 144, rolling_start_interval_number: next_rsin)
@@ -192,7 +194,7 @@ module Helper
       pid = Process.spawn(
         {
           'BIND_ADDR' => addr,
-          'KEY_CLAIM_TOKEN' => 'first-token=ON:second-token=PE',
+          'KEY_CLAIM_TOKEN' => 'first-token=302:second-token=302',
           'DATABASE_URL' => DATABASE_URL,
         },
         bin, STDERR => File.open('/dev/null')

@@ -25,7 +25,7 @@ class RetrieveTest < MiniTest::Test
     period = current_period - 72
     resp = get_period(period)
     export = assert_happy_zip_response(resp)
-    assert_keys(export, [], region: '', period: period)
+    assert_keys(export, [], region: '302', period: period)
   end
 
   def test_reject_unacceptable_periods
@@ -35,10 +35,10 @@ class RetrieveTest < MiniTest::Test
       body: "cannot serve data for current period for privacy reasons\n"
     )
 
-    resp = get_period(current_period - 2)
+    resp = get_period(current_period - PERIOD_HOURS)
     assert_response(resp, 200, 'application/zip')
 
-    resp = get_period(current_period + 2)
+    resp = get_period(current_period + PERIOD_HOURS)
     assert_response(
       resp, 404, 'text/plain; charset=utf-8',
       body: "cannot request future data\n"
@@ -49,7 +49,7 @@ class RetrieveTest < MiniTest::Test
     assert_response(resp, 200, 'application/zip')
 
     # too old
-    resp = get_period(current_period - 338)
+    resp = get_period(current_period - 342)
     assert_response(resp, 410, 'text/plain; charset=utf-8', body: "requested data no longer valid\n")
 
     # odd-numbered (invalid) period
@@ -60,17 +60,17 @@ class RetrieveTest < MiniTest::Test
   def test_disallowed_methods
     # Disallowed methods
     %w[post patch delete put].each do |meth|
-      resp = get_period((Time.now.to_i / 3600 / 2) * 2 - 72, method: meth)
+      resp = get_period((Time.now.to_i / 3600 / PERIOD_HOURS) * PERIOD_HOURS - 72, method: meth)
       assert_response(resp, 405, 'text/plain; charset=utf-8', body: "method not allowed\n")
     end
   end
 
   def test_retrieve_stuff
     active_at = time_in_date('10:00', today_utc.prev_day(8))
-    add_key(active_at: active_at, submitted_at: time_in_date('03:00', yesterday_utc))
+    add_key(active_at: active_at, submitted_at: time_in_date('07:00', yesterday_utc))
     rsin = rolling_start_interval_number(active_at)
 
-    period = yesterday_utc.to_datetime.to_time.to_i / 3600 + 2
+    period = yesterday_utc.to_datetime.to_time.to_i / 3600 + PERIOD_HOURS
 
     resp = get_period(period)
     export = assert_happy_zip_response(resp)
@@ -78,7 +78,7 @@ class RetrieveTest < MiniTest::Test
       rolling_start_interval_number: rsin,
       transmission_risk_level: 8,
     )]
-    assert_keys(export, keys, region: 'ON', period: period)
+    assert_keys(export, keys, region: '302', period: period)
   end
 
   def test_period_bounds
@@ -93,7 +93,7 @@ class RetrieveTest < MiniTest::Test
 
     rsin = rolling_start_interval_number(active_at)
 
-    period = yesterday_utc.to_datetime.to_time.to_i / 3600 + 2
+    period = yesterday_utc.to_datetime.to_time.to_i / 3600 + PERIOD_HOURS
 
     resp = get_period(period)
     export = assert_happy_zip_response(resp)
@@ -113,23 +113,23 @@ class RetrieveTest < MiniTest::Test
     hmac = OpenSSL::HMAC.hexdigest(
       "SHA256",
       [ENV.fetch("RETRIEVE_HMAC_KEY")].pack("H*"),
-      "#{period}:#{Time.now.to_i / 3600}"
+      "302:#{period}:#{Time.now.to_i / 3600}"
     )
 
     # success
-    resp = @ret_conn.get("/retrieve/#{period}/#{hmac}")
+    resp = @ret_conn.get("/retrieve/302/#{period}/#{hmac}")
     assert_response(resp, 200, 'application/zip')
 
     # hmac is keyed to date
-    resp = @ret_conn.get("/retrieve/#{period - 1}/#{hmac}")
+    resp = @ret_conn.get("/retrieve/302/#{period - 1}/#{hmac}")
     assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
 
     # changing hmac breaks it
-    resp = @ret_conn.get("/retrieve/#{period}/11112222#{hmac[8..-1]}")
+    resp = @ret_conn.get("/retrieve/302/#{period}/11112222#{hmac[8..-1]}")
     assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
 
     # hmac is required
-    resp = @ret_conn.get("/retrieve/#{period}")
+    resp = @ret_conn.get("/retrieve/302/#{period}")
     assert_response(resp, 404, 'text/plain; charset=utf-8', body: "404 page not found\n")
   end
 
@@ -195,7 +195,7 @@ class RetrieveTest < MiniTest::Test
         Covidshield::TemporaryExposureKeyExport.new(
           start_timestamp: start_time,
           end_timestamp: end_time,
-          region: 'ON',
+          region: '302',
           batch_num: 1,
           batch_size: 1,
           keys: [
@@ -218,7 +218,7 @@ class RetrieveTest < MiniTest::Test
     assert_equal([], files, "  (from #{caller[0]})")
   end
 
-  def add_key(data: '1' * 16, active_at:, submitted_at:, transmission_risk_level: 8, region: 'ON')
+  def add_key(data: '1' * 16, active_at:, submitted_at:, transmission_risk_level: 8, region: '302')
     add_key_explicit(
       rsin: rolling_start_interval_number(active_at),
       hour: hour_number(submitted_at),
@@ -236,7 +236,7 @@ class RetrieveTest < MiniTest::Test
     SQL
   end
 
-  def add_key_explicit(data: '1' * 16, rsin:, transmission_risk_level: 8, hour:, region: 'ON', rolling_period: TEK_ROLLING_PERIOD)
+  def add_key_explicit(data: '1' * 16, rsin:, transmission_risk_level: 8, hour:, region: '302', rolling_period: TEK_ROLLING_PERIOD)
     insert_key.execute(data, rsin, rolling_period, transmission_risk_level, hour, region)
   end
 
@@ -267,7 +267,7 @@ class RetrieveTest < MiniTest::Test
 
   def assert_keys(export, keys, region:, period:)
     start_time = period * 3600
-    end_time = (period + 2) * 3600
+    end_time = (period + 6) * 3600
 
     assert_equal(
       Covidshield::TemporaryExposureKeyExport.new(
@@ -300,7 +300,7 @@ class RetrieveTest < MiniTest::Test
           Covidshield::TEKSignature.new(
             signature_info: Covidshield::SignatureInfo.new(
               app_bundle_id: "com.shopify.covid-shield",
-              android_package: "",
+              android_package: "com.covidshield",
               verification_key_version: "v1",
               verification_key_id: "key-0",
               signature_algorithm: "ecdsa-with-SHA256"

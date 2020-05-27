@@ -34,10 +34,10 @@ class RoundtripTest < MiniTest::Test
     expect_keys(first_keys[0..-2])
 
     move_forward_hours(1) # total: +1 day & 1 hour
-    expect_keys(first_keys[0..-2] + [keys.first])
+    expect_keys(first_keys[0..-2])
 
     move_forward_hours(1) # total: +1 day & 2 hours
-    expect_keys(first_keys[0..-2] + [keys.first])
+    expect_keys(first_keys[0..-2])
 
     move_forward_hours(12 * 24 + 21) # total: +13 days & 23 hours
     expect_keys(first_keys[0..0] + [keys.first])
@@ -67,9 +67,10 @@ class RoundtripTest < MiniTest::Test
   def expect_keys(want_keys)
     keys = []
 
-    number_of_periods = 168
+    number_of_periods = (168 * 2) / PERIOD_HOURS
+    assert_equal(56, number_of_periods)
     number_of_periods.times do |n|
-      period = current_period - (2 * (n + 1))
+      period = current_period - (PERIOD_HOURS * (n + 1))
       resp = get_period(period)
       assert_response(resp, 200, 'application/zip')
       keys.concat(parse_keys(resp))
