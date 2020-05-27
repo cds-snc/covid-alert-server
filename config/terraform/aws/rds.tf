@@ -14,18 +14,20 @@ resource "aws_db_subnet_group" "covidshield" {
   }
 }
 
-resource "aws_db_instance" "covidshield_backend" {
-  identifier_prefix         = "backend"
-  allocated_storage         = var.rds_backend_allocated_storage
+resource "aws_db_instance" "covidshield_server" {
+  identifier_prefix         = "server"
+  allocated_storage         = var.rds_server_allocated_storage
   storage_type              = "gp2"
   engine                    = "mysql"
   engine_version            = "5.7"
-  final_snapshot_identifier = "backend-${random_string.random.result}"
+  final_snapshot_identifier = "server-${random_string.random.result}"
   skip_final_snapshot       = false
-  instance_class            = var.rds_backend_instance_class
-  name                      = var.rds_backend_db_name
-  username                  = var.rds_backend_db_user
-  password                  = var.rds_backend_db_password
+  multi_az                  = true
+  storage_encrypted         = true
+  instance_class            = var.rds_server_instance_class
+  name                      = var.rds_server_db_name
+  username                  = var.rds_server_db_user
+  password                  = var.rds_server_db_password
   vpc_security_group_ids = [
     aws_security_group.covidshield_database.id
   ]
@@ -33,7 +35,7 @@ resource "aws_db_instance" "covidshield_backend" {
   db_subnet_group_name = aws_db_subnet_group.covidshield.id
 
   tags = {
-    Name                  = var.rds_backend_db_name
+    Name                  = var.rds_server_db_name
     (var.billing_tag_key) = var.billing_tag_value
   }
 }

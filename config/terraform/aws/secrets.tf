@@ -1,10 +1,10 @@
-resource "aws_secretsmanager_secret" "backend_database_url" {
-  name = "backend-database-url"
+resource "aws_secretsmanager_secret" "server_database_url" {
+  name = "server-database-url"
 }
 
-resource "aws_secretsmanager_secret_version" "backend_database_url" {
-  secret_id     = aws_secretsmanager_secret.backend_database_url.id
-  secret_string = "${var.rds_backend_db_user}:${var.rds_backend_db_password}@tcp(${aws_db_instance.covidshield_backend.endpoint})/${var.rds_backend_db_name}"
+resource "aws_secretsmanager_secret_version" "server_database_url" {
+  secret_id     = aws_secretsmanager_secret.server_database_url.id
+  secret_string = "${var.rds_server_db_user}:${var.rds_server_db_password}@tcp(${aws_db_instance.covidshield_server.endpoint})/${var.rds_server_db_name}"
 }
 
 ###

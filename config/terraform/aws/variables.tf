@@ -74,23 +74,23 @@ variable "rds_db_subnet_group_name" {
 }
 
 # RDS DB - Key Retrieval/Submission
-variable "rds_backend_db_name" {
+variable "rds_server_db_name" {
   type = string
 }
 
-variable "rds_backend_db_user" {
+variable "rds_server_db_user" {
   type = string
 }
 
-variable "rds_backend_db_password" {
+variable "rds_server_db_password" {
   type = string
 }
 
-variable "rds_backend_allocated_storage" {
+variable "rds_server_allocated_storage" {
   type = string
 }
 
-variable "rds_backend_instance_class" {
+variable "rds_server_instance_class" {
   type = string
 }
 
