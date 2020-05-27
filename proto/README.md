@@ -86,7 +86,9 @@ positive diagnosis, and then should call it again each subsequent day, for days 
 Duplicate keys will be filtered by the server. Some time on day T+14, the keypairs used for
 encryption and authorization will become invalid and be purged.
 
-## `/retrieve/:period/:hmac`
+## `/retrieve/:region/:period/:hmac`
+
+The `region` is an [MCC](https://www.mcc-mnc.com/) (e.g. "302" for Canada).
 
 An "hour number" in this system is a UTC timestamp divided (using integer division) by 3600. This
 quantity increases by 1 each hour.
@@ -96,7 +98,7 @@ for hours 3 and 2 is 2, in both cases. The period increases by 2 every 2 hours.
 
 the hmac parameter in this case must be a hex-encoded SHA256 HMAC (64 characters) of:
 
-    period + ":" + currentHour
+    region + ":" + period + ":" + currentHour
 
 where `period` is provided in the URL (e.g. `441670`), and `currentHour` is the current UTC hour
 number (e.g. `441683`). `currentHour` must agree with the server to within +/- 1 hour in order for

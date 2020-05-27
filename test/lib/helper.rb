@@ -62,9 +62,9 @@ module Helper
       hmac = OpenSSL::HMAC.hexdigest(
         "SHA256",
         [ENV.fetch("RETRIEVE_HMAC_KEY")].pack("H*"),
-        "#{period}:#{Time.now.to_i / 3600}"
+        "302:#{period}:#{Time.now.to_i / 3600}"
       )
-      @ret_conn.send(method, "/retrieve/#{period}/#{hmac}")
+      @ret_conn.send(method, "/retrieve/302/#{period}/#{hmac}")
     end
 
     def tek(data: '1' * 16, transmission_risk_level: 3, rolling_period: 144, rolling_start_interval_number: next_rsin)
