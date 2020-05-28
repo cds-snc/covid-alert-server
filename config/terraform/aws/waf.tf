@@ -50,7 +50,7 @@ resource "aws_wafregional_byte_match_set" "key_submission_authorization_header" 
   name = "KeySubmissionAuthorizationHeader"
   byte_match_tuples {
     text_transformation   = "NONE"
-    target_string         = "bearer"
+    target_string         = "Bearer"
     positional_constraint = "CONTAINS"
 
     field_to_match {
