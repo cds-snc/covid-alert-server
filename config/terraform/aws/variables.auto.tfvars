@@ -29,7 +29,7 @@ ecs_key_retrieval_name = "KeyRetrieval"
 # Key Submission
 ecs_key_submission_name = "KeySubmission"
 # Value should come from a TF_VAR environment variable (e.g. set in a Github Secret)
-# Must be a string of the form <secret1>=<MMC_code>:<secret2=MMC_code> - https://www.mcc-mnc.com
+# Must be a string of the form <secret1>=<MMC_code>:<secret2>=<MMC_code> - https://www.mcc-mnc.com
 # ecs_task_key_submission_env_key_claim_token = ""
 
 ###
