@@ -8,20 +8,30 @@ provided by Canada's Privacy
 Commissioners](https://priv.gc.ca/en/opc-news/speeches/2020/s-d_20200507/).
 
 The choices made in implementation were made to maximize privacy, security and performance. No
-personally-identifying information is ever stored, and none other than IP address is ever even
+personally-identifiable information is ever stored, and none other than IP address is ever even
 available to the server. No data at all is retained past 21 days. This server was designed to handle
 use by up to 38 million Canadians, though it shouldn't be difficult to scale it to any population
 size.
 
-## Brief Overview
+In this document:
+
+- [Overview](#overview)  
+- [Data usage](#data-usage)  
+- [Generating one-time codes](#generating-one-time-codes)  
+- [Protocol documentation](#protocol-documentation)
+- [Deployment notes](#deployment-notes)
+- [Contributing](#contributing)
+- [Who Built COVID Shield?](#who-built-covid-shield)
+
+## Overview
 
 _[Apple/Google's Exposure Notification](https://www.apple.com/covid19/contacttracing) specifications
 provide important information to contextualize the rest of this document._
 
 There are two fundamental operations conceptually:
 
-* Retrieving *Diagnosis Keys*: retrieving a list of all keys uploaded by other users; and
-* Submitting *Diagnosis Keys*: sharing keys returned from the EN framework with the server.
+* **Retrieving _Diagnosis Keys_**: retrieving a list of all keys uploaded by other users; and
+* **Submitting _Diagnosis Keys_**: sharing keys returned from the EN framework with the server.
 
 These two operations are implemented as two separate servers (`key-submission` and `key-retrieval`)
 generated from this codebase, and can be deployed independently as long as they share a database. It
@@ -44,7 +54,7 @@ The published _Diagnosis Keys_ are fetched—with some best-effort authenticatio
 Distribution Network (CDN), backed by `key-retrieval`. This allows a functionally-arbitrary number
 of concurrent users.
 
-### Retrieving Exposure Configuration
+### Retrieving _Exposure Configuration_
 
 [_Exposure Configuration_](https://developer.apple.com/documentation/exposurenotification/enexposureconfiguration),
 used to determine the risk of a given exposure, is also retrieved from the `key-retrieval` server. A JSON
@@ -73,7 +83,7 @@ The encryption scheme employed for key upload is _NaCl Box_ (a public-key encryp
 Curve25519, XSalsa20, and Poly1305). This is widely regarded as an exceedingly secure implementation
 of Elliptic-Curve cryptography.
 
-## Data Usage
+## Data usage
 
 The _Diagnosis Key_ retrieval protocol used in _COVID Shield_ was designed to restrict the data
 transfer to a minimum. With large numbers of keys and assuming the client fetches using compression,
@@ -118,9 +128,9 @@ There were 74,000 new cases globally on May 10, 2020. 74,000 * 28 * 16 = 36MB pe
 deploying to the entire world at current infection rates would cause: **1.5MB of download each
 hour**.
 
-## Generating One-Time-Codes
+## Generating one-time codes
 
-We use a One-Time-Code generation scheme that allows authenticated case workers to issue codes,
+We use a one-time code generation scheme that allows authenticated case workers to issue codes,
 which are to be passed to patients with positive diagnoses via whatever communication channel is
 convenient.
 
@@ -135,25 +145,96 @@ minimally:
 curl -XPOST -H "Authorization: Bearer $token" "https://submission.covidshield.app/new-key-claim"
 ```
 
-## Protocol Documentation
+## Protocol documentation
 
 For a more in-depth description of the protocol, please see [the "proto" subdirectory of this
 repo](/proto).
 
-## Deployment Notes
+## Deployment notes
 
-`key-submission` depends on being deployed behind a firewall (e.g. [AWS
+- `key-submission` depends on being deployed behind a firewall (e.g. [AWS
 WAF](https://aws.amazon.com/waf/)), aggressively throttling users with 400 and 401 responses.
 
-`key-retrieval` assumes it will be deployed behind a caching reverse proxy.
+- `key-retrieval` assumes it will be deployed behind a caching reverse proxy.
 
 We hope to provide reference implementations on AWS, GCP, and Azure via [Hashicorp Terraform](https://www.terraform.io/).
 
-[AWS Reference Implementation](config/infrastructure/aws/README.md) 
+See [AWS Reference Implementation](config/infrastructure/aws/README.md) for more information.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+Before you begin to contribute, see [_CONTRIBUTING.md_](CONTRIBUTING.md).
+
+### 1. Set up a local development environment
+
+#### Development environment via docker-compose
+
+1. Fork https://github.com/CovidShield/server to your account.
+2. Clone your fork of the **CovidShield/server** repo locally by running `git clone https://github.com/<username>/server.git`.
+3. Enter the repo directory `cd server`.
+4. Run `docker-compose up`.
+
+**Note**: It is normal to see a few errors from the retrieval service exiting initially while the MySQL database is instantiated
+
+### 2. Develop locally
+
+#### Prerequisites
+
+* Go (tested with 1.14)
+* Ruby (tested with 2.6.5)
+* Bundler
+* [protobuf](https://developers.google.com/protocol-buffers/) (tested with libprotoc 3.11.4)
+* [protoc-gen-go](https://github.com/golang/protobuf) (may only be needed to change `proto/*`)
+* libsodium
+* docker-compose
+* MySQL
+
+#### Building
+
+Run `make` or `make release` to build a release version of the servers.
+
+#### Running
+
+```bash
+# example...
+export DATABASE_URL="root@tcp(localhost)/covidshield"
+export KEY_CLAIM_TOKEN=thisisatoken=302
+
+./key-retrieval migrate-db
+
+PORT=8000 ./key-submission
+PORT=8001 ./key-retrieval
+```
+
+Note that 302 is a [MCC](https://www.mcc-mnc.com/): 302 represents Canada.
+
+### 3. Run tests
+
+If you're not a Shopify employee, you'll need to point to your database server using the environment variables
+(note that the database will be clobbered so ensure that you don't point to a
+production database):
+
+```shell
+$ export DB_USER=<username>
+$ export DB_PASS=<password>
+$ export DB_HOST=<hostname>
+$ export DB_NAME=<test database name>
+```
+
+Then, ensure the appropriate requirements are installed:
+
+```shell
+$ bundle install
+```
+
+Finally, run:
+```shell
+$ make test
+```
+
+If you're a Shopify employee, `dev up` will configure the database for you and install the above dependencies and `dev {build,test,run,etc.}` will work as you'd expect.
+
+Once you're happy with your changes, please fork the repository and push your code to your fork, then open a pull request against this repository.
 
 ## Who Built COVID Shield?
 
