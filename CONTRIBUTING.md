@@ -22,4 +22,4 @@ If you'd like to contribute a documentation or static file change, feel free to 
 
 ## Contributing code
 
-If you'd like to contribute code changes, follow [these instructions](README.md#setting-up-a-local-development-environment) to set up a local development environment, make changes, and run tests.
+If you'd like to contribute code changes, follow [these instructions](README.md#contributing) to set up a local development environment, make changes, and run tests.

@@ -7,20 +7,24 @@ Notification](https://www.apple.com/covid19/contacttracing) framework, informed 
 provided by Canada's Privacy
 Commissioners](https://priv.gc.ca/en/opc-news/speeches/2020/s-d_20200507/).
 
-The choices made in implementation were made to maximize privacy, security and performance. No
-personally-identifiable information is ever stored, and none other than IP address is ever even
-available to the server. No data at all is retained past 21 days. This server was designed to handle
-use by up to 38 million Canadians, though it shouldn't be difficult to scale it to any population
-size.
+The choices made in implementation are meant to maximize privacy, security, and performance. No
+personally-identifiable information is ever stored, and nothing other than IP address is available to the server. No data at all is retained past 21 days. This server is designed to handle
+use by up to 38 million Canadians, though it can be scaled to any population size.
 
 In this document:
 
-- [Overview](#overview)  
+- [Overview](#overview)
+   - [Retrieving _Diagnosis Keys_](#retrieving-diagnosis-keys)
+   - [Retrieving _Exposure Configuration_](#retrieving-exposure-configuration)
+   - [Submitting _Diagnosis Keys_](#submitting-diagnosis-keys)
 - [Data usage](#data-usage)  
 - [Generating one-time codes](#generating-one-time-codes)  
 - [Protocol documentation](#protocol-documentation)
 - [Deployment notes](#deployment-notes)
-- [Contributing](#contributing)
+- [Contributing](#contributing)   
+    1. [Set up a local development environment](#env-setup)   
+    2. [Develop locally](#dev-local)  
+    3. [Run tests](#run-tests) 
 - [Who Built COVID Shield?](#who-built-covid-shield)
 
 ## Overview
@@ -165,7 +169,7 @@ See [AWS Reference Implementation](config/infrastructure/aws/README.md) for more
 
 Before you begin to contribute, see [_CONTRIBUTING.md_](CONTRIBUTING.md).
 
-### 1. Set up a local development environment
+<h3 id="env-setup">1. Set up a local development environment</h3>
 
 #### Development environment via docker-compose
 
@@ -176,7 +180,7 @@ Before you begin to contribute, see [_CONTRIBUTING.md_](CONTRIBUTING.md).
 
 **Note**: It is normal to see a few errors from the retrieval service exiting initially while the MySQL database is instantiated
 
-### 2. Develop locally
+<h3 id="dev-local">2. Develop locally</h3>
 
 #### Prerequisites
 
@@ -208,7 +212,7 @@ PORT=8001 ./key-retrieval
 
 Note that 302 is a [MCC](https://www.mcc-mnc.com/): 302 represents Canada.
 
-### 3. Run tests
+<h3 id="run-tests">3. Run tests</h3>
 
 If you're not a Shopify employee, you'll need to point to your database server using the environment variables
 (note that the database will be clobbered so ensure that you don't point to a
