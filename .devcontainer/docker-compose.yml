@@ -1,0 +1,34 @@
+version: '3'
+
+services:
+  app:
+    build: 
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/workspace:cached   
+    command: sleep infinity
+    ports: 
+      - 6011:6011
+    links: 
+      - db
+    environment: 
+      DB_USER: test
+      DB_PASS: password
+      DB_HOST: db
+      DB_NAME: test
+      DB_PORT: 3306
+      ECDSA_KEY: 30770201010420a6885a310b694b7bb4ba985459de1e79446dddcd1247c62ece925402b362a110a00a06082a8648ce3d030107a1440342000403eb64f714c4b4ed394331c26c31b7ce7156d00fb28982ad2679a87eaa1a3869802fbeb1d7ee28002762921929c3f7603672d535fcac3d24d57afbb4e2d97f5a
+      KEY_CLAIM_TOKEN: thisisatoken=302
+      RETRIEVE_HMAC_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    
+  db:
+    image: mysql:5.7
+    restart: unless-stopped
+    ports: 
+      - 3310:3306
+    environment:
+      MYSQL_DATABASE: test
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_USER: test
