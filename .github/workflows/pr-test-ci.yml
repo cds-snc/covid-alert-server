@@ -1,0 +1,31 @@
+name: Testing CI
+on: [pull_request]
+jobs:
+  testing:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_DATABASE: test
+          MYSQL_PASSWORD: password
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_USER: test
+          
+        ports:
+        - 3306:3306
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-ruby@v1
+      with:
+        ruby-version: '2.6'
+    - name: Run tests
+      run: |
+        bundle install
+        make test
+      env:
+        DB_USER: test
+        DB_PASS: password
+        DB_HOST: 127.0.0.1
+        DB_NAME: test
