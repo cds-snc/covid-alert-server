@@ -11,6 +11,14 @@ git remote add upstream git@github.com:CovidShield/server.git
 git pull upstream master
 ```
 
+or
+
+
+```
+git remote add upstream https://github.com/CovidShield/server.git
+git pull upstream master
+```
+
 ### Changes
 
 - Added DevContainer for VSCode (https://github.com/cds-snc/covid-shield-server/pull/7)
