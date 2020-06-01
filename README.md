@@ -2,7 +2,7 @@
 
 ![Container Build](https://github.com/CovidShield/server/workflows/Container%20Builds/badge.svg)
 
-This repository implements a *Diagnosis Server* to use as a server for Apple/Google's [Exposure
+This repository implements a diagnosis server to use as a server for Apple/Google's [Exposure
 Notification](https://www.apple.com/covid19/contacttracing) framework, informed by the [guidance
 provided by Canada's Privacy
 Commissioners](https://priv.gc.ca/en/opc-news/speeches/2020/s-d_20200507/).
@@ -14,11 +14,11 @@ use by up to 38 million Canadians, though it can be scaled to any population siz
 In this document:
 
 - [Overview](#overview)
-   - [Retrieving _Diagnosis Keys_](#retrieving-diagnosis-keys)
-   - [Retrieving _Exposure Configuration_](#retrieving-exposure-configuration)
-   - [Submitting _Diagnosis Keys_](#submitting-diagnosis-keys)
-- [Data usage](#data-usage)  
-- [Generating one-time codes](#generating-one-time-codes)  
+   - [Retrieving diagnosis keys](#retrieving-diagnosis-keys)
+   - [Retrieving Exposure Configuration](#retrieving-exposure-configuration)
+   - [Submitting diagnosis keys](#submitting-diagnosis-keys)
+- [Data usage](#data-usage)
+- [Generating one-time codes](#generating-one-time-codes)
 - [Protocol documentation](#protocol-documentation)
 - [Deployment notes](#deployment-notes)
 - [Contributing](#contributing)   
@@ -34,8 +34,8 @@ provide important information to contextualize the rest of this document._
 
 There are two fundamental operations conceptually:
 
-* **Retrieving _Diagnosis Keys_**: retrieving a list of all keys uploaded by other users; and
-* **Submitting _Diagnosis Keys_**: sharing keys returned from the EN framework with the server.
+* **Retrieving diagnosis keys**: retrieving a list of all keys uploaded by other users; and
+* **Submitting diagnosis keys**: sharing keys returned from the EN framework with the server.
 
 These two operations are implemented as two separate servers (`key-submission` and `key-retrieval`)
 generated from this codebase, and can be deployed independently as long as they share a database. It
@@ -43,9 +43,9 @@ is also possible to deploy any number of configurations for each of these compon
 the same database, though there would be little value in deploying multiple configurations of
 `key-retrieval`.
 
-### Retrieving _Diagnosis Keys_
+### Retrieving diagnosis keys
 
-When _Diagnosis Keys_ are uploaded, the `key-submission` server stores the data defined and required
+When diagnosis keys are uploaded, the `key-submission` server stores the data defined and required
 by the Exposure Notification API in addition to the time at which the data was received by the
 server. This submission timestamp is rounded to the nearest hour for privacy preservation (to
 prevent correlation of multiple keys to the same user).
@@ -54,7 +54,7 @@ The hour of submission is used to group keys into buckets, in order to prevent c
 soon-to-be-released _COVID Shield_ mobile app) from having to download a given set of key data
 multiple times in order to repeatedly check for exposure.
 
-The published _Diagnosis Keys_ are fetched—with some best-effort authentication—from a Content
+The published diagnosis keys are fetched—with some best-effort authentication—from a Content
 Distribution Network (CDN), backed by `key-retrieval`. This allows a functionally-arbitrary number
 of concurrent users.
 
@@ -70,13 +70,13 @@ $ curl https://retrieval.covidshield.app/exposure-configuration/ON.json
 {"minimumRiskScore":0,"attenuationLevelValues":[1,2,3,4,5,6,7,8],"attenuationWeight":50,"daysSinceLastExposureLevelValues":[1,2,3,4,5,6,7,8],"daysSinceLastExposureWeight":50,"durationLevelValues":[1,2,3,4,5,6,7,8],"durationWeight":50,"transmissionRiskLevelValues":[1,2,3,4,5,6,7,8],"transmissionRiskWeight":50}
 ```
 
-### Submitting _Diagnosis Keys_
+### Submitting diagnosis keys
 
 In brief, upon receiving a positive diagnosis, a health care professional will generate a _One Time
 Code_ through a web application frontend (a reference implementation will be open-sourced soon), which
 communicates with `key-submission`. This code is sent to the patient, who enters the code into their
 (soon-to-be-released) _COVID Shield_ App. This code is used to authenticate the
-Application (once) to the _Diagnosis Server_. Encryption keypairs are exchanged by the Application
+Application (once) to the diagnosis server. Encryption keypairs are exchanged by the Application
 and the `key-submission` server to be stored for fourteen days, and the One Time Code is immediately
 purged from the database.
 
@@ -125,7 +125,7 @@ hour**.
 
 If _COVID Shield_ were deployed for the entire world, we would be inclined to use the "regions"
 built into the protocol to implement key namespacing, in order to not serve up the entire set of
-global _Diagnosis Keys_ to each and every person in the world, but let's work through the number in
+global diagnosis keys to each and every person in the world, but let's work through the number in
 the case that we wouldn't:
 
 There were 74,000 new cases globally on May 10, 2020. 74,000 * 28 * 16 = 36MB per day, thus,
