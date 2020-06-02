@@ -4,6 +4,7 @@
 require 'google/protobuf'
 
 require 'google/protobuf/timestamp_pb'
+require 'google/protobuf/duration_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_file("covidshield.proto", :syntax => :proto2) do
     add_message "covidshield.KeyClaimRequest" do
@@ -13,6 +14,8 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     add_message "covidshield.KeyClaimResponse" do
       optional :error, :enum, 1, "covidshield.KeyClaimResponse.ErrorCode"
       optional :server_public_key, :bytes, 2
+      optional :tries_remaining, :uint32, 3
+      optional :remaining_ban_duration, :message, 4, "google.protobuf.Duration"
     end
     add_enum "covidshield.KeyClaimResponse.ErrorCode" do
       value :NONE, 0
@@ -20,6 +23,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       value :INVALID_ONE_TIME_CODE, 2
       value :SERVER_ERROR, 3
       value :INVALID_KEY, 4
+      value :TEMPORARY_BAN, 5
     end
     add_message "covidshield.EncryptedUploadRequest" do
       required :server_public_key, :bytes, 1
