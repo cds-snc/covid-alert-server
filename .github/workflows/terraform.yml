@@ -1,12 +1,12 @@
-name: 'Terraform'
+name: "Terraform"
 
 on:
   push:
     branches:
-    - master
+      - master
   pull_request:
     paths:
-    - 'config/terraform/aws/*'
+      - "config/terraform/aws/*"
 
 defaults:
   run:
@@ -24,89 +24,89 @@ env:
 
 jobs:
   terraform-plan:
-    if: github.ref != 'refs/heads/master' && github.repository_owner == 'CovidShield'
+    if: github.ref != 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v1
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
 
-    - name: Terraform Init
-      run: terraform init
+      - name: Terraform Init
+        run: terraform init
 
-    - name: Terraform Format
-      run: terraform fmt -check
+      - name: Terraform Format
+        run: terraform fmt -check
 
-    - name: Terraform Plan
-      run: terraform plan
+      - name: Terraform Plan
+        run: terraform plan
 
   terraform-apply:
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push' && github.repository_owner == 'CovidShield'
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-    - name: Wait for container to be built and pushed
-      uses: fountainhead/action-wait-for-check@v1.0.0
-      id: wait-for-build
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        checkName: build-n-push
-        ref: ${{ github.sha }}
+      - name: Wait for container to be built and pushed
+        uses: fountainhead/action-wait-for-check@v1.0.0
+        id: wait-for-build
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: build-n-push
+          ref: ${{ github.sha }}
 
-    - name: Checkout
-      if: steps.wait-for-build.outputs.conclusion == 'success'
-      uses: actions/checkout@v2
+      - name: Checkout
+        if: steps.wait-for-build.outputs.conclusion == 'success'
+        uses: actions/checkout@v2
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v1
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
 
-    - name: Terraform Init
-      run: terraform init
+      - name: Terraform Init
+        run: terraform init
 
-    - name: Terraform Format
-      run: terraform fmt -check
+      - name: Terraform Format
+        run: terraform fmt -check
 
-    - name: Terraform Plan
-      env:
-        TF_VAR_github_sha: ${{ github.sha }}
-      run: terraform plan -out terraform.tfplan
+      - name: Terraform Plan
+        env:
+          TF_VAR_github_sha: ${{ github.sha }}
+        run: terraform plan -out terraform.tfplan
 
-    - name: Terraform Apply
-      env:
-        TF_VAR_github_sha: ${{ github.sha }}
-      run: terraform apply -auto-approve terraform.tfplan
+      - name: Terraform Apply
+        env:
+          TF_VAR_github_sha: ${{ github.sha }}
+        run: terraform apply -auto-approve terraform.tfplan
 
-    - name: Check For New Deployments
-      env:
-        GITHUB_SHA: ${{ github.sha }}
-      run: |
-        count=0
-        kr_finished=0
-        ks_finished=0
+      - name: Check For New Deployments
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          count=0
+          kr_finished=0
+          ks_finished=0
 
-        while [[ $count -le 180 && ($kr_finished -le 5 || $ks_finished -le 5) ]]
-        do
-          echo "Watching for new deployments - loop ${count}"
+          while [[ $count -le 180 && ($kr_finished -le 5 || $ks_finished -le 5) ]]
+          do
+            echo "Watching for new deployments - loop ${count}"
 
-          kr_deployed_revision=$(curl -s https://retrieval.covidshield.app/services/version.json | jq -r .revision)
-          if [ "${kr_deployed_revision}" == "${GITHUB_SHA}" ]; then
-            kr_finished=$(( $kr_finished + 1 ))
-          fi
+            kr_deployed_revision=$(curl -s https://retrieval.covidshield.app/services/version.json | jq -r .revision)
+            if [ "${kr_deployed_revision}" == "${GITHUB_SHA}" ]; then
+              kr_finished=$(( $kr_finished + 1 ))
+            fi
 
-          ks_deployed_revision=$(curl -s https://submission.covidshield.app/services/version.json | jq -r .revision)
-          if [ "${ks_deployed_revision}" == "${GITHUB_SHA}" ]; then
-            ks_finished=$(( $ks_finished + 1 ))
-          fi
+            ks_deployed_revision=$(curl -s https://submission.covidshield.app/services/version.json | jq -r .revision)
+            if [ "${ks_deployed_revision}" == "${GITHUB_SHA}" ]; then
+              ks_finished=$(( $ks_finished + 1 ))
+            fi
 
-          count=$(( $count + 1 ))
-          sleep 1
-          if [ $count -eq 180 ]; then
-            echo "Deployment failed"
-            exit 1
-          fi
-        done
+            count=$(( $count + 1 ))
+            sleep 1
+            if [ $count -eq 180 ]; then
+              echo "Deployment failed"
+              exit 1
+            fi
+          done
 
-        echo "Key Retrieval was successfully updated - ${GITHUB_SHA}"
-        echo "Key Submission was successfully updated - ${GITHUB_SHA}"
-        exit 0
+          echo "Key Retrieval was successfully updated - ${GITHUB_SHA}"
+          echo "Key Submission was successfully updated - ${GITHUB_SHA}"
+          exit 0
