@@ -2,38 +2,41 @@ name: Dockerhub Container Builds
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   build-n-push:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
 
-    - name: Build Key Retrieval
-      uses: docker/build-push-action@v1
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-        repository: covidshield/key-retrieval
-        tags: latest,${{ github.sha }}
-        build_args: branch=${{ github.ref }},revision=${{ github.sha }},component=key-retrieval
+      - name: Build Key Retrieval
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          repository: ${{ secrets.DOCKER_REPOSITORY_RETRIEVAL }}
+          tags: latest,${{ github.sha }}
+          build_args: branch=${{ github.ref }},revision=${{ github.sha }},component=key-retrieval
 
-    - name: Build Key Submission
-      uses: docker/build-push-action@v1
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-        repository: covidshield/key-submission
-        tags: latest,${{ github.sha }}
-        build_args: branch=${{ github.ref }},revision=${{ github.sha }},component=key-submission
+      - name: Build Key Submission
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          repository: ${{ secrets.DOCKER_REPOSITORY_SUBMISSION }}
+          tags: latest,${{ github.sha }}
+          build_args: branch=${{ github.ref }},revision=${{ github.sha }},component=key-submission
 
-    - name: Build Monolith
-      uses: docker/build-push-action@v1
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-        repository: covidshield/monolith
-        tags: latest,${{ github.sha }}
-        build_args: branch=${{ github.ref }},revision=${{ github.sha }},component=monolith
+      - name: Build Monolith
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          repository: ${{ secrets.DOCKER_REPOSITORY_MONOLITH }}
+          tags: latest,${{ github.sha }}
+          build_args: branch=${{ github.ref }},revision=${{ github.sha }},component=monolith
