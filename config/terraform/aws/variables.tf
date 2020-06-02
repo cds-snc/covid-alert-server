@@ -13,6 +13,10 @@ variable "billing_tag_value" {
   type = string
 }
 
+variable "backend_bucket" {
+  type = string
+}
+
 ###
 # AWS Cloud Watch - cloudwatch.tf
 ###

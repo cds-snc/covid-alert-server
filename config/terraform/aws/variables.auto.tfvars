@@ -7,6 +7,9 @@ region = "ca-central-1"
 billing_tag_key   = "CostCentre"
 billing_tag_value = "CovidShield"
 
+# Value should come from a TF_VAR environment variable (e.g. set in a Github Secret)
+# backend_bucket = ""
+
 ###
 # AWS Cloud Watch - cloudwatch.tf
 ###
@@ -56,5 +59,5 @@ rds_server_instance_class    = "db.t3.small"
 ###
 # AWS Route 53 - route53.tf
 ###
-
-route53_zone_name = "covidshield.app"
+# Value should come from a TF_VAR environment variable (e.g. set in a Github Secret)
+# route53_zone_name = ""

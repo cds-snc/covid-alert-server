@@ -9,18 +9,13 @@ provider "aws" {
   region  = "us-east-1"
 }
 
-provider "github" {
-  organization = "CovidShield"
-  anonymous    = true
-}
-
 terraform {
   required_version = "> 0.12.0"
 }
 
 terraform {
   backend "s3" {
-    bucket = "covidshield-terraform"
+    bucket = var.backend_bucket
     key    = "aws/backend/default.tfstate"
     region = "ca-central-1"
   }

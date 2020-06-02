@@ -15,11 +15,6 @@ resource "aws_ecs_cluster" "covidshield" {
   }
 }
 
-data "github_branch" "server" {
-  repository = "server"
-  branch     = "master"
-}
-
 ###
 # ECS - Key Retrieval
 ###
@@ -30,7 +25,7 @@ data "template_file" "covidshield_key_retrieval_task" {
   template = file("task-definitions/covidshield_key_retrieval.json")
 
   vars = {
-    image                 = "covidshield/key-retrieval:${coalesce(var.github_sha, data.github_branch.server.sha)}"
+    image                 = "covidshield/key-retrieval:${var.github_sha}"
     awslogs-group         = aws_cloudwatch_log_group.covidshield.name
     awslogs-region        = var.region
     awslogs-stream-prefix = "ecs-${var.ecs_key_retrieval_name}"
@@ -106,7 +101,7 @@ data "template_file" "covidshield_key_submission_task" {
   template = file("task-definitions/covidshield_key_submission.json")
 
   vars = {
-    image                 = "covidshield/key-submission:${coalesce(var.github_sha, data.github_branch.server.sha)}"
+    image                 = "covidshield/key-submission:${var.github_sha}"
     awslogs-group         = aws_cloudwatch_log_group.covidshield.name
     awslogs-region        = var.region
     awslogs-stream-prefix = "ecs-${var.ecs_key_submission_name}"
