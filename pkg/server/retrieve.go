@@ -38,9 +38,6 @@ func (s *retrieveServlet) RegisterRouting(r *mux.Router) {
 	r.HandleFunc("/retrieve/{region:[0-9]{3}}/{period:[0-9]{6}}/{auth:.*}", s.retrieveWrapper)
 }
 
-// returning this from s.fail and the s.retrieve makes it harder to call s.fail but forget to return.
-type result struct{}
-
 func (s *retrieveServlet) fail(logger *logrus.Entry, w http.ResponseWriter, logMsg string, responseMsg string, responseCode int) result {
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	if responseCode == http.StatusInternalServerError {

@@ -3,6 +3,7 @@ package server
 import (
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/CovidShield/server/pkg/keyclaim"
@@ -10,6 +11,7 @@ import (
 	pb "github.com/CovidShield/server/pkg/proto/covidshield"
 
 	"github.com/Shopify/goose/srvutil"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/gorilla/mux"
 	"google.golang.org/protobuf/proto"
 )
@@ -27,7 +29,7 @@ type keyClaimServlet struct {
 
 func (s *keyClaimServlet) RegisterRouting(r *mux.Router) {
 	r.HandleFunc("/new-key-claim", s.newKeyClaim)
-	r.HandleFunc("/claim-key", s.claimKey)
+	r.HandleFunc("/claim-key", s.claimKeyWrapper)
 }
 
 func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
@@ -80,32 +82,49 @@ func (s *keyClaimServlet) regionFromAuthHeader(header string) (string, bool) {
 	return s.auth.Authenticate(parts[1])
 }
 
-func kcrError(errCode pb.KeyClaimResponse_ErrorCode) *pb.KeyClaimResponse {
-	return &pb.KeyClaimResponse{Error: &errCode}
+func kcrError(errCode pb.KeyClaimResponse_ErrorCode, triesRemaining int) *pb.KeyClaimResponse {
+	tr := uint32(triesRemaining)
+	return &pb.KeyClaimResponse{Error: &errCode, TriesRemaining: &tr}
 }
 
-func (s *keyClaimServlet) claimKey(w http.ResponseWriter, r *http.Request) {
+func (s *keyClaimServlet) claimKeyWrapper(w http.ResponseWriter, r *http.Request) {
+	_ = s.claimKey(w, r)
+}
+
+func (s *keyClaimServlet) claimKey(w http.ResponseWriter, r *http.Request) result {
 	ctx := r.Context()
+
+	// be extremely careful not to log this or otherwise cause it to be persisted
+	// other than transiently in the failed attempts table.
+	ip := getIP(r)
+
+	triesRemaining, banDuration, err := s.db.CheckClaimKeyBan(ip)
+	if err != nil {
+		kcre := kcrError(pb.KeyClaimResponse_SERVER_ERROR, triesRemaining)
+		return requestError(ctx, w, err, "database error checking claim-key ban", http.StatusInternalServerError, kcre)
+	} else if triesRemaining == 0 {
+		kcre := kcrError(pb.KeyClaimResponse_TEMPORARY_BAN, triesRemaining)
+		kcre.RemainingBanDuration = ptypes.DurationProto(banDuration)
+		return requestError(ctx, w, err, "error reading request", http.StatusTooManyRequests, kcre)
+	}
 
 	w.Header().Add("Content-Type", "application/x-protobuf")
 
 	reader := http.MaxBytesReader(w, r.Body, 256)
 	data, err := ioutil.ReadAll(reader)
 	if err != nil {
-		requestError(
+		return requestError(
 			ctx, w, err, "error reading request",
-			http.StatusBadRequest, kcrError(pb.KeyClaimResponse_UNKNOWN),
+			http.StatusBadRequest, kcrError(pb.KeyClaimResponse_UNKNOWN, triesRemaining),
 		)
-		return
 	}
 
 	var req pb.KeyClaimRequest
 	if err := proto.Unmarshal(data, &req); err != nil {
-		requestError(
+		return requestError(
 			ctx, w, err, "error unmarshalling request",
-			http.StatusBadRequest, kcrError(pb.KeyClaimResponse_UNKNOWN),
+			http.StatusBadRequest, kcrError(pb.KeyClaimResponse_UNKNOWN, triesRemaining),
 		)
-		return
 	}
 
 	oneTimeCode := req.GetOneTimeCode()
@@ -113,43 +132,65 @@ func (s *keyClaimServlet) claimKey(w http.ResponseWriter, r *http.Request) {
 
 	serverPub, err := s.db.ClaimKey(oneTimeCode, appPublicKey)
 	if err == persistence.ErrInvalidKeyFormat {
-		requestError(
+		return requestError(
 			ctx, w, err, "invalid key format",
-			http.StatusBadRequest, kcrError(pb.KeyClaimResponse_INVALID_KEY),
+			http.StatusBadRequest, kcrError(pb.KeyClaimResponse_INVALID_KEY, triesRemaining),
 		)
-		return
 	} else if err == persistence.ErrDuplicateKey {
-		requestError(
+		return requestError(
 			ctx, w, err, "duplicate key",
-			http.StatusUnauthorized, kcrError(pb.KeyClaimResponse_INVALID_KEY),
+			http.StatusUnauthorized, kcrError(pb.KeyClaimResponse_INVALID_KEY, triesRemaining),
 		)
-		return
 	} else if err == persistence.ErrInvalidOneTimeCode {
-		requestError(
-			ctx, w, err, "invalid one time code",
-			http.StatusUnauthorized, kcrError(pb.KeyClaimResponse_INVALID_ONE_TIME_CODE),
-		)
-		return
+		triesRemaining, banDuration, err := s.db.ClaimKeyFailure(ip)
+		if err != nil {
+			kcre := kcrError(pb.KeyClaimResponse_SERVER_ERROR, triesRemaining)
+			msg := "database error recording claim-key failure"
+			return requestError(ctx, w, err, msg, http.StatusInternalServerError, kcre)
+		}
+		kcre := kcrError(pb.KeyClaimResponse_INVALID_ONE_TIME_CODE, triesRemaining)
+		kcre.RemainingBanDuration = ptypes.DurationProto(banDuration)
+		return requestError(ctx, w, err, "invalid one time code", http.StatusUnauthorized, kcre)
 	} else if err != nil {
-		requestError(
+		return requestError(
 			ctx, w, err, "failure to claim key using OneTimeCode",
-			http.StatusInternalServerError, kcrError(pb.KeyClaimResponse_SERVER_ERROR),
+			http.StatusInternalServerError, kcrError(pb.KeyClaimResponse_SERVER_ERROR, triesRemaining),
 		)
-		return
 	}
 
-	resp := &pb.KeyClaimResponse{ServerPublicKey: serverPub}
+	maxTries := uint32(persistence.MaxConsecutiveClaimKeyFailures)
+	resp := &pb.KeyClaimResponse{ServerPublicKey: serverPub, TriesRemaining: &maxTries}
 
 	data, err = proto.Marshal(resp)
 	if err != nil {
-		requestError(
+		return requestError(
 			ctx, w, err, "failure to marshal response",
-			http.StatusInternalServerError, kcrError(pb.KeyClaimResponse_SERVER_ERROR),
+			http.StatusInternalServerError, kcrError(pb.KeyClaimResponse_SERVER_ERROR, triesRemaining),
 		)
-		return
 	}
 
 	if _, err := w.Write(data); err != nil {
 		log(ctx, err).Info("error writing response")
 	}
+
+	if err := s.db.ClaimKeySuccess(ip); err != nil {
+		log(ctx, err).Warn("error recording claim-key success")
+	}
+
+	return result{}
+}
+
+var numeric = regexp.MustCompile("^[0-9]+$")
+
+func getIP(r *http.Request) string {
+	forwarded := r.Header.Get("X-FORWARDED-FOR")
+	if forwarded != "" {
+		return forwarded
+	}
+	// If the RemoteAddr is of the form $ip:$port, return only the IP
+	parts := strings.Split(r.RemoteAddr, ":")
+	if len(parts) == 2 && numeric.MatchString(parts[1]) {
+		return parts[0]
+	}
+	return r.RemoteAddr
 }

@@ -37,7 +37,7 @@ func New(bind string, servlets []srvutil.Servlet) Server {
 func requestError(
 	ctx context.Context, w http.ResponseWriter, err error,
 	logMessage string, code int, resp proto.Message,
-) {
+) result {
 	if code == http.StatusInternalServerError {
 		log(ctx, err).Error(logMessage)
 	} else {
@@ -47,7 +47,7 @@ func requestError(
 	data, err := proto.Marshal(resp)
 	if err != nil {
 		log(ctx, err).Error("error marshalling error response")
-		return
+		return result{}
 	}
 
 	w.Header().Set("Content-Type", "application/x-protobuf")
@@ -55,6 +55,10 @@ func requestError(
 	w.WriteHeader(code)
 	if _, err := w.Write(data); err != nil {
 		log(ctx, err).Warn("error writing error response")
-		return
+		return result{}
 	}
+	return result{}
 }
+
+// returning this from s.fail and the s.retrieve makes it harder to call s.fail but forget to return.
+type result struct{}

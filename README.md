@@ -43,6 +43,9 @@ is also possible to deploy any number of configurations for each of these compon
 the same database, though there would be little value in deploying multiple configurations of
 `key-retrieval`.
 
+For a more technical overview of the codebase, especially of the protocol and database schema, see
+[this video](https://www.youtube.com/watch?v=5GNJo1hEj5I).
+
 ### Retrieving diagnosis keys
 
 When diagnosis keys are uploaded, the `key-submission` server stores the data defined and required
