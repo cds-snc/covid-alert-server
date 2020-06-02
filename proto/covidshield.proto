@@ -1,5 +1,6 @@
 syntax = "proto2";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
 
 package covidshield;
 option go_package="pkg/proto/covidshield";
@@ -31,9 +32,12 @@ message KeyClaimResponse {
     SERVER_ERROR = 3;
     // Indicates the key is invalid, or already registered.
     INVALID_KEY = 4;
+    TEMPORARY_BAN = 5;
   }
   optional ErrorCode error = 1;
   optional bytes server_public_key = 2; // 32 bytes
+  optional uint32 tries_remaining = 3;
+  optional google.protobuf.Duration remaining_ban_duration = 4;
 }
 
 // We are using a NaCl Box (Curve25519+XSalsa20+Poly1305) to encrypt and
