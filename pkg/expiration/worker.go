@@ -56,6 +56,13 @@ func (w *worker) run(ctx context.Context) error {
 		log(ctx, nil).WithField("count", nDeleted).Info("deleted old encryption keys")
 	}
 
+	if nDeleted, err := w.db.DeleteOldFailedClaimKeyAttempts(); err != nil {
+		log(ctx, err).Info("failed to delete old failed claim-key attempts")
+		lastErr = err
+	} else {
+		log(ctx, nil).WithField("count", nDeleted).Info("deleted old claim-key attempts")
+	}
+
 	return lastErr
 }
 

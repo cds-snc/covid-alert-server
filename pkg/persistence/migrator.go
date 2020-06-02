@@ -53,6 +53,18 @@ CREATE TABLE IF NOT EXISTS encryption_keys (
 	INDEX (created)
 )`,
 		},
+	}, {
+		id: "2",
+		statements: []string{`
+CREATE TABLE IF NOT EXISTS failed_key_claim_attempts (
+	identifier      VARCHAR(32)       NOT NULL UNIQUE,
+	failures        SMALLINT UNSIGNED NOT NULL DEFAULT 1,
+	last_failure    TIMESTAMP         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+	UNIQUE INDEX (identifier),
+	INDEX (last_failure)
+)`,
+		},
 	},
 }
 

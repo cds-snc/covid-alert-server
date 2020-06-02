@@ -9,6 +9,11 @@ import (
 	"github.com/CovidShield/server/pkg/timemath"
 )
 
+const (
+	MaxConsecutiveClaimKeyFailures = 8
+	claimKeyBanDuration            = 1 * time.Hour
+)
+
 // (Legal requirement: <21)
 // We serve up the last 14. This number 15 includes the current day, so 14 days
 // ago is the oldest data.
@@ -315,4 +320,83 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 		return err
 	}
 	return nil
+}
+
+type queryRower interface {
+	QueryRow(query string, args ...interface{}) *sql.Row
+}
+
+func checkClaimKeyBan(db queryRower, identifier string) (triesRemaining int, banDuration time.Duration, err error) {
+	var failures uint16
+	var lastFailure time.Time
+	q := db.QueryRow(`SELECT failures, last_failure FROM failed_key_claim_attempts WHERE identifier = ?`, identifier)
+	if err := q.Scan(&failures, &lastFailure); err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			return MaxConsecutiveClaimKeyFailures, 0, nil
+		}
+		return 0, 0, err
+	}
+
+	triesRemaining = MaxConsecutiveClaimKeyFailures - int(failures)
+	if triesRemaining < 0 {
+		triesRemaining = 0
+	}
+	banDuration = time.Duration(0)
+	if triesRemaining == 0 {
+		elapsed := time.Since(lastFailure)
+		banDuration = claimKeyBanDuration - elapsed
+	}
+
+	if banDuration < time.Duration(0) {
+		return MaxConsecutiveClaimKeyFailures, 0, nil
+	}
+
+	return triesRemaining, banDuration, nil
+}
+
+func registerClaimKeySuccess(db *sql.DB, identifier string) error {
+	_, err := db.Exec(`DELETE FROM failed_key_claim_attempts WHERE identifier = ?`, identifier)
+	return err
+}
+
+func registerClaimKeyFailure(db *sql.DB, identifier string) (triesRemaining int, banDuration time.Duration, err error) {
+	tx, err := db.Begin()
+	if err != nil {
+		return 0, 0, err
+	}
+
+	if _, err := tx.Exec(`
+		INSERT INTO failed_key_claim_attempts (identifier) VALUES (?)
+		ON DUPLICATE KEY UPDATE
+      failures = failures + 1,
+			last_failure = NOW()
+	`, identifier); err != nil {
+		if err := tx.Rollback(); err != nil {
+			return 0, 0, err
+		}
+		return 0, 0, err
+	}
+
+	triesRemaining, banDuration, err = checkClaimKeyBan(tx, identifier)
+	if err != nil {
+		if err := tx.Rollback(); err != nil {
+			return 0, 0, err
+		}
+		return 0, 0, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, 0, err
+	}
+	return triesRemaining, banDuration, nil
+}
+
+func deleteOldFailedClaimKeyAttempts(db *sql.DB) (int64, error) {
+	threshold := time.Now().Add(-claimKeyBanDuration)
+
+	res, err := db.Exec(`DELETE FROM failed_key_claim_attempts WHERE last_failure < ?`, threshold)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
 }
