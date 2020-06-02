@@ -2,26 +2,40 @@
 
 ![Container Build](https://github.com/CovidShield/server/workflows/Container%20Builds/badge.svg)
 
-This repository implements a *Diagnosis Server* to use as a server for Apple/Google's [Exposure
+This repository implements a diagnosis server to use as a server for Apple/Google's [Exposure
 Notification](https://www.apple.com/covid19/contacttracing) framework, informed by the [guidance
 provided by Canada's Privacy
 Commissioners](https://priv.gc.ca/en/opc-news/speeches/2020/s-d_20200507/).
 
-The choices made in implementation were made to maximize privacy, security and performance. No
-personally-identifying information is ever stored, and none other than IP address is ever even
-available to the server. No data at all is retained past 21 days. This server was designed to handle
-use by up to 38 million Canadians, though it shouldn't be difficult to scale it to any population
-size.
+The choices made in implementation are meant to maximize privacy, security, and performance. No
+personally-identifiable information is ever stored, and nothing other than IP address is available to the server. No data at all is retained past 21 days. This server is designed to handle
+use by up to 38 million Canadians, though it can be scaled to any population size.
 
-## Brief Overview
+In this document:
+
+- [Overview](#overview)
+   - [Retrieving diagnosis keys](#retrieving-diagnosis-keys)
+   - [Retrieving Exposure Configuration](#retrieving-exposure-configuration)
+   - [Submitting diagnosis keys](#submitting-diagnosis-keys)
+- [Data usage](#data-usage)
+- [Generating one-time codes](#generating-one-time-codes)
+- [Protocol documentation](#protocol-documentation)
+- [Deployment notes](#deployment-notes)
+- [Contributing](#contributing)   
+    1. [Set up a local development environment](#env-setup)   
+    2. [Develop locally](#dev-local)  
+    3. [Run tests](#run-tests) 
+- [Who Built COVID Shield?](#who-built-covid-shield)
+
+## Overview
 
 _[Apple/Google's Exposure Notification](https://www.apple.com/covid19/contacttracing) specifications
 provide important information to contextualize the rest of this document._
 
 There are two fundamental operations conceptually:
 
-* Retrieving *Diagnosis Keys*: retrieving a list of all keys uploaded by other users; and
-* Submitting *Diagnosis Keys*: sharing keys returned from the EN framework with the server.
+* **Retrieving diagnosis keys**: retrieving a list of all keys uploaded by other users; and
+* **Submitting diagnosis keys**: sharing keys returned from the EN framework with the server.
 
 These two operations are implemented as two separate servers (`key-submission` and `key-retrieval`)
 generated from this codebase, and can be deployed independently as long as they share a database. It
@@ -32,9 +46,9 @@ the same database, though there would be little value in deploying multiple conf
 For a more technical overview of the codebase, especially of the protocol and database schema, see
 [this video](https://www.youtube.com/watch?v=5GNJo1hEj5I).
 
-### Retrieving _Diagnosis Keys_
+### Retrieving diagnosis keys
 
-When _Diagnosis Keys_ are uploaded, the `key-submission` server stores the data defined and required
+When diagnosis keys are uploaded, the `key-submission` server stores the data defined and required
 by the Exposure Notification API in addition to the time at which the data was received by the
 server. This submission timestamp is rounded to the nearest hour for privacy preservation (to
 prevent correlation of multiple keys to the same user).
@@ -43,11 +57,11 @@ The hour of submission is used to group keys into buckets, in order to prevent c
 soon-to-be-released _COVID Shield_ mobile app) from having to download a given set of key data
 multiple times in order to repeatedly check for exposure.
 
-The published _Diagnosis Keys_ are fetched—with some best-effort authentication—from a Content
+The published diagnosis keys are fetched—with some best-effort authentication—from a Content
 Distribution Network (CDN), backed by `key-retrieval`. This allows a functionally-arbitrary number
 of concurrent users.
 
-### Retrieving Exposure Configuration
+### Retrieving _Exposure Configuration_
 
 [_Exposure Configuration_](https://developer.apple.com/documentation/exposurenotification/enexposureconfiguration),
 used to determine the risk of a given exposure, is also retrieved from the `key-retrieval` server. A JSON
@@ -59,13 +73,13 @@ $ curl https://retrieval.covidshield.app/exposure-configuration/ON.json
 {"minimumRiskScore":0,"attenuationLevelValues":[1,2,3,4,5,6,7,8],"attenuationWeight":50,"daysSinceLastExposureLevelValues":[1,2,3,4,5,6,7,8],"daysSinceLastExposureWeight":50,"durationLevelValues":[1,2,3,4,5,6,7,8],"durationWeight":50,"transmissionRiskLevelValues":[1,2,3,4,5,6,7,8],"transmissionRiskWeight":50}
 ```
 
-### Submitting _Diagnosis Keys_
+### Submitting diagnosis keys
 
 In brief, upon receiving a positive diagnosis, a health care professional will generate a _One Time
 Code_ through a web application frontend (a reference implementation will be open-sourced soon), which
 communicates with `key-submission`. This code is sent to the patient, who enters the code into their
 (soon-to-be-released) _COVID Shield_ App. This code is used to authenticate the
-Application (once) to the _Diagnosis Server_. Encryption keypairs are exchanged by the Application
+Application (once) to the diagnosis server. Encryption keypairs are exchanged by the Application
 and the `key-submission` server to be stored for fourteen days, and the One Time Code is immediately
 purged from the database.
 
@@ -76,7 +90,7 @@ The encryption scheme employed for key upload is _NaCl Box_ (a public-key encryp
 Curve25519, XSalsa20, and Poly1305). This is widely regarded as an exceedingly secure implementation
 of Elliptic-Curve cryptography.
 
-## Data Usage
+## Data usage
 
 The _Diagnosis Key_ retrieval protocol used in _COVID Shield_ was designed to restrict the data
 transfer to a minimum. With large numbers of keys and assuming the client fetches using compression,
@@ -114,16 +128,16 @@ hour**.
 
 If _COVID Shield_ were deployed for the entire world, we would be inclined to use the "regions"
 built into the protocol to implement key namespacing, in order to not serve up the entire set of
-global _Diagnosis Keys_ to each and every person in the world, but let's work through the number in
+global diagnosis keys to each and every person in the world, but let's work through the number in
 the case that we wouldn't:
 
 There were 74,000 new cases globally on May 10, 2020. 74,000 * 28 * 16 = 36MB per day, thus,
 deploying to the entire world at current infection rates would cause: **1.5MB of download each
 hour**.
 
-## Generating One-Time-Codes
+## Generating one-time codes
 
-We use a One-Time-Code generation scheme that allows authenticated case workers to issue codes,
+We use a one-time code generation scheme that allows authenticated case workers to issue codes,
 which are to be passed to patients with positive diagnoses via whatever communication channel is
 convenient.
 
@@ -138,25 +152,96 @@ minimally:
 curl -XPOST -H "Authorization: Bearer $token" "https://submission.covidshield.app/new-key-claim"
 ```
 
-## Protocol Documentation
+## Protocol documentation
 
 For a more in-depth description of the protocol, please see [the "proto" subdirectory of this
 repo](/proto).
 
-## Deployment Notes
+## Deployment notes
 
-`key-submission` depends on being deployed behind a firewall (e.g. [AWS
+- `key-submission` depends on being deployed behind a firewall (e.g. [AWS
 WAF](https://aws.amazon.com/waf/)), aggressively throttling users with 400 and 401 responses.
 
-`key-retrieval` assumes it will be deployed behind a caching reverse proxy.
+- `key-retrieval` assumes it will be deployed behind a caching reverse proxy.
 
 We hope to provide reference implementations on AWS, GCP, and Azure via [Hashicorp Terraform](https://www.terraform.io/).
 
-[AWS Reference Implementation](config/infrastructure/aws/README.md) 
+See [AWS Reference Implementation](config/infrastructure/aws/README.md) for more information.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+Before you begin to contribute, see [_CONTRIBUTING.md_](CONTRIBUTING.md).
+
+<h3 id="env-setup">1. Set up a local development environment</h3>
+
+#### Development environment via docker-compose
+
+1. Fork https://github.com/CovidShield/server to your account.
+2. Clone your fork of the **CovidShield/server** repo locally by running `git clone https://github.com/<username>/server.git`.
+3. Enter the repo directory `cd server`.
+4. Run `docker-compose up`.
+
+**Note**: It is normal to see a few errors from the retrieval service exiting initially while the MySQL database is instantiated
+
+<h3 id="dev-local">2. Develop locally</h3>
+
+#### Prerequisites
+
+* Go (tested with 1.14)
+* Ruby (tested with 2.6.5)
+* Bundler
+* [protobuf](https://developers.google.com/protocol-buffers/) (tested with libprotoc 3.11.4)
+* [protoc-gen-go](https://github.com/golang/protobuf) (may only be needed to change `proto/*`)
+* libsodium
+* docker-compose
+* MySQL
+
+#### Building
+
+Run `make` or `make release` to build a release version of the servers.
+
+#### Running
+
+```bash
+# example...
+export DATABASE_URL="root@tcp(localhost)/covidshield"
+export KEY_CLAIM_TOKEN=thisisatoken=302
+
+./key-retrieval migrate-db
+
+PORT=8000 ./key-submission
+PORT=8001 ./key-retrieval
+```
+
+Note that 302 is a [MCC](https://www.mcc-mnc.com/): 302 represents Canada.
+
+<h3 id="run-tests">3. Run tests</h3>
+
+If you're not a Shopify employee, you'll need to point to your database server using the environment variables
+(note that the database will be clobbered so ensure that you don't point to a
+production database):
+
+```shell
+$ export DB_USER=<username>
+$ export DB_PASS=<password>
+$ export DB_HOST=<hostname>
+$ export DB_NAME=<test database name>
+```
+
+Then, ensure the appropriate requirements are installed:
+
+```shell
+$ bundle install
+```
+
+Finally, run:
+```shell
+$ make test
+```
+
+If you're a Shopify employee, `dev up` will configure the database for you and install the above dependencies and `dev {build,test,run,etc.}` will work as you'd expect.
+
+Once you're happy with your changes, please fork the repository and push your code to your fork, then open a pull request against this repository.
 
 ## Who Built COVID Shield?
 
