@@ -101,7 +101,7 @@ data "template_file" "covidshield_key_submission_task" {
   template = file("task-definitions/covidshield_key_submission.json")
 
   vars = {
-    image                 = "covidshield/key-submission:${coalesce(var.github_sha, data.github_branch.server.sha)}"
+    image                 = "covidshield/key-submission:${coalesce(var.github_sha, "latest")}"
     awslogs-group         = aws_cloudwatch_log_group.covidshield.name
     awslogs-region        = var.region
     awslogs-stream-prefix = "ecs-${var.ecs_key_submission_name}"
