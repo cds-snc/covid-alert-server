@@ -27,18 +27,30 @@ spec:
         app: mysql
     spec:
       containers:
-      - image: mysql:5.7
+      - image: mysql:8.0
         name: mysql
         env:
           # Use secret in real usage
         - name: MYSQL_USER
-          value: covidshield
+          valueFrom:
+            secretKeyRef:
+              name: covidshield-secret
+              key: MYSQL_USER
         - name: MYSQL_DATABASE
-          value: covidshield
+          valueFrom:
+            secretKeyRef:
+              name: covidshield-secret
+              key: MYSQL_DATABASE
         - name: MYSQL_PASSWORD
-          value: covidshield
+          valueFrom:
+            secretKeyRef:
+              name: covidshield-secret
+              key: MYSQL_PASSWORD
         - name: MYSQL_RANDOM_ROOT_PASSWORD
-          value: "yes"
+          valueFrom:
+            secretKeyRef:
+              name: covidshield-secret
+              key: MYSQL_RANDOM_ROOT_PASSWORD
         ports:
         - containerPort: 3306
           name: mysql
@@ -60,7 +72,7 @@ metadata:
 spec:
   storageClassName: manual
   capacity:
-    storage: 20Gi
+    storage: 1Gi
   accessModes:
     - ReadWriteOnce
   hostPath:
@@ -77,4 +89,4 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 20Gi
+      storage: 1Gi
