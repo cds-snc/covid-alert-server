@@ -80,6 +80,8 @@ jobs:
       - name: Check For New Deployments
         env:
           GITHUB_SHA: ${{ github.sha }}
+          RETRIEVAL_URL: ${{ secrets.RETRIEVAL_URL }}
+          SUBMISSION_URL: ${{ secrets.SUBMISSION_URL }}
         run: |
           count=0
           kr_finished=0
@@ -89,12 +91,12 @@ jobs:
           do
             echo "Watching for new deployments - loop ${count}"
 
-            kr_deployed_revision=$(curl -s https://retrieval.covidshield.app/services/version.json | jq -r .revision)
+            kr_deployed_revision=$(curl -s ${RETRIEVAL_URL}/services/version.json | jq -r .revision)
             if [ "${kr_deployed_revision}" == "${GITHUB_SHA}" ]; then
               kr_finished=$(( $kr_finished + 1 ))
             fi
 
-            ks_deployed_revision=$(curl -s https://submission.covidshield.app/services/version.json | jq -r .revision)
+            ks_deployed_revision=$(curl -s ${SUBMISSION_URL}/services/version.json | jq -r .revision)
             if [ "${ks_deployed_revision}" == "${GITHUB_SHA}" ]; then
               ks_finished=$(( $ks_finished + 1 ))
             fi
