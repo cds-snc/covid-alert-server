@@ -14,9 +14,5 @@ terraform {
 }
 
 terraform {
-  backend "s3" {
-    bucket = var.backend_bucket
-    key    = "aws/backend/default.tfstate"
-    region = "ca-central-1"
-  }
+  backend "s3" {}
 }

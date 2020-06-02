@@ -7,9 +7,6 @@ region = "ca-central-1"
 billing_tag_key   = "CostCentre"
 billing_tag_value = "CovidShield"
 
-# Value should come from a TF_VAR environment variable (e.g. set in a Github Secret)
-# backend_bucket = ""
-
 ###
 # AWS Cloud Watch - cloudwatch.tf
 ###
