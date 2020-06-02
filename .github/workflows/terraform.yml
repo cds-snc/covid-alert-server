@@ -14,13 +14,15 @@ defaults:
     working-directory: config/terraform/aws
 
 env:
-  AWS_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_REGION: ca-central-1
+  BACKEND_BUCKET: ${{ secrets.BACKEND_BUCKET }}
   TF_VAR_ecs_task_key_retrieval_env_hmac_key: ${{ secrets.TF_VAR_ecs_task_key_retrieval_env_hmac_key }}
   TF_VAR_ecs_task_key_retrieval_env_ecdsa_key: ${{ secrets.TF_VAR_ecs_task_key_retrieval_env_ecdsa_key }}
   TF_VAR_ecs_task_key_submission_env_key_claim_token: ${{ secrets.TF_VAR_ecs_task_key_submission_env_key_claim_token }}
   TF_VAR_rds_server_db_password: ${{ secrets.TF_VAR_rds_server_db_password }}
+  TF_VAR_route53_zone_name: ${{ secrets.TF_VAR_route53_zone_name }}
 
 jobs:
   terraform-plan:
@@ -34,7 +36,11 @@ jobs:
         uses: hashicorp/setup-terraform@v1
 
       - name: Terraform Init
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config="bucket=${BACKEND_BUCKET}" \
+            -backend-config="key=aws/backend/default.tfstate" \
+            -backend-config="region=ca-central-1"
 
       - name: Terraform Format
         run: terraform fmt -check
@@ -62,7 +68,11 @@ jobs:
         uses: hashicorp/setup-terraform@v1
 
       - name: Terraform Init
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config="bucket=${BACKEND_BUCKET}" \
+            -backend-config="key=aws/backend/default.tfstate" \
+            -backend-config="region=ca-central-1"
 
       - name: Terraform Format
         run: terraform fmt -check
@@ -80,8 +90,8 @@ jobs:
       - name: Check For New Deployments
         env:
           GITHUB_SHA: ${{ github.sha }}
-          RETRIEVAL_URL: ${{ secrets.RETRIEVAL_URL }}
-          SUBMISSION_URL: ${{ secrets.SUBMISSION_URL }}
+          RETRIEVAL_URL: retrieval.${{ secrets.TF_VAR_route53_zone_name }}
+          SUBMISSION_URL: submission.${{ secrets.TF_VAR_route53_zone_name }}
         run: |
           count=0
           kr_finished=0

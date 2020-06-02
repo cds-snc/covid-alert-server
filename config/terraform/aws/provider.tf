@@ -19,9 +19,5 @@ terraform {
 }
 
 terraform {
-  backend "s3" {
-    bucket = "covidshield-terraform"
-    key    = "aws/backend/default.tfstate"
-    region = "ca-central-1"
-  }
+  backend "s3" {}
 }

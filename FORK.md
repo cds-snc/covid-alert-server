@@ -21,9 +21,10 @@ git pull upstream master
 
 ### Changes
 
-- Added DevContainer for VSCode (https://github.com/cds-snc/covid-shield-server/pull/7)
 - Added CI for Ruby unit tests (https://github.com/cds-snc/covid-shield-server/pull/3)
+- Added DevContainer for VSCode (https://github.com/cds-snc/covid-shield-server/pull/7)
 - Make CI files more generic (https://github.com/cds-snc/covid-shield-server/pull/9):
   - Moved Docker registry url and repository name to secrets
   - Moved retrieval/submission URLs to secrets
   - Removed hardcoded repository_owner
+- Make Terraform files more generic (https://github.com/cds-snc/covid-shield-server/pull/12):

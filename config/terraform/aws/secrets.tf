@@ -1,5 +1,5 @@
 resource "aws_secretsmanager_secret" "server_database_url" {
-  name = "server-database-url"
+  name = "server-database-url-${random_string.random.result}"
 }
 
 resource "aws_secretsmanager_secret_version" "server_database_url" {
@@ -12,7 +12,7 @@ resource "aws_secretsmanager_secret_version" "server_database_url" {
 ###
 
 resource "aws_secretsmanager_secret" "key_retrieval_env_hmac_key" {
-  name = "key-retrieval-env-hmac-key"
+  name = "key-retrieval-env-hmac-key-${random_string.random.result}"
 }
 
 resource "aws_secretsmanager_secret_version" "key_retrieval_env_hmac_key" {
@@ -21,7 +21,7 @@ resource "aws_secretsmanager_secret_version" "key_retrieval_env_hmac_key" {
 }
 
 resource "aws_secretsmanager_secret" "key_retrieval_env_ecdsa_key" {
-  name = "key-retrieval-env-ecdsa-key"
+  name = "key-retrieval-env-ecdsa-key-${random_string.random.result}"
 }
 
 resource "aws_secretsmanager_secret_version" "key_retrieval_env_ecdsa_key" {
@@ -34,7 +34,7 @@ resource "aws_secretsmanager_secret_version" "key_retrieval_env_ecdsa_key" {
 ###
 
 resource "aws_secretsmanager_secret" "key_submission_env_key_claim_token" {
-  name = "key-submission-env-key-claim-token"
+  name = "key-submission-env-key-claim-token-${random_string.random.result}"
 }
 
 resource "aws_secretsmanager_secret_version" "key_submission_env_key_claim_token" {
