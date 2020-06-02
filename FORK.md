@@ -27,4 +27,4 @@ git pull upstream master
   - Moved Docker registry url and repository name to secrets
   - Moved retrieval/submission URLs to secrets
   - Removed hardcoded repository_owner
-- Make Terraform files more generic (https://github.com/cds-snc/covid-shield-server/pull/11):
+- Make Terraform files more generic (https://github.com/cds-snc/covid-shield-server/pull/12):
