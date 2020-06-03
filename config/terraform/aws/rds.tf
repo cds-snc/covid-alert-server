@@ -38,6 +38,8 @@ resource "aws_rds_cluster" "covidshield_server" {
   backup_retention_period   = 5
   preferred_backup_window   = "07:00-09:00"
   db_subnet_group_name      = aws_db_subnet_group.covidshield.name
+  storage_encrypted         = true
+
 
   vpc_security_group_ids = [
     aws_security_group.covidshield_database.id
