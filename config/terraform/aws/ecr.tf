@@ -36,3 +36,10 @@ resource "aws_ecr_lifecycle_policy" "policy" {
 }
 EOF
 }
+
+output "ecr_repository_url" {
+  value = {
+    for repo in aws_ecr_repository.repository :
+    repo.name => repo.repository_url
+  }
+}
