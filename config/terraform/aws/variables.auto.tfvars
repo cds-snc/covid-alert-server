@@ -51,7 +51,7 @@ rds_server_db_user = "root"
 # Value should come from a TF_VAR environment variable (e.g. set in a Github Secret)
 # rds_server_db_password       = ""
 rds_server_allocated_storage = "5"
-rds_server_instance_class    = "db.t3.small"
+rds_server_instance_class    = "db.r4.large"
 
 ###
 # AWS Route 53 - route53.tf
