@@ -28,7 +28,7 @@ Install Nginx Ingress Controller https://github.com/kubernetes/ingress-nginx
 
 ## Adding Kubernetes Secrets
 
-`kubectl create secret generic covidshield-secret --from-env-file=./deploy/kubernetes/secrets.development.env`
+`kubectl create secret generic covidshield-secret --from-env-file=./deploy/kubernetes/secrets.development.env -n covidshield`
 
 ## Interacting with COVID Shield
 
