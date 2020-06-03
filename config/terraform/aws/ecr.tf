@@ -3,7 +3,7 @@ locals {
 }
 
 resource "aws_ecr_repository" "repository" {
-  for_each             = ${local.image_names}
+  for_each             = toset(local.image_names)
   name                 = "covid-server/${each.value}"
   image_tag_mutability = "MUTABLE"
 
@@ -13,7 +13,7 @@ resource "aws_ecr_repository" "repository" {
 }
 
 resource "aws_ecr_lifecycle_policy" "policy" {
-  for_each   = ${local.image_names}
+  for_each   = toset(local.image_names)
   repository = aws_ecr_repository.repository[each.value].name
 
   policy = <<EOF
