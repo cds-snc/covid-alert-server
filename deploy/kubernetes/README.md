@@ -26,6 +26,8 @@ Install Nginx Ingress Controller https://github.com/kubernetes/ingress-nginx
 
 `kubectl apply -f ./deploy/kubernetes`
 
+## Adding Kubernetes Secrets
+
 `kubectl create secret generic covidshield-secret --from-env-file=./deploy/kubernetes/secrets.development.env`
 
 ## Interacting with COVID Shield
@@ -69,4 +71,5 @@ Call a route in the COVID Shield application:
 
 - Specifying a namespace in the `PersistentVolumeClaim` may not be necessary in environments outside of Minikube.
 - Expect for the `key-retrieval` Deployment to fail to start for ~30 seconds while the `mysql` Deployment spins up.
-- Do not commit the values file that the secret is referencing to version control, this is something only done for the reference implementation in this example.
+- You must create the Kubernetes secret mentioned above for the pods to fully spin up.
+- Do not commit the `secrets.development.env` file to version control. This file contains secrets and only exists in this repository for the reference implementation as an example.
