@@ -24,7 +24,7 @@ jobs:
           COMPONENT: key-retrieval
         run: |
           docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT -t $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       - name: Build Key Submission
@@ -36,7 +36,7 @@ jobs:
           COMPONENT: key-submission
         run: |
           docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT -t $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       - name: Build Monolith
@@ -48,7 +48,7 @@ jobs:
           COMPONENT: monolith
         run: |
           docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT -t $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       - name: Logout of Amazon ECR
