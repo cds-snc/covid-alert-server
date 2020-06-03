@@ -15,12 +15,12 @@ resource "aws_db_subnet_group" "covidshield" {
 }
 
 resource "aws_rds_cluster_instance" "covidshield_server_instances" {
-  count                         = 2
-  identifier                    = "${var.rds_server_db_name}-instance-${count.index}"
-  cluster_identifier            = aws_rds_cluster.covidshield_server.id
-  instance_class                = var.rds_server_instance_class
-  db_subnet_group_name          = aws_db_subnet_group.covidshield.name
-  performance_insights_enabled  = true
+  count                        = 2
+  identifier                   = "${var.rds_server_db_name}-instance-${count.index}"
+  cluster_identifier           = aws_rds_cluster.covidshield_server.id
+  instance_class               = var.rds_server_instance_class
+  db_subnet_group_name         = aws_db_subnet_group.covidshield.name
+  performance_insights_enabled = true
 
   tags = {
     Name                  = "${var.rds_server_db_name}-instance"
@@ -39,7 +39,7 @@ resource "aws_rds_cluster" "covidshield_server" {
   preferred_backup_window   = "07:00-09:00"
   db_subnet_group_name      = aws_db_subnet_group.covidshield.name
 
-  vpc_security_group_ids    = [
+  vpc_security_group_ids = [
     aws_security_group.covidshield_database.id
   ]
 
