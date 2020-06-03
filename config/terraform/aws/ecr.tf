@@ -1,5 +1,10 @@
+locals {
+  image_names = ["key-retrieval", "key-submission", "monolith"]
+}
+
 resource "aws_ecr_repository" "repository" {
-  name                 = "covid-server"
+  for_each             = local.image_names
+  name                 = "covid-server/${each.value}"
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -8,7 +13,8 @@ resource "aws_ecr_repository" "repository" {
 }
 
 resource "aws_ecr_lifecycle_policy" "policy" {
-  repository = "${aws_ecr_repository.repository.name}"
+  for_each   = local.image_names
+  repository = aws_ecr_repository.repository[each.value].name
 
   policy = <<EOF
 {
