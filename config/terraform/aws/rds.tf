@@ -14,28 +14,37 @@ resource "aws_db_subnet_group" "covidshield" {
   }
 }
 
-resource "aws_db_instance" "covidshield_server" {
-  identifier_prefix         = "server"
-  allocated_storage         = var.rds_server_allocated_storage
-  storage_type              = "gp2"
-  engine                    = "mysql"
-  engine_version            = "5.7"
-  final_snapshot_identifier = "server-${random_string.random.result}"
-  skip_final_snapshot       = false
-  multi_az                  = true
-  storage_encrypted         = true
-  instance_class            = var.rds_server_instance_class
-  name                      = var.rds_server_db_name
-  username                  = var.rds_server_db_user
-  password                  = var.rds_server_db_password
-  vpc_security_group_ids = [
-    aws_security_group.covidshield_database.id
-  ]
-  parameter_group_name = "default.mysql5.7"
-  db_subnet_group_name = aws_db_subnet_group.covidshield.id
+resource "aws_rds_cluster_instance" "covidshield_server_instances" {
+  count                         = 2
+  identifier                    = "${var.rds_server_db_name}-instance-${count.index}"
+  cluster_identifier            = aws_rds_cluster.covidshield_server.id
+  instance_class                = var.rds_server_instance_class
+  db_subnet_group_name          = aws_db_subnet_group.covidshield.name
+  performance_insights_enabled  = true
 
   tags = {
-    Name                  = var.rds_server_db_name
+    Name                  = "${var.rds_server_db_name}-instance"
+    (var.billing_tag_key) = var.billing_tag_value
+  }
+}
+
+resource "aws_rds_cluster" "covidshield_server" {
+  cluster_identifier        = "${var.rds_server_db_name}-cluster"
+  engine                    = "aurora"
+  database_name             = var.rds_server_db_name
+  final_snapshot_identifier = "server-${random_string.random.result}"
+  master_username           = var.rds_server_db_user
+  master_password           = var.rds_server_db_password
+  backup_retention_period   = 5
+  preferred_backup_window   = "07:00-09:00"
+  db_subnet_group_name      = aws_db_subnet_group.covidshield.name
+
+  vpc_security_group_ids    = [
+    aws_security_group.covidshield_database.id
+  ]
+
+  tags = {
+    Name                  = "${var.rds_server_db_name}-cluster"
     (var.billing_tag_key) = var.billing_tag_value
   }
 }
