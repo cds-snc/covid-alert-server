@@ -28,3 +28,4 @@ git pull upstream master
   - Moved retrieval/submission URLs to secrets
   - Removed hardcoded repository_owner
 - Make Terraform files more generic (https://github.com/cds-snc/covid-shield-server/pull/12):
+- Add private ECR Container repositories
