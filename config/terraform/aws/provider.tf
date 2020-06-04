@@ -11,7 +11,7 @@ provider "aws" {
 
 provider "github" {
   organization = "cds-snc"
-  anonymous    = true
+  anonymous    = false
 }
 
 terraform {
