@@ -76,14 +76,21 @@ module Helper
       )
     end
 
-    def new_valid_one_time_code
-      resp = @sub_conn.post do |req|
-        req.url('/new-key-claim')
-        req.headers['Authorization'] = 'Bearer first-token'
-      end
-      assert_response(resp, 200, 'text/plain; charset=utf-8')
-      resp.body.chomp
+    def encryption_originators
+      @dbconn.query("SELECT originator FROM encryption_keys").map(&:values).map(&:first)
     end
+
+    def diagnosis_originators
+      @dbconn.query("SELECT originator FROM encryption_keys").map(&:values).map(&:first)
+    end
+      def new_valid_one_time_code
+        resp = @sub_conn.post do |req|
+          req.url('/new-key-claim')
+          req.headers['Authorization'] = 'Bearer first-token'
+        end
+        assert_response(resp, 200, 'text/plain; charset=utf-8')
+        resp.body.chomp
+      end
 
     def new_valid_keyset
       otc = new_valid_one_time_code

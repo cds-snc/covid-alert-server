@@ -29,6 +29,9 @@ func NewAuthenticator() Authenticator {
 		if len(parts) != assignmentParts {
 			panic("invalid KEY_CLAIM_TOKEN")
 		}
+		if len(parts[0]) > 63 {
+			panic("token too long")
+		}
 		if len(parts[1]) > 31 {
 			panic("region too long")
 		}
