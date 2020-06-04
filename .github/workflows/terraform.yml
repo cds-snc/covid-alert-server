@@ -90,8 +90,8 @@ jobs:
       - name: Check For New Deployments
         env:
           GITHUB_SHA: ${{ github.sha }}
-          RETRIEVAL_URL: retrieval.${{ secrets.TF_VAR_route53_zone_name }}
-          SUBMISSION_URL: submission.${{ secrets.TF_VAR_route53_zone_name }}
+          RETRIEVAL_URL: https://retrieval.${{ secrets.TF_VAR_route53_zone_name }}
+          SUBMISSION_URL: https://submission.${{ secrets.TF_VAR_route53_zone_name }}
         run: |
           count=0
           kr_finished=0
