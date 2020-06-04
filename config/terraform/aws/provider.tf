@@ -10,8 +10,8 @@ provider "aws" {
 }
 
 provider "github" {
-  organization = "CovidShield"
-  anonymous    = true
+  organization = "cds-snc"
+  anonymous    = false
 }
 
 terraform {
