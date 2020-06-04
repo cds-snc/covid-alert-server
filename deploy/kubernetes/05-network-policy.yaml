@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: covidshield
+  namespace: covidshield
+  labels:
+    app.kubernetes.io/name: covidshield
+    app.kubernetes.io/part-of: covidshield
+spec:
+  egress:
+  - {}
+  ingress:
+  - from:
+    ports:
+    - port: 8000
+      protocol: TCP
+    - port: 8001
+      protocol: TCP
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          app.kubernetes.io/name: mysql
+    ports:
+    - port: 3306
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: covidshield
+  policyTypes:
+  - Ingress
+  - Egress
+  
