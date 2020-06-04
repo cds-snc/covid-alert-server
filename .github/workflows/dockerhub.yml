@@ -11,32 +11,46 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
       - name: Build Key Retrieval
-        uses: docker/build-push-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          registry: ${{ secrets.DOCKER_REGISTRY }}
-          repository: ${{ secrets.DOCKER_REPOSITORY_RETRIEVAL }}
-          tags: latest,${{ github.sha }}
-          build_args: branch=${{ github.ref }},revision=${{ github.sha }},component=key-retrieval
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: covid-server/key-retrieval
+          GITHUB_SHA: ${{ github.sha }}
+          BRANCH: ${{ github.ref }}
+          COMPONENT: key-retrieval
+        run: |
+          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT -t $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       - name: Build Key Submission
-        uses: docker/build-push-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          registry: ${{ secrets.DOCKER_REGISTRY }}
-          repository: ${{ secrets.DOCKER_REPOSITORY_SUBMISSION }}
-          tags: latest,${{ github.sha }}
-          build_args: branch=${{ github.ref }},revision=${{ github.sha }},component=key-submission
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: covid-server/key-submission
+          GITHUB_SHA: ${{ github.sha }}
+          BRANCH: ${{ github.ref }}
+          COMPONENT: key-submission
+        run: |
+          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT -t $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       - name: Build Monolith
-        uses: docker/build-push-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          registry: ${{ secrets.DOCKER_REGISTRY }}
-          repository: ${{ secrets.DOCKER_REPOSITORY_MONOLITH }}
-          tags: latest,${{ github.sha }}
-          build_args: branch=${{ github.ref }},revision=${{ github.sha }},component=monolith
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: covid-server/monolith
+          GITHUB_SHA: ${{ github.sha }}
+          BRANCH: ${{ github.ref }}
+          COMPONENT: monolith
+        run: |
+          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT -t $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Logout of Amazon ECR
+        if: always()
+        run: docker logout ${{ steps.login-ecr.outputs.registry }}
