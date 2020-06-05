@@ -18,6 +18,8 @@ You can use any of the following to run Kubernetes in your preferred environment
 
 [AKS](https://azure.microsoft.com/en-us/services/kubernetes-service/)
 
+[OpenShift](https://www.openshift.com/)
+
 ### 2. Install Nginx Ingress Controller
 
 Install Nginx Ingress Controller https://github.com/kubernetes/ingress-nginx
@@ -64,12 +66,12 @@ View logs for key-submission Pod:
 
 Call a route in the COVID Shield application:
 
-`export MINIKUBE_IP=`minikube ip``
-`curl $MINIKUBE_IP/claim-key`
+`MINIKUBE_IP=<YOUR_MINIKUBE_IP> curl $MINIKUBE_IP/claim-key`
 
 ## Deployment Notes
 
 - Specifying a namespace in the `PersistentVolumeClaim` may not be necessary in environments outside of Minikube.
+- You will likely want/need to adjust the [MySQL `PersistentVolume`](01-mysql.yaml#L64-L79) to fit your environment.
 - Expect for the `key-retrieval` Deployment to fail to start for ~30 seconds while the `mysql` Deployment spins up.
 - You must create the Kubernetes secret mentioned above for the pods to fully spin up.
 - Do not commit the `secrets.development.env` file to version control. This file contains secrets and only exists in this repository for the reference implementation as an example.
