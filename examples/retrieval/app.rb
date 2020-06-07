@@ -35,6 +35,7 @@ end
 
 class App
   KEY_RETRIEVAL_URL = "http://127.0.0.1:8001"
+  REGION = '302'
 
   def initialize
     @database = Database.new
@@ -72,7 +73,7 @@ class App
 
   def check_for_exposure
     puts "checking for exposure"
-    fetch_exposure_config('302')
+    fetch_exposure_config(REGION)
     puts "running exposure checks"
   end
 
@@ -82,8 +83,8 @@ class App
     @database.drop_old_data
 
     curr = current_period
-    168.times do |n|
-      period = curr - (2 * (n + 1))
+    56.times do |n|
+      period = curr - (6 * (n + 1))
       fetch_period(period) unless @database.fetched?(period)
     end
   end
@@ -98,6 +99,7 @@ class App
   def fetch_period(period)
     puts "Fetching period: #{period}"
     resp = Faraday.get(period_url(period))
+    puts resp.body
     raise("failed") unless resp.status == 200
     raise("failed") unless resp['Content-Type'] == 'application/zip'
     db_transaction do
@@ -108,7 +110,7 @@ class App
   end
 
   def current_period
-    (Time.now.to_i / 3600 / 2) * 2
+    (Time.now.to_i / 3600 / 6) * 6
   end
 
   def send_to_framework(resp)
@@ -125,10 +127,10 @@ class App
   end
 
   def period_url(period)
-    message = "#{period}:#{hour_number}"
+    message = "#{REGION}:#{period}:#{hour_number}"
     key = [ENV.fetch("RETRIEVE_HMAC_KEY")].pack("H*")
     hmac = OpenSSL::HMAC.hexdigest("SHA256", key, message)
-    "#{KEY_RETRIEVAL_URL}/retrieve/#{period}/#{hmac}"
+    "#{KEY_RETRIEVAL_URL}/retrieve/#{REGION}/#{period}/#{hmac}"
   end
 
   def hour_number(at = Time.now)
