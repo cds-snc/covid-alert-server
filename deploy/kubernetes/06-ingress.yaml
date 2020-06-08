@@ -1,0 +1,32 @@
+  
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: covidshield
+  namespace: covidshield
+  labels:
+    app.kubernetes.io/name: covidshield
+    app.kubernetes.io/part-of: covidshield
+  annotations:
+      kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /claim-key
+        backend:
+          serviceName: key-submission
+          servicePort: 8000
+      - path: /new-key-claim
+        backend:
+          serviceName: key-submission
+          servicePort: 8000
+      - path: /upload
+        backend:
+          serviceName: key-submission
+          servicePort: 8000
+      - path: /retrieve/*
+        backend:
+          serviceName: key-retrieval
+          servicePort: 8001
+          
