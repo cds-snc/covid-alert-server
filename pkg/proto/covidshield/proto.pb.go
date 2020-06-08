@@ -114,6 +114,7 @@ const (
 	EncryptedUploadResponse_INVALID_KEY_DATA                      EncryptedUploadResponse_ErrorCode = 11
 	EncryptedUploadResponse_INVALID_ROLLING_START_INTERVAL_NUMBER EncryptedUploadResponse_ErrorCode = 12
 	EncryptedUploadResponse_INVALID_TRANSMISSION_RISK_LEVEL       EncryptedUploadResponse_ErrorCode = 13
+	EncryptedUploadResponse_NO_KEYS_IN_PAYLOAD							      EncryptedUploadResponse_ErrorCode = 14
 )
 
 // Enum value maps for EncryptedUploadResponse_ErrorCode.
@@ -132,6 +133,7 @@ var (
 		11: "INVALID_KEY_DATA",
 		12: "INVALID_ROLLING_START_INTERVAL_NUMBER",
 		13: "INVALID_TRANSMISSION_RISK_LEVEL",
+		14: "NO_KEYS_IN_PAYLOAD",
 	}
 	EncryptedUploadResponse_ErrorCode_value = map[string]int32{
 		"NONE":                                  0,
@@ -147,6 +149,7 @@ var (
 		"INVALID_KEY_DATA":                      11,
 		"INVALID_ROLLING_START_INTERVAL_NUMBER": 12,
 		"INVALID_TRANSMISSION_RISK_LEVEL":       13,
+		"NO_KEYS_IN_PAYLOAD":										 14,
 	}
 )
 

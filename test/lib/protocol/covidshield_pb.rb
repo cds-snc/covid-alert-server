@@ -48,6 +48,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       value :INVALID_KEY_DATA, 11
       value :INVALID_ROLLING_START_INTERVAL_NUMBER, 12
       value :INVALID_TRANSMISSION_RISK_LEVEL, 13
+      value :NO_KEYS_IN_PAYLOAD, 14
     end
     add_message "covidshield.Upload" do
       required :timestamp, :message, 1, "google.protobuf.Timestamp"

@@ -122,6 +122,14 @@ func (s *uploadServlet) upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(upload.GetKeys()) == 0 {
+		requestError(
+			ctx, w, err, "no keys provided",
+			http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_NO_KEYS_IN_PAYLOAD),
+		)
+		return
+	}
+
 	if len(upload.GetKeys()) > pb.MaxKeysInUpload {
 		requestError(
 			ctx, w, err, "too many keys provided",
