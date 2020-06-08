@@ -90,6 +90,11 @@ class UploadTest < MiniTest::Test
     resp = @sub_conn.post('/upload', req.to_proto)
     assert_result(resp, 200, :NONE)
 
+    # no keys
+    req = encrypted_request(dummy_payload(0), new_valid_keyset)
+    resp = @sub_conn.post('/upload', req.to_proto)
+    assert_result(resp, 400, :NO_KEYS_IN_PAYLOAD)
+
     # too many keys
     req = encrypted_request(dummy_payload(15), new_valid_keyset)
     resp = @sub_conn.post('/upload', req.to_proto)
