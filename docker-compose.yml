@@ -29,6 +29,8 @@ services:
       ECDSA_KEY: 30770201010420a6885a310b694b7bb4ba985459de1e79446dddcd1247c62ece925402b362a110a00a06082a8648ce3d030107a1440342000403eb64f714c4b4ed394331c26c31b7ce7156d00fb28982ad2679a87eaa1a3869802fbeb1d7ee28002762921929c3f7603672d535fcac3d24d57afbb4e2d97f5a
       DATABASE_URL: covidshield:covidshield@tcp(mysql)/covidshield
       RETRIEVE_HMAC_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      METRIC_PROVIDER: ""
+      TRACER_PROVIDER: ""
   key-submission:
     build:
       context: .
@@ -50,3 +52,5 @@ services:
     environment:
       DATABASE_URL: covidshield:covidshield@tcp(mysql)/covidshield
       KEY_CLAIM_TOKEN: thisisatoken=302
+      METRIC_PROVIDER: ""
+      TRACER_PROVIDER: ""
