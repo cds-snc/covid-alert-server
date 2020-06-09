@@ -21,10 +21,8 @@ In this document:
 - [Generating one-time codes](#generating-one-time-codes)
 - [Protocol documentation](#protocol-documentation)
 - [Deployment notes](#deployment-notes)
-- [Contributing](#contributing)   
-    1. [Set up a local development environment](#env-setup)   
-    2. [Develop locally](#dev-local)  
-    3. [Run tests](#run-tests) 
+- [Metrics and Tracing](#metrics-and-tracing)
+- [Contributing](#contributing)
 - [Who Built COVID Shield?](#who-built-covid-shield)
 
 ## Overview
@@ -172,80 +170,54 @@ We hope to provide reference implementations on AWS, GCP, and Azure via [Hashico
 
 [Kubernetes](deploy/kubernetes/README.md)
 
+## Metrics and Tracing
+
+COVID Shield uses [OpenTelemetry](https://github.com/open-telemetry/opentelemetry-go) to configure the metrics and tracing for the server, both the key retrieval and key submission.
+
+### Metrics
+
+Currently, the following options are supported for enabling Metrics:
+* standard output
+* prometheus
+
+Metrics can be enabled by setting the `METRIC_PROVIDER` variable to `stdout`, `pretty`, or `prometheus`.
+
+Both `stdout` and `pretty` will send metrics output to stdout but differ in their formatting. `stdout` will print
+the metrics as JSON on a single line whereas `pretty` will format the JSON in a human-readable way, split across
+multiple lines.
+
+If you want to use Prometheus, please see the additional configuration requirements below.
+
+#### Prometheus 
+
+In order to use Prometheus as a metrics solution, you'll need to be running it in your environment. 
+
+You can follow the instructions [here](https://prometheus.io/docs/prometheus/latest/installation/) for running Prometheus. 
+
+You will need to edit the configuration file, `prometheus.yml` to add an additional target so it actually polls the metrics coming from the COVID Shield server:
+
+```
+...
+    static_configs:
+    - targets: ['localhost:9090', 'localhost:2222']
+```
+
+### Tracing 
+
+Currently, the following options are supported for enabling Tracing:
+* standard output
+
+Tracing can be enabled by setting the `TRACER_PROVIDER` variable to `stdout` or `pretty`.
+
+Both `stdout` and `pretty` will send trace output to stdout but differ in their formatting. `stdout` will print
+the trace as JSON on a single line whereas `pretty` will format the JSON in a human-readable way, split across
+multiple lines.
+
+Note that logs are emitted to `stderr`, so with `stdout` mode, logs will be on `stderr` and metrics will be on `stdout`.
+
 ## Contributing
 
-Before you begin to contribute, see [_CONTRIBUTING.md_](CONTRIBUTING.md).
-
-<h3 id="env-setup">1. Set up a local development environment</h3>
-
-#### Development environment via docker-compose
-
-1. Fork https://github.com/CovidShield/server to your account.
-2. Clone your fork of the **CovidShield/server** repo locally by running `git clone https://github.com/<username>/server.git`.
-3. Enter the repo directory `cd server`.
-4. Run `docker-compose up`.
-
-**Note**: It is normal to see a few errors from the retrieval service exiting initially while the MySQL database is instantiated
-
-<h3 id="dev-local">2. Develop locally</h3>
-
-#### Prerequisites
-
-* Go (tested with 1.14)
-* Ruby (tested with 2.6.5)
-* Bundler
-* [protobuf](https://developers.google.com/protocol-buffers/) (tested with libprotoc 3.11.4)
-* [protoc-gen-go](https://github.com/golang/protobuf) (may only be needed to change `proto/*`)
-* libsodium
-* docker-compose
-* MySQL
-
-#### Building
-
-Run `make` or `make release` to build a release version of the servers.
-
-#### Running
-
-```bash
-# example...
-export DATABASE_URL="root@tcp(localhost)/covidshield"
-export KEY_CLAIM_TOKEN=thisisatoken=302
-
-./key-retrieval migrate-db
-
-PORT=8000 ./key-submission
-PORT=8001 ./key-retrieval
-```
-
-Note that 302 is a [MCC](https://www.mcc-mnc.com/): 302 represents Canada.
-
-<h3 id="run-tests">3. Run tests</h3>
-
-If you're not a Shopify employee, you'll need to point to your database server using the environment variables
-(note that the database will be clobbered so ensure that you don't point to a
-production database):
-
-```shell
-$ export DB_USER=<username>
-$ export DB_PASS=<password>
-$ export DB_HOST=<hostname>
-$ export DB_NAME=<test database name>
-```
-
-Then, ensure the appropriate requirements are installed:
-
-```shell
-$ bundle install
-```
-
-Finally, run:
-```shell
-$ make test
-```
-
-If you're a Shopify employee, `dev up` will configure the database for you and install the above dependencies and `dev {build,test,run,etc.}` will work as you'd expect.
-
-Once you're happy with your changes, please fork the repository and push your code to your fork, then open a pull request against this repository.
+See the [_Contributing Guidelines_](CONTRIBUTING.md).
 
 ## Who Built COVID Shield?
 
