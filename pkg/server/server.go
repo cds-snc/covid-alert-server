@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/CovidShield/server/pkg/telemetry"
 	"github.com/Shopify/goose/genmain"
 	"github.com/Shopify/goose/logger"
 
@@ -29,6 +30,7 @@ func New(bind string, servlets []srvutil.Servlet) Server {
 		srvutil.RequestContextMiddleware,
 		srvutil.RequestMetricsMiddleware,
 		safely.Middleware,
+		telemetry.OpenTelemetryMiddleware,
 	)
 
 	return srvutil.NewServer(&tomb.Tomb{}, bind, sl)
