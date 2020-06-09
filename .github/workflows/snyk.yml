@@ -10,4 +10,5 @@ jobs:
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
-        args: --file=go.mod
+        command: monitor
+        args: --file=go.mod --org=cds-snc --project-name=covid-shield-server
