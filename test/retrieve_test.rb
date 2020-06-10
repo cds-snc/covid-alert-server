@@ -27,7 +27,7 @@ class RetrieveTest < MiniTest::Test
     period = current_period - 72
     resp = get_period(period)
     export = assert_happy_zip_response(resp)
-    assert_keys(export, [], region: '302', period: period)
+    assert_keys(export, [], region: 'CA', period: period)
   end
 
   def test_reject_unacceptable_periods
@@ -80,7 +80,7 @@ class RetrieveTest < MiniTest::Test
       rolling_start_interval_number: rsin,
       transmission_risk_level: 8,
     )]
-    assert_keys(export, keys, region: '302', period: period)
+    assert_keys(export, keys, region: 'CA', period: period)
   end
 
   def test_period_bounds
@@ -197,7 +197,7 @@ class RetrieveTest < MiniTest::Test
         Covidshield::TemporaryExposureKeyExport.new(
           start_timestamp: start_time,
           end_timestamp: end_time,
-          region: '302',
+          region: 'CA',
           batch_num: 1,
           batch_size: 1,
           keys: [

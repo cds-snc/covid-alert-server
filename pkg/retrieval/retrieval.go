@@ -35,6 +35,16 @@ func min(a, b int) int {
 	return b
 }
 
+// It's still really unclear to me when A/G wants us to use MCC and when we're
+// expected/permitted to use some other identifier. It would be great to get
+// more clarity on this.
+func transformRegion(reg string) string {
+	if reg == "302" {
+		return "CA"
+	}
+	return reg
+}
+
 func SerializeTo(
 	ctx context.Context, w io.Writer,
 	keys []*pb.TemporaryExposureKey,
@@ -56,6 +66,8 @@ func SerializeTo(
 		VerificationKeyId:      &verificationKeyID,
 		SignatureAlgorithm:     &signatureAlgorithm,
 	}
+
+	region = transformRegion(region)
 
 	tekExport := &pb.TemporaryExposureKeyExport{
 		StartTimestamp: &start,
