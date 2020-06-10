@@ -42,6 +42,8 @@ data "template_file" "covidshield_key_retrieval_task" {
     retrieve_hmac_key     = aws_secretsmanager_secret_version.key_retrieval_env_hmac_key.arn
     ecdsa_key             = aws_secretsmanager_secret_version.key_retrieval_env_ecdsa_key.arn
     database_url          = aws_secretsmanager_secret_version.server_database_url.arn
+    metric_provider       = var.metric_provider
+    tracer_provider       = var.tracer_provider
   }
 }
 
@@ -117,6 +119,8 @@ data "template_file" "covidshield_key_submission_task" {
     awslogs-stream-prefix = "ecs-${var.ecs_key_submission_name}"
     key_claim_token       = aws_secretsmanager_secret_version.key_submission_env_key_claim_token.arn
     database_url          = aws_secretsmanager_secret_version.server_database_url.arn
+    metric_provider       = var.metric_provider
+    tracer_provider       = var.tracer_provider
   }
 }
 

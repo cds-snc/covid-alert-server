@@ -17,7 +17,9 @@ cloudwatch_log_group_name = "CovidShield"
 # AWS ECS - ecs.tf
 ###
 
-ecs_name = "CovidShield"
+ecs_name        = "CovidShield"
+metric_provider = "stdout"
+tracer_provider = "stdout"
 
 # Key Retrieval
 ecs_key_retrieval_name = "KeyRetrieval"

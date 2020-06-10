@@ -27,6 +27,16 @@
           "awslogs-stream-prefix": "${awslogs-stream-prefix}"
         }
       },
+      "environment": [
+        {
+            "name": "METRIC_PROVIDER",
+            "value": "${metric_provider}"
+        },
+        {
+          "name": "TRACER_PROVIDER",
+          "value": "${tracer_provider}"
+        }
+      ],
       "secrets": [
         {
           "name": "KEY_CLAIM_TOKEN",
