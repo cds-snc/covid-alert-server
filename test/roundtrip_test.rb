@@ -83,7 +83,7 @@ class RoundtripTest < MiniTest::Test
 
   def parse_keys(resp)
     export_proto, siglist_proto = extract_zip(resp.body)
-    export = Covidshield::TemporaryExposureKeyExport.decode(export_proto)
+    export = Covidshield::TemporaryExposureKeyExport.decode(export_proto[16..-1])
     export.keys
   end
 

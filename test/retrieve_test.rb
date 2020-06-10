@@ -16,6 +16,8 @@ class RetrieveTest < MiniTest::Test
     assert_response(resp, 200, 'application/zip')
     assert_equal(resp.headers['Cache-Control'], 'public, max-age=3600, max-stale=600')
     export_proto, siglist_proto = extract_zip(resp.body)
+    assert_equal("EK Export v1    ", export_proto[0...16])
+    export_proto = export_proto[16..-1]
     assert_valid_signature_list(siglist_proto, export_proto)
     export = Covidshield::TemporaryExposureKeyExport.decode(export_proto)
     export
@@ -25,7 +27,7 @@ class RetrieveTest < MiniTest::Test
     period = current_period - 72
     resp = get_period(period)
     export = assert_happy_zip_response(resp)
-    assert_keys(export, [], region: '302', period: period)
+    assert_keys(export, [], region: 'CA', period: period)
   end
 
   def test_reject_unacceptable_periods
@@ -78,7 +80,7 @@ class RetrieveTest < MiniTest::Test
       rolling_start_interval_number: rsin,
       transmission_risk_level: 8,
     )]
-    assert_keys(export, keys, region: '302', period: period)
+    assert_keys(export, keys, region: 'CA', period: period)
   end
 
   def test_period_bounds
@@ -195,7 +197,7 @@ class RetrieveTest < MiniTest::Test
         Covidshield::TemporaryExposureKeyExport.new(
           start_timestamp: start_time,
           end_timestamp: end_time,
-          region: '302',
+          region: 'CA',
           batch_num: 1,
           batch_size: 1,
           keys: [
@@ -281,8 +283,8 @@ class RetrieveTest < MiniTest::Test
             app_bundle_id: "com.shopify.covid-shield",
             android_package: "com.covidshield",
             verification_key_version: "v1",
-            verification_key_id: "key-0",
-            signature_algorithm: "ecdsa-with-SHA256"
+            verification_key_id: "302",
+            signature_algorithm: "1.2.840.10045.4.3.2"
           ),
         ],
         keys: keys
@@ -302,8 +304,8 @@ class RetrieveTest < MiniTest::Test
               app_bundle_id: "com.shopify.covid-shield",
               android_package: "com.covidshield",
               verification_key_version: "v1",
-              verification_key_id: "key-0",
-              signature_algorithm: "ecdsa-with-SHA256"
+              verification_key_id: "302",
+              signature_algorithm: "1.2.840.10045.4.3.2"
             ),
             batch_num: 1,
             batch_size: 1,
