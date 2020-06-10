@@ -21,9 +21,11 @@ const (
 var (
 	appBundleID            = "com.shopify.covid-shield"
 	androidPackage         = "com.covidshield"
-	signatureAlgorithm     = "ecdsa-with-SHA256" // required by protocol
+	signatureAlgorithm     = "1.2.840.10045.4.3.2" // required by protocol
 	verificationKeyVersion = "v1"
-	verificationKeyID      = "key-0"
+	verificationKeyID      = "302"
+	binHeader              = []byte("EK Export v1    ")
+	binHeaderLength        = 16
 )
 
 func min(a, b int) int {
@@ -31,6 +33,16 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// It's still really unclear to me when A/G wants us to use MCC and when we're
+// expected/permitted to use some other identifier. It would be great to get
+// more clarity on this.
+func transformRegion(reg string) string {
+	if reg == "302" {
+		return "CA"
+	}
+	return reg
 }
 
 func SerializeTo(
@@ -54,6 +66,8 @@ func SerializeTo(
 		VerificationKeyId:      &verificationKeyID,
 		SignatureAlgorithm:     &signatureAlgorithm,
 	}
+
+	region = transformRegion(region)
 
 	tekExport := &pb.TemporaryExposureKeyExport{
 		StartTimestamp: &start,
@@ -92,7 +106,14 @@ func SerializeTo(
 	if err != nil {
 		return err
 	}
-	n, err := f.Write(exportBinData)
+	n, err := f.Write(binHeader)
+	if err != nil {
+		return err
+	}
+	if n != binHeaderLength {
+		panic("header len")
+	}
+	n, err = f.Write(exportBinData)
 	if err != nil {
 		return err
 	}
