@@ -648,7 +648,7 @@ type SignatureInfo struct {
 	// from different countries with different keys).
 	VerificationKeyId *string `protobuf:"bytes,4,opt,name=verification_key_id,json=verificationKeyId" json:"verification_key_id,omitempty"`
 	// All keys must be signed using the SHA-256 with ECDSA algorithm.
-	// This field must contain the string "ecdsa-with-SHA256".
+	// This field must contain the string "1.2.840.10045.4.3.2".
 	SignatureAlgorithm *string `protobuf:"bytes,5,opt,name=signature_algorithm,json=signatureAlgorithm" json:"signature_algorithm,omitempty"`
 }
 

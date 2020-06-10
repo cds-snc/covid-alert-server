@@ -282,7 +282,7 @@ class RetrieveTest < MiniTest::Test
             android_package: "com.covidshield",
             verification_key_version: "v1",
             verification_key_id: "key-0",
-            signature_algorithm: "ecdsa-with-SHA256"
+            signature_algorithm: "1.2.840.10045.4.3.2"
           ),
         ],
         keys: keys
@@ -303,7 +303,7 @@ class RetrieveTest < MiniTest::Test
               android_package: "com.covidshield",
               verification_key_version: "v1",
               verification_key_id: "key-0",
-              signature_algorithm: "ecdsa-with-SHA256"
+              signature_algorithm: "1.2.840.10045.4.3.2"
             ),
             batch_num: 1,
             batch_size: 1,
