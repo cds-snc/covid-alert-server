@@ -59,6 +59,11 @@ variable "metric_provider" {
   type = string
 }
 
+# Tracing provider
+variable "tracer_provider" {
+  type = string
+}
+
 ###
 # AWS VPC - networking.tf
 ###
