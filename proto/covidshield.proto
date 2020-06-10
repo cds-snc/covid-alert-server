@@ -154,7 +154,7 @@ message SignatureInfo {
   optional string verification_key_id = 4;
 
   // All keys must be signed using the SHA-256 with ECDSA algorithm.
-  // This field must contain the string "ecdsa-with-SHA256".
+  // This field must contain the string "1.2.840.10045.4.3.2".
   optional string signature_algorithm = 5;
 }
 
