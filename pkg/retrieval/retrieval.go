@@ -23,7 +23,9 @@ var (
 	androidPackage         = "com.covidshield"
 	signatureAlgorithm     = "1.2.840.10045.4.3.2" // required by protocol
 	verificationKeyVersion = "v1"
-	verificationKeyID      = "key-0"
+	verificationKeyID      = "302"
+	binHeader              = []byte("EK Export v1    ")
+	binHeaderLength        = 16
 )
 
 func min(a, b int) int {
@@ -92,7 +94,14 @@ func SerializeTo(
 	if err != nil {
 		return err
 	}
-	n, err := f.Write(exportBinData)
+	n, err := f.Write(binHeader)
+	if err != nil {
+		return err
+	}
+	if n != binHeaderLength {
+		panic("header len")
+	}
+	n, err = f.Write(exportBinData)
 	if err != nil {
 		return err
 	}

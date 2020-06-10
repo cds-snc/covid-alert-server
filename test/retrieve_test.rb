@@ -16,6 +16,8 @@ class RetrieveTest < MiniTest::Test
     assert_response(resp, 200, 'application/zip')
     assert_equal(resp.headers['Cache-Control'], 'public, max-age=3600, max-stale=600')
     export_proto, siglist_proto = extract_zip(resp.body)
+    assert_equal("EK Export v1    ", export_proto[0...16])
+    export_proto = export_proto[16..-1]
     assert_valid_signature_list(siglist_proto, export_proto)
     export = Covidshield::TemporaryExposureKeyExport.decode(export_proto)
     export
@@ -281,7 +283,7 @@ class RetrieveTest < MiniTest::Test
             app_bundle_id: "com.shopify.covid-shield",
             android_package: "com.covidshield",
             verification_key_version: "v1",
-            verification_key_id: "key-0",
+            verification_key_id: "302",
             signature_algorithm: "1.2.840.10045.4.3.2"
           ),
         ],
@@ -302,7 +304,7 @@ class RetrieveTest < MiniTest::Test
               app_bundle_id: "com.shopify.covid-shield",
               android_package: "com.covidshield",
               verification_key_version: "v1",
-              verification_key_id: "key-0",
+              verification_key_id: "302",
               signature_algorithm: "1.2.840.10045.4.3.2"
             ),
             batch_num: 1,
