@@ -54,6 +54,11 @@ variable "ecs_task_key_submission_env_key_claim_token" {
   type = string
 }
 
+# Metric provider
+variable "metric_provider" {
+  type = string
+}
+
 ###
 # AWS VPC - networking.tf
 ###

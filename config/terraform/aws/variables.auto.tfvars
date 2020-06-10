@@ -18,6 +18,7 @@ cloudwatch_log_group_name = "CovidShield"
 ###
 
 ecs_name = "CovidShield"
+metric_provider = "stdout"
 
 # Key Retrieval
 ecs_key_retrieval_name = "KeyRetrieval"

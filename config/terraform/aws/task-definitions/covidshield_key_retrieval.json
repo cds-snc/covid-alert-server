@@ -20,6 +20,12 @@
           "awslogs-stream-prefix": "${awslogs-stream-prefix}"
         }
       },
+      "environment": [
+        {
+            "name": "METRIC_PROVIDER",
+            "value": "${metric_provider}"
+        }
+      ],
       "secrets": [
         {
           "name": "RETRIEVE_HMAC_KEY",
