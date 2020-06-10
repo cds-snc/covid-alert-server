@@ -114,6 +114,7 @@ const (
 	EncryptedUploadResponse_INVALID_KEY_DATA                      EncryptedUploadResponse_ErrorCode = 11
 	EncryptedUploadResponse_INVALID_ROLLING_START_INTERVAL_NUMBER EncryptedUploadResponse_ErrorCode = 12
 	EncryptedUploadResponse_INVALID_TRANSMISSION_RISK_LEVEL       EncryptedUploadResponse_ErrorCode = 13
+	EncryptedUploadResponse_NO_KEYS_IN_PAYLOAD										EncryptedUploadResponse_ErrorCode = 14
 )
 
 // Enum value maps for EncryptedUploadResponse_ErrorCode.
