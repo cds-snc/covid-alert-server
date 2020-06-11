@@ -541,7 +541,9 @@ type TemporaryExposureKeyExport struct {
 	// at the server, in UTC seconds.
 	StartTimestamp *uint64 `protobuf:"fixed64,1,opt,name=start_timestamp,json=startTimestamp" json:"start_timestamp,omitempty"`
 	EndTimestamp   *uint64 `protobuf:"fixed64,2,opt,name=end_timestamp,json=endTimestamp" json:"end_timestamp,omitempty"`
-	// Region from which these keys came (for example, MCC).
+	// Region from which these keys came (for example, MCC, however, some schemes
+	// use e.g. ISO-3166-2. There's no apparent hard requirement by the protocol
+	// for the contents here).
 	Region *string `protobuf:"bytes,3,opt,name=region" json:"region,omitempty"`
 	// Reserved for future use. Both batch_num and batch_size
 	// must be set to a value of 1.
@@ -645,10 +647,14 @@ type SignatureInfo struct {
 	AndroidPackage *string `protobuf:"bytes,2,opt,name=android_package,json=androidPackage" json:"android_package,omitempty"`
 	// Key version in case the EN server signing key is rotated.
 	VerificationKeyVersion *string `protobuf:"bytes,3,opt,name=verification_key_version,json=verificationKeyVersion" json:"verification_key_version,omitempty"`
-	// Additional information to uniquely identify the public
-	// key associated with the EN server's signing key
-	// (for example, the EN server might serve the app
-	// from different countries with different keys).
+	// Additional information to uniquely identify the public key associated with
+	// the EN server's signing key (for example, the EN server might serve the
+	// app from different countries with different keys).
+	//
+	// Three-digit mobile country code (MCC) for validating the key file.
+	// If a region has more than one MCC, the server can choose
+	// which MCC to use. This value does not have to match the client's MCC,
+	// but must correspond to one of the supported MCCs for its region.
 	VerificationKeyId *string `protobuf:"bytes,4,opt,name=verification_key_id,json=verificationKeyId" json:"verification_key_id,omitempty"`
 	// All keys must be signed using the SHA-256 with ECDSA algorithm.
 	// This field must contain the string "1.2.840.10045.4.3.2".
