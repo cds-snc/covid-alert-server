@@ -90,6 +90,7 @@ message EncryptedUploadResponse {
     INVALID_KEY_DATA = 11;
     INVALID_ROLLING_START_INTERVAL_NUMBER = 12;
     INVALID_TRANSMISSION_RISK_LEVEL = 13;
+    NO_KEYS_IN_PAYLOAD = 14;
   }
   required ErrorCode error = 1;
 }
