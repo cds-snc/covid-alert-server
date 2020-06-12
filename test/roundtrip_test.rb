@@ -7,10 +7,26 @@ require('set')
 class RoundtripTest < MiniTest::Test
   include(Helper::Include)
 
+  def days_ago(n)
+    current_rsin - 144 * n
+  end
+
   def test_key_roundtrip
-    keys = (0...14).map do |i|
-      tek(data: '1' * 15 + (i+97).chr, rolling_period: 144, rolling_start_interval_number: current_rsin - 144 * i)
-    end
+    keys = [
+      tek(data: '111111111111111a', rolling_start_interval_number: days_ago(1)),
+      tek(data: '111111111111111b', rolling_start_interval_number: days_ago(2)),
+      tek(data: '111111111111111c', rolling_start_interval_number: days_ago(3)),
+      tek(data: '111111111111111d', rolling_start_interval_number: days_ago(4)),
+      tek(data: '111111111111111e', rolling_start_interval_number: days_ago(5)),
+      tek(data: '111111111111111f', rolling_start_interval_number: days_ago(6)),
+      tek(data: '111111111111111g', rolling_start_interval_number: days_ago(7)),
+      tek(data: '111111111111111h', rolling_start_interval_number: days_ago(8)),
+      tek(data: '111111111111111i', rolling_start_interval_number: days_ago(9)),
+      tek(data: '111111111111111j', rolling_start_interval_number: days_ago(10)),
+      tek(data: '111111111111111k', rolling_start_interval_number: days_ago(11)),
+      tek(data: '111111111111111l', rolling_start_interval_number: days_ago(12)),
+      tek(data: '111111111111111m', rolling_start_interval_number: days_ago(13)),
+    ]
     first_keys = keys.dup
 
     payload = Covidshield::Upload.new(timestamp: Time.now, keys: keys).to_proto
@@ -18,20 +34,22 @@ class RoundtripTest < MiniTest::Test
     credentials = new_valid_keyset
 
     resp = @sub_conn.post('/upload', encrypted_request(payload, credentials).to_proto)
-    assert_result(resp, 200, :NONE, 14)
-    expect_keys([]) # no visible keys because these are still in the current hour
+    assert_result(resp, 200, :NONE, 13)
+    expect_keys([]) # no visible keys because these are still in the current day
 
     move_forward_days(1) # total: +1 days
 
     # Replace one of the 14 keys with a "new" one
     keys.pop
     keys.each { |k| k.rolling_start_interval_number -= 144 }
-    keys.unshift(tek(data: '1' * 15 + 'z', rolling_start_interval_number: current_rsin))
+    keys.unshift(tek(data: '111111111111111z', rolling_start_interval_number: days_ago(1)))
     payload = Covidshield::Upload.new(timestamp: Time.now, keys: keys).to_proto
 
     resp = @sub_conn.post('/upload', encrypted_request(payload, credentials).to_proto)
-    assert_result(resp, 200, :NONE, 15)
-    expect_keys(first_keys[0..-2])
+    assert_result(resp, 200, :NONE, 14)
+    # expected ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"]
+    # actual   [     "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"]
+    expect_keys(first_keys[0..-2]) ###############################################################################################################################
 
     move_forward_hours(1) # total: +1 day & 1 hour
     expect_keys(first_keys[0..-2])
@@ -39,14 +57,15 @@ class RoundtripTest < MiniTest::Test
     move_forward_hours(1) # total: +1 day & 2 hours
     expect_keys(first_keys[0..-2])
 
-    move_forward_hours(12 * 24 + 21) # total: +13 days & 23 hours
+    move_forward_hours(11 * 24 + 21) # total: +12 days & 23 hours
     expect_keys(first_keys[0..0] + [keys.first])
 
     resp = @sub_conn.post('/upload', encrypted_request(payload, credentials).to_proto)
-    assert_result(resp, 200, :NONE, 15)
+    assert_result(resp, 200, :NONE, 14)
     expect_keys(first_keys[0..0] + [keys.first])
 
-    move_forward_hours(1) # total: +14 days
+    move_forward_hours(1) # total: +13 days
+    expect_keys([keys.first])
 
     # In this range, the credentials could be valid or invalid, depending on
     # how far we were into the UTC date when we created the keypair.
@@ -55,10 +74,14 @@ class RoundtripTest < MiniTest::Test
     # application should only be uploading credentials on days T+[0,13] after
     # diagnosis. (i.e. 14 total days, starting on diagnosis day)
 
+    move_forward_days(1) # total: +14 days
+    assert_result(resp, 200, :NONE, 14)
+    expect_keys([])
+
     move_forward_days(1) # total: +15 days
 
     resp = @sub_conn.post('/upload', encrypted_request(payload, credentials).to_proto)
-    assert_result(resp, 401, :INVALID_KEYPAIR, 15)
+    assert_result(resp, 401, :INVALID_KEYPAIR, 14)
     expect_keys([])
   end
 
@@ -67,11 +90,10 @@ class RoundtripTest < MiniTest::Test
   def expect_keys(want_keys)
     keys = []
 
-    number_of_periods = (168 * 2) / PERIOD_HOURS
-    assert_equal(56, number_of_periods)
+    number_of_periods = 14
     number_of_periods.times do |n|
-      period = current_period - (PERIOD_HOURS * (n + 1))
-      resp = get_period(period)
+      dn = current_date_number - (1 + n)
+      resp = get_date(dn)
       assert_response(resp, 200, 'application/zip')
       keys.concat(parse_keys(resp))
     end

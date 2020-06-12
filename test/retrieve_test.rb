@@ -24,45 +24,41 @@ class RetrieveTest < MiniTest::Test
   end
 
   def test_retrieve_period_happy_path_no_keys
-    period = current_period - 72
-    resp = get_period(period)
+    dn = current_date_number - 3
+    resp = get_date(dn)
     export = assert_happy_zip_response(resp)
-    assert_keys(export, [], region: 'CA', period: period)
+    assert_keys(export, [], region: 'CA', date_number: dn)
   end
 
   def test_reject_unacceptable_periods
-    resp = get_period(current_period)
+    resp = get_date(current_date_number)
     assert_response(
       resp, 404, 'text/plain; charset=utf-8',
       body: "cannot serve data for current period for privacy reasons\n"
     )
 
-    resp = get_period(current_period - PERIOD_HOURS)
+    resp = get_date(current_date_number - 1)
     assert_response(resp, 200, 'application/zip')
 
-    resp = get_period(current_period + PERIOD_HOURS)
+    resp = get_date(current_date_number + 1)
     assert_response(
       resp, 404, 'text/plain; charset=utf-8',
       body: "cannot request future data\n"
     )
 
     # almost too old
-    resp = get_period(current_period - 336)
+    resp = get_date(current_date_number - 14)
     assert_response(resp, 200, 'application/zip')
 
     # too old
-    resp = get_period(current_period - 342)
+    resp = get_date(current_date_number - 15)
     assert_response(resp, 410, 'text/plain; charset=utf-8', body: "requested data no longer valid\n")
-
-    # odd-numbered (invalid) period
-    resp = get_period(current_period - 7)
-    assert_response(resp, 404, 'text/plain; charset=utf-8', body: "period must be even\n")
   end
 
   def test_disallowed_methods
     # Disallowed methods
     %w[post patch delete put].each do |meth|
-      resp = get_period((Time.now.to_i / 3600 / PERIOD_HOURS) * PERIOD_HOURS - 72, method: meth)
+      resp = get_date(current_date_number - 1, method: meth)
       assert_response(resp, 405, 'text/plain; charset=utf-8', body: "method not allowed\n")
     end
   end
@@ -72,15 +68,15 @@ class RetrieveTest < MiniTest::Test
     add_key(active_at: active_at, submitted_at: time_in_date('07:00', yesterday_utc))
     rsin = rolling_start_interval_number(active_at)
 
-    period = yesterday_utc.to_datetime.to_time.to_i / 3600 + PERIOD_HOURS
+    dn = current_date_number - 1
 
-    resp = get_period(period)
+    resp = get_date(dn)
     export = assert_happy_zip_response(resp)
     keys = [tek(
       rolling_start_interval_number: rsin,
       transmission_risk_level: 8,
     )]
-    assert_keys(export, keys, region: 'CA', period: period)
+    assert_keys(export, keys, region: 'CA', date_number: dn)
   end
 
   def test_period_bounds
@@ -95,9 +91,9 @@ class RetrieveTest < MiniTest::Test
 
     rsin = rolling_start_interval_number(active_at)
 
-    period = yesterday_utc.to_datetime.to_time.to_i / 3600 + PERIOD_HOURS
+    dn = current_date_number - 1
 
-    resp = get_period(period)
+    resp = get_date(dn)
     export = assert_happy_zip_response(resp)
     keys = [tek(
       rolling_start_interval_number: rsin,
@@ -111,27 +107,27 @@ class RetrieveTest < MiniTest::Test
   end
 
   def test_invalid_auth
-    period = current_period - 48
+    dn = current_date_number - 2
     hmac = OpenSSL::HMAC.hexdigest(
       "SHA256",
       [ENV.fetch("RETRIEVE_HMAC_KEY")].pack("H*"),
-      "302:#{period}:#{Time.now.to_i / 3600}"
+      "302:#{dn}:#{Time.now.to_i / 3600}"
     )
 
     # success
-    resp = @ret_conn.get("/retrieve/302/#{period}/#{hmac}")
+    resp = @ret_conn.get("/retrieve/302/#{dn}/#{hmac}")
     assert_response(resp, 200, 'application/zip')
 
     # hmac is keyed to date
-    resp = @ret_conn.get("/retrieve/302/#{period - 1}/#{hmac}")
+    resp = @ret_conn.get("/retrieve/302/#{dn - 1}/#{hmac}")
     assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
 
     # changing hmac breaks it
-    resp = @ret_conn.get("/retrieve/302/#{period}/11112222#{hmac[8..-1]}")
+    resp = @ret_conn.get("/retrieve/302/#{dn}/11112222#{hmac[8..-1]}")
     assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
 
     # hmac is required
-    resp = @ret_conn.get("/retrieve/302/#{period}")
+    resp = @ret_conn.get("/retrieve/302/#{dn}")
     assert_response(resp, 404, 'text/plain; charset=utf-8', body: "404 page not found\n")
   end
 
@@ -267,9 +263,9 @@ class RetrieveTest < MiniTest::Test
     # key.dsa_verify_asn1(digest, signature)
   end
 
-  def assert_keys(export, keys, region:, period:)
-    start_time = period * 3600
-    end_time = (period + 6) * 3600
+  def assert_keys(export, keys, region:, date_number:)
+    start_time = date_number * 86400
+    end_time = (date_number + 1) * 86400
 
     assert_equal(
       Covidshield::TemporaryExposureKeyExport.new(
@@ -299,8 +295,6 @@ class RetrieveTest < MiniTest::Test
         signatures: [
           Covidshield::TEKSignature.new(
             signature_info: Covidshield::SignatureInfo.new(
-              app_bundle_id: "com.shopify.covid-shield",
-              android_package: "com.covidshield",
               verification_key_version: "v1",
               verification_key_id: "302",
               signature_algorithm: "1.2.840.10045.4.3.2"

@@ -26,11 +26,11 @@ var ErrTooManyKeys = errors.New("key limit for keypair exceeded")
 // creation/migrations, which are handled separately.
 type Conn interface {
 	// Return keys that were SUBMITTED to the Diagnosis Server during the specified
-	// two-hour period within the specified date.
+	// UTC date.
 	//
 	// Only returns keys that correspond to a Key for a date
 	// less than 14 days ago.
-	FetchKeysForPeriod(string, int32, int32) ([]*pb.TemporaryExposureKey, error)
+	FetchKeysForDateNumber(string, uint32, int32) ([]*pb.TemporaryExposureKey, error)
 	StoreKeys(*[32]byte, []*pb.TemporaryExposureKey) error
 	NewKeyClaim(string, string) (string, error)
 	ClaimKey(string, []byte) ([]byte, error)
@@ -157,8 +157,8 @@ func (c *conn) StoreKeys(appPubKey *[32]byte, keys []*pb.TemporaryExposureKey) e
 	return registerDiagnosisKeys(c.db, appPubKey, keys)
 }
 
-func (c *conn) FetchKeysForPeriod(region string, period int32, currentRSIN int32) ([]*pb.TemporaryExposureKey, error) {
-	rows, err := diagnosisKeysForPeriod(c.db, region, period, currentRSIN)
+func (c *conn) FetchKeysForDateNumber(region string, dateNumber uint32, currentRSIN int32) ([]*pb.TemporaryExposureKey, error) {
+	rows, err := diagnosisKeysForDateNumber(c.db, region, dateNumber, currentRSIN)
 	if err != nil {
 		return nil, err
 	}

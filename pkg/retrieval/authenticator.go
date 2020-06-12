@@ -36,8 +36,8 @@ func NewAuthenticator() Authenticator {
 	return &authenticator{hmacKey: hmacKey}
 }
 
-func (a *authenticator) Authenticate(region, requestedHour, auth string) bool {
-	if len(region) != 3 || len(requestedHour) != 6 || len(auth) != 64 {
+func (a *authenticator) Authenticate(region, requestedDay, auth string) bool {
+	if len(region) != 3 || len(requestedDay) != 5 || len(auth) != 64 {
 		return false
 	}
 
@@ -52,7 +52,7 @@ func (a *authenticator) Authenticate(region, requestedHour, auth string) bool {
 
 	currentHour := int(timemath.HourNumber(time.Now()))
 
-	base := region + ":" + requestedHour + ":"
+	base := region + ":" + requestedDay + ":"
 
 	if validMAC([]byte(base+strconv.Itoa(currentHour)), dst, a.hmacKey) {
 		return true
