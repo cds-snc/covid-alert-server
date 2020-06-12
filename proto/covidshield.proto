@@ -123,7 +123,9 @@ message TemporaryExposureKeyExport {
   optional fixed64 start_timestamp = 1;
   optional fixed64 end_timestamp = 2;
 
-  // Region from which these keys came (for example, MCC).
+  // Region from which these keys came (for example, MCC, however, some schemes
+  // use e.g. ISO-3166-2. There's no apparent hard requirement by the protocol
+  // for the contents here).
   optional string region = 3;
 
   // Reserved for future use. Both batch_num and batch_size
@@ -148,10 +150,14 @@ message SignatureInfo {
   // Key version in case the EN server signing key is rotated.
   optional string verification_key_version = 3;
 
-  // Additional information to uniquely identify the public 
-  // key associated with the EN server's signing key
-  // (for example, the EN server might serve the app
-  // from different countries with different keys).
+  // Additional information to uniquely identify the public key associated with
+  // the EN server's signing key (for example, the EN server might serve the
+  // app from different countries with different keys).
+  //
+  // Three-digit mobile country code (MCC) for validating the key file.
+  // If a region has more than one MCC, the server can choose
+  // which MCC to use. This value does not have to match the client's MCC,
+  // but must correspond to one of the supported MCCs for its region.
   optional string verification_key_id = 4;
 
   // All keys must be signed using the SHA-256 with ECDSA algorithm.
@@ -186,7 +192,7 @@ message TEKSignature {
 
   // Reserved for future use. Both batch_num and batch_size
   // must be set to a value of 1.
-  optional int32 batch_num = 2; 
+  optional int32 batch_num = 2;
   optional int32 batch_size = 3;
 
   // Signature in X9.62 format (ASN.1 SEQUENCE of two INTEGER fields).
