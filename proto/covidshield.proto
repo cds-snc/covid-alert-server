@@ -106,6 +106,9 @@ message Upload {
 // Remaining messages imported from:
 // https://developer.apple.com/documentation/exposurenotification/setting_up_an_exposure_notification_server
 //
+// And also referencing:
+// https://developers.google.com/android/exposure-notifications/exposure-key-file-format
+//
 // The format of the /keys endpoints is a stream of serialized File
 // messages, each length-prefixed with a big-endian uint32. Clients should take
 // care to verify that the batch_size from the headers matches the total number
@@ -115,7 +118,8 @@ message Upload {
 // range, the total content of the response will be "\x00\x00\x00\x00"; that
 // is, a big-endian uint32 of zero.
 //
-// In general, we don't change or add field definitions below this point.
+// In general, these definitions are copied from the resources above, but some
+// of the documentation is clarified or merged.
 
 message TemporaryExposureKeyExport {
   // Time window of keys in the file, based on arrival
@@ -141,11 +145,9 @@ message TemporaryExposureKeyExport {
 }
 
 message SignatureInfo {
-  // App Store app bundle ID.
-  optional string app_bundle_id = 1;
-
-  // Android app package name.
-  optional string android_package = 2;
+  // The first two fields have been deprecated
+  reserved 1, 2;
+  reserved "app_bundle_id", "android_package";
 
   // Key version in case the EN server signing key is rotated.
   optional string verification_key_version = 3;
