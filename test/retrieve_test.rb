@@ -280,8 +280,6 @@ class RetrieveTest < MiniTest::Test
         batch_size: 1,
         signature_infos: [
           Covidshield::SignatureInfo.new(
-            app_bundle_id: "com.shopify.covid-shield",
-            android_package: "com.covidshield",
             verification_key_version: "v1",
             verification_key_id: "302",
             signature_algorithm: "1.2.840.10045.4.3.2"

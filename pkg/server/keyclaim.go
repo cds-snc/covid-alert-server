@@ -53,14 +53,14 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 	}
 
 	hdr := r.Header.Get("Authorization")
-	region, ok := s.regionFromAuthHeader(hdr)
+	region, originator, ok := s.regionFromAuthHeader(hdr)
 	if !ok {
 		log(ctx, nil).WithField("header", hdr).Info("bad auth header")
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	keyClaim, err := s.db.NewKeyClaim(region)
+	keyClaim, err := s.db.NewKeyClaim(region, originator)
 	if err != nil {
 		log(ctx, err).Error("error constructing new key claim")
 		http.Error(w, "server error", http.StatusInternalServerError)
@@ -74,12 +74,13 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *keyClaimServlet) regionFromAuthHeader(header string) (string, bool) {
+func (s *keyClaimServlet) regionFromAuthHeader(header string) (string, string, bool) {
 	parts := strings.SplitN(header, " ", 2)
 	if len(parts) != 2 || parts[0] != "Bearer" {
-		return "", false
+		return "", "", false
 	}
-	return s.auth.Authenticate(parts[1])
+	region, ok := s.auth.Authenticate(parts[1])
+	return region, parts[1], ok
 }
 
 func kcrError(errCode pb.KeyClaimResponse_ErrorCode, triesRemaining int) *pb.KeyClaimResponse {
