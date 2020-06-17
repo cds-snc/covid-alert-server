@@ -165,12 +165,12 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, erro
 	return serverPub, nil
 }
 
-func persistEncryptionKey(db *sql.DB, region string, pub *[32]byte, priv *[32]byte, oneTimeCode string) error {
+func persistEncryptionKey(db *sql.DB, region, originator string, pub *[32]byte, priv *[32]byte, oneTimeCode string) error {
 	_, err := db.Exec(
 		`INSERT INTO encryption_keys
-			(region, server_private_key, server_public_key, one_time_code, remaining_keys)
-			VALUES (?, ?, ?, ?, ?)`,
-		region, priv[:], pub[:], oneTimeCode, initialRemainingKeys,
+			(region, originator, server_private_key, server_public_key, one_time_code, remaining_keys)
+			VALUES (?, ?, ?, ?, ?, ?)`,
+		region, originator, priv[:], pub[:], oneTimeCode, initialRemainingKeys,
 	)
 	return err
 }
@@ -233,7 +233,8 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 	}
 
 	var region string
-	if err := tx.QueryRow("SELECT region FROM encryption_keys WHERE app_public_key = ?", appPubKey[:]).Scan(&region); err != nil {
+	var originator string
+	if err := tx.QueryRow("SELECT region, originator FROM encryption_keys WHERE app_public_key = ?", appPubKey[:]).Scan(&region, &originator); err != nil {
 		if err := tx.Rollback(); err != nil {
 			return err
 		}
@@ -242,8 +243,8 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 
 	s, err := tx.Prepare(`
 		INSERT IGNORE INTO diagnosis_keys
-		(region, key_data, rolling_start_interval_number, rolling_period, transmission_risk_level, hour_of_submission)
-		VALUES (?, ?, ?, ?, ?, ?)`,
+		(region, originator, key_data, rolling_start_interval_number, rolling_period, transmission_risk_level, hour_of_submission)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`,
 	)
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
@@ -259,7 +260,7 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 	for _, key := range keys {
 		hourForKey := postDateKeyIfNecessary(hourOfSubmission, key)
 
-		result, err := s.Exec(region, key.GetKeyData(), key.GetRollingStartIntervalNumber(), key.GetRollingPeriod(), key.GetTransmissionRiskLevel(), hourForKey)
+		result, err := s.Exec(region, originator, key.GetKeyData(), key.GetRollingStartIntervalNumber(), key.GetRollingPeriod(), key.GetTransmissionRiskLevel(), hourForKey)
 		if err != nil {
 			if err := tx.Rollback(); err != nil {
 				return err

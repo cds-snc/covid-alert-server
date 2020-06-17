@@ -19,8 +19,6 @@ const (
 )
 
 var (
-	appBundleID            = "com.shopify.covid-shield"
-	androidPackage         = "com.covidshield"
 	signatureAlgorithm     = "1.2.840.10045.4.3.2" // required by protocol
 	verificationKeyVersion = "v1"
 	verificationKeyID      = "302"
@@ -60,8 +58,6 @@ func SerializeTo(
 	end := uint64(endTimestamp.Unix())
 
 	sigInfo := &pb.SignatureInfo{
-		AppBundleId:            &appBundleID,
-		AndroidPackage:         &androidPackage,
 		VerificationKeyVersion: &verificationKeyVersion,
 		VerificationKeyId:      &verificationKeyID,
 		SignatureAlgorithm:     &signatureAlgorithm,

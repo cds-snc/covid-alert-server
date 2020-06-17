@@ -65,6 +65,14 @@ CREATE TABLE IF NOT EXISTS failed_key_claim_attempts (
 	INDEX (last_failure)
 )`,
 		},
+	}, {
+		id: "3",
+		statements: []string{
+			`ALTER TABLE diagnosis_keys  ADD COLUMN originator VARCHAR(64)`,
+			`ALTER TABLE encryption_keys ADD COLUMN originator VARCHAR(64)`,
+			`ALTER TABLE diagnosis_keys  ADD INDEX (originator)`,
+			`ALTER TABLE encryption_keys ADD INDEX (originator)`,
+		},
 	},
 }
 
