@@ -80,33 +80,9 @@ jobs:
     - name: Check For New Deployments
       env:
         GITHUB_SHA: ${{ github.sha }}
+        submission: submission.covidshield.app
+        retrieval: retrieval.covidshield.app
+        
       run: |
-        count=0
-        kr_finished=0
-        ks_finished=0
-
-        while [[ $count -le 180 && ($kr_finished -le 5 || $ks_finished -le 5) ]]
-        do
-          echo "Watching for new deployments - loop ${count}"
-
-          kr_deployed_revision=$(curl -s https://retrieval.covidshield.app/services/version.json | jq -r .revision)
-          if [ "${kr_deployed_revision}" == "${GITHUB_SHA}" ]; then
-            kr_finished=$(( $kr_finished + 1 ))
-          fi
-
-          ks_deployed_revision=$(curl -s https://submission.covidshield.app/services/version.json | jq -r .revision)
-          if [ "${ks_deployed_revision}" == "${GITHUB_SHA}" ]; then
-            ks_finished=$(( $ks_finished + 1 ))
-          fi
-
-          count=$(( $count + 1 ))
-          sleep 1
-          if [ $count -eq 180 ]; then
-            echo "Deployment failed"
-            exit 1
-          fi
-        done
-
-        echo "Key Retrieval was successfully updated - ${GITHUB_SHA}"
-        echo "Key Submission was successfully updated - ${GITHUB_SHA}"
-        exit 0
+        source ../../../bin/verify-deployment.sh
+        verify_deployments -c $GITHUB_SHA -e $submission -e $retrieval 
