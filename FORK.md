@@ -30,3 +30,4 @@ git pull upstream master
 - Make Terraform files more generic (https://github.com/cds-snc/covid-shield-server/pull/12):
 - Add private ECR Container repositories (https://github.com/cds-snc/covid-shield-server/pull/16)
 - Replace MySQL with Aurora (https://github.com/cds-snc/covid-shield-server/pull/17)
+- Added SNS topics to facilitate monitoring and reporting to outside tools (https://github.com/cds-snc/covid-shield-server/pull/42)
