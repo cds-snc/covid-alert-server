@@ -19,8 +19,6 @@ import (
 const (
 	numberOfDaysToServe = 14
 	hoursInDay          = 24
-	hoursPerPeriod      = 6
-	availableHours      = numberOfDaysToServe * hoursInDay // 336
 )
 
 func NewRetrieveServlet(db persistence.Conn, auth retrieval.Authenticator, signer retrieval.Signer) srvutil.Servlet {
@@ -35,7 +33,7 @@ type retrieveServlet struct {
 
 func (s *retrieveServlet) RegisterRouting(r *mux.Router) {
 	// becomes 7 digits in 2084
-	r.HandleFunc("/retrieve/{region:[0-9]{3}}/{period:[0-9]{6}}/{auth:.*}", s.retrieveWrapper)
+	r.HandleFunc("/retrieve/{region:[0-9]{3}}/{day:[0-9]{5}}/{auth:.*}", s.retrieveWrapper)
 }
 
 func (s *retrieveServlet) fail(logger *logrus.Entry, w http.ResponseWriter, logMsg string, responseMsg string, responseCode int) result {
@@ -61,7 +59,7 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) resul
 	vars := mux.Vars(r)
 
 	region := vars["region"]
-	if !s.auth.Authenticate(region, vars["period"], vars["auth"]) {
+	if !s.auth.Authenticate(region, vars["day"], vars["auth"]) {
 		return s.fail(log(ctx, nil), w, "invalid auth parameter", "unauthorized", http.StatusUnauthorized)
 	}
 
@@ -69,31 +67,29 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) resul
 		return s.fail(log(ctx, nil).WithField("method", r.Method), w, "method not allowed", "", http.StatusMethodNotAllowed)
 	}
 
-	hourNumber64, err := strconv.ParseInt(vars["period"], 10, 32)
+	dateNumber64, err := strconv.ParseUint(vars["day"], 10, 32)
 	if err != nil {
-		return s.fail(log(ctx, err), w, "invalid period parameter", "", http.StatusBadRequest)
+		return s.fail(log(ctx, err), w, "invalid day parameter", "", http.StatusBadRequest)
 	}
-	period := int32(hourNumber64)
+	dateNumber := uint32(dateNumber64)
 
-	startTimestamp := time.Unix(int64(period*3600), 0)
-	endTimestamp := time.Unix(int64((period+hoursPerPeriod)*3600), 0)
+	startTimestamp := time.Unix(int64(dateNumber*86400), 0)
+	endTimestamp := time.Unix(int64((dateNumber+1)*86400), 0)
 
 	currentRSIN := pb.CurrentRollingStartIntervalNumber()
-	currentPeriod := timemath.CurrentPeriod()
+	currentDateNumber := timemath.CurrentDateNumber()
 
-	if period%hoursPerPeriod != 0 {
-		return s.fail(log(ctx, err), w, "odd period", "period must be even", http.StatusNotFound)
-	} else if period == currentPeriod {
-		return s.fail(log(ctx, err), w, "request for current period", "cannot serve data for current period for privacy reasons", http.StatusNotFound)
-	} else if period > currentPeriod {
+	if dateNumber == currentDateNumber {
+		return s.fail(log(ctx, err), w, "request for current date", "cannot serve data for current period for privacy reasons", http.StatusNotFound)
+	} else if dateNumber > currentDateNumber {
 		return s.fail(log(ctx, err), w, "request for future data", "cannot request future data", http.StatusNotFound)
-	} else if period < (currentPeriod - availableHours) {
+	} else if dateNumber < (currentDateNumber - numberOfDaysToServe) {
 		return s.fail(log(ctx, err), w, "request for too-old data", "requested data no longer valid", http.StatusGone)
 	}
 
 	// TODO: Maybe implement multi-pack linked-list scheme depending on what we hear back from G/A
 
-	keys, err := s.db.FetchKeysForPeriod(region, period, currentRSIN)
+	keys, err := s.db.FetchKeysForDateNumber(region, dateNumber, currentRSIN)
 	if err != nil {
 		return s.fail(log(ctx, err), w, "database error", "", http.StatusInternalServerError)
 	}
