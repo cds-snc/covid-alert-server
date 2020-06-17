@@ -64,8 +64,6 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       repeated :keys, :message, 7, "covidshield.TemporaryExposureKey"
     end
     add_message "covidshield.SignatureInfo" do
-      optional :app_bundle_id, :string, 1
-      optional :android_package, :string, 2
       optional :verification_key_version, :string, 3
       optional :verification_key_id, :string, 4
       optional :signature_algorithm, :string, 5
