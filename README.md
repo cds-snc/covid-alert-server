@@ -2,6 +2,8 @@
 
 ![Container Build](https://github.com/CovidShield/server/workflows/Container%20Builds/badge.svg)
 
+Adapted from <https://github.com/CovidShield/server> ([see changes](https://github.com/cds-snc/covid-shield-server/blob/master/FORK.md))
+
 This repository implements a diagnosis server to use as a server for Apple/Google's [Exposure
 Notification](https://www.apple.com/covid19/contacttracing) framework, informed by the [guidance
 provided by Canada's Privacy
@@ -221,8 +223,6 @@ See the [_Contributing Guidelines_](CONTRIBUTING.md).
 
 ## Who Built COVID Shield?
 
-We are a group of Shopify volunteers who want to help to slow the spread of COVID-19 by offering our
-skills and experience developing scalable, easy to use applications. We are releasing COVID Shield
-free of charge and with a flexible open-source license.
+COVID Shield was originally developed by [volunteers at Shopify](https://www.covidshield.app/). It was [released free of charge under a flexible open-source license](https://github.com/CovidShield/server).
 
-For questions, we can be reached at <press@covidshield.app>.
+This repository is being developed by the [Canadian Digital Service](https://digital.canada.ca/). We can be reached at <cds-snc@tbs-sct.gc.ca>.
