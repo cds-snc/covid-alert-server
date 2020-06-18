@@ -16,7 +16,7 @@ in this repository at [covidshield.proto](covidshield.proto).
 The Diagnosis Server implements five main endpoints:
 
 
-* `/retrieve`: Fetch a set of Diagnosis Keys for a given two-hour period
+* `/retrieve`: Fetch a set of Diagnosis Keys for a given UTC date number
 * `/upload`: Upload a batch of Diagnosis Keys
 * `/new-key-claim`: Generate One-Time-Code to permit an app user to upload keys
 * `/claim-key`: Convert One-Time-Code into a credential that permits upload
@@ -86,23 +86,20 @@ positive diagnosis, and then should call it again each subsequent day, for days 
 Duplicate keys will be filtered by the server. Some time on day T+14, the keypairs used for
 encryption and authorization will become invalid and be purged.
 
-## `/retrieve/:region/:period/:hmac`
+## `/retrieve/:region/:datenumber/:hmac`
 
 The `region` is an [MCC](https://www.mcc-mnc.com/) (e.g. "302" for Canada).
 
-An "hour number" in this system is a UTC timestamp divided (using integer division) by 3600. This
-quantity increases by 1 each hour.
-
-A period is an hour number, rounded down to the next lower even number. So for example, the period
-for hours 3 and 2 is 2, in both cases. The period increases by 2 every 2 hours.
+A "date number" in this system is a UTC timestamp divided (using integer division) by 86400. This
+quantity increases by 1 each day, at UTC midnight.
 
 the hmac parameter in this case must be a hex-encoded SHA256 HMAC (64 characters) of:
 
-    region + ":" + period + ":" + currentHour
+    region + ":" + date-number + ":" + currentHour
 
-where `period` is provided in the URL (e.g. `441670`), and `currentHour` is the current UTC hour
-number (e.g. `441683`). `currentHour` must agree with the server to within +/- 1 hour in order for
-the request to be accepted.
+where `date-number` is provided in the URL (e.g. `18431`), and `currentHour` is the current UTC hour
+number (timestamp / 3600; e.g. `441683`). `currentHour` must agree with the server to within +/- 1
+hour in order for the request to be accepted.
 
 Of course there's no reliable way to truly authenticate these requests in an environment where
 millions of devices have immediate access to them upon downloading an Application: this scheme is
@@ -129,8 +126,8 @@ The rationale for this is: a client should fetch the key data for the past 14 da
 There's no need to cache historical keys locally, or to ever fetch them again or feed them into
 future ExposureSessions, as long as the application has recorded locally that keys have been fetched
 and checked for that range of historical time. This implementation is designed in a way that a
-device can check every two hours for newly-available unprocessed data packs and expect to find one
-new one each two hours to feed into an ExposureSession.
+device can check every day for newly-available unprocessed data packs and expect to find one
+new one each day to feed into an ExposureSession.
 
 Note that, over time, historical packs will get smaller: the server will prune keys that, at the
 time of pack generation, are more than 14 days old. However, no new keys will ever be added to a
