@@ -26,23 +26,27 @@ verify_deployments () {
   for endpoint in "${ENDPOINTS[@]}"
   do
     endpoint_count=0
-     while [[ "$count" -le 180 && ("$endpoint_count" -lt 5) ]]
+     { while [[ "$count" -le 20 && ("$endpoint_count" -lt 5) ]]
       do
-        echo "Watching for new deployments in $endpoint - loop ${count}"
         check_endpoint $endpoint $COMMIT_SHA
         if [[ $? == 0 ]]; then
-          endpoint_count=$(($endpoint_count+1))
-          if [[ "$endpoint_count" == 1 ]]; then
-            echo "$endpoint was successfully updated - $COMMIT_SHA"
-          fi
+          endpoint_count=$(($endpoint_count+1)):
         fi
+        case $endpoint_count in
+          0)
+            echo "Watching for new deployments in $endpoint - loop ${count}" ;;
+          1) 
+            echo "$endpoint was successfully updated - $COMMIT_SHA" ;;
+          $(($endpoint_count > 1))) 
+            echo "Verifying deployment $((5 - "$endpoint_count"))" ;;
+        esac
         count=$(( $count + 1 ))
         sleep 1
-        if [ $count -eq 10 ]; then
-        echo "Deployment failed"
+        if [ $count -eq 20 ]; then
+        echo "Deployment failed on $endpoint - $COMMIT_SHA"
           return 1
         fi
-     done & 
+     done & } 2>/dev/null
   done
   while [[ -n $(jobs -r) ]]; do sleep 5; done
 }
