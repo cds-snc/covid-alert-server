@@ -25,20 +25,20 @@ verify_deployments () {
   count=0
   for endpoint in "${ENDPOINTS[@]}"
   do
-    endpoint_count=0
      { while [[ "$count" -le 20 && ("$endpoint_count" -lt 5) ]]
       do
         check_endpoint $endpoint $COMMIT_SHA
         if [[ $? == 0 ]]; then
-          endpoint_count=$(($endpoint_count+1)):
+          endpoint_count=$(($endpoint_count+1))
         fi
         case $endpoint_count in
           0)
             echo "Watching for new deployments in $endpoint - loop ${count}" ;;
           1) 
             echo "$endpoint was successfully updated - $COMMIT_SHA" ;;
-          $(($endpoint_count > 1))) 
-            echo "Verifying deployment $endpoint_count"/5" ;;
+          2|3|4|5)
+            echo "Verified successful deployment $endpoint_count/5 on $endpoint" ;;
+          *) echo "Invalid Counter value"
         esac
         count=$(( $count + 1 ))
         sleep 1
