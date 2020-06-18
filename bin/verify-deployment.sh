@@ -38,7 +38,7 @@ verify_deployments () {
           1) 
             echo "$endpoint was successfully updated - $COMMIT_SHA" ;;
           $(($endpoint_count > 1))) 
-            echo "Verifying deployment $((5 - "$endpoint_count"))" ;;
+            echo "Verifying deployment $endpoint_count"/5" ;;
         esac
         count=$(( $count + 1 ))
         sleep 1
