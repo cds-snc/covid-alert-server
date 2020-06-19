@@ -165,12 +165,12 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, erro
 	return serverPub, nil
 }
 
-func persistEncryptionKey(db *sql.DB, region, originator string, pub *[32]byte, priv *[32]byte, oneTimeCode string) error {
+func persistEncryptionKey(db *sql.DB, region, originator, hashId string, pub *[32]byte, priv *[32]byte, oneTimeCode string) error {
 	_, err := db.Exec(
 		`INSERT INTO encryption_keys
-			(region, originator, server_private_key, server_public_key, one_time_code, remaining_keys)
-			VALUES (?, ?, ?, ?, ?, ?)`,
-		region, originator, priv[:], pub[:], oneTimeCode, initialRemainingKeys,
+			(region, originator, hash_id, server_private_key, server_public_key, one_time_code, remaining_keys)
+			VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		region, originator, hashId, priv[:], pub[:], oneTimeCode, initialRemainingKeys,
 	)
 	return err
 }
@@ -353,6 +353,19 @@ func checkClaimKeyBan(db queryRower, identifier string) (triesRemaining int, ban
 	}
 
 	return triesRemaining, banDuration, nil
+}
+
+func checkHashId(db *sql.DB, identifier string) (int64, error) {
+	var count int64
+
+	row := db.QueryRow("SELECT COUNT(*) FROM encryption_keys WHERE hash_id = ?", identifier)
+	err := row.Scan(&count)
+
+	if err != nil {
+		return 1, err
+	}
+
+	return count, err
 }
 
 func registerClaimKeySuccess(db *sql.DB, identifier string) error {

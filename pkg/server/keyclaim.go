@@ -29,11 +29,13 @@ type keyClaimServlet struct {
 
 func (s *keyClaimServlet) RegisterRouting(r *mux.Router) {
 	r.HandleFunc("/new-key-claim", s.newKeyClaim)
+	r.HandleFunc("/new-key-claim/{hashId:[0-9,a-z]{64}}", s.newKeyClaim)
 	r.HandleFunc("/claim-key", s.claimKeyWrapper)
 }
 
 func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	vars := mux.Vars(r)
 
 	if r.Method == http.MethodOptions {
 		// TODO definitely do better than this for CORS
@@ -60,7 +62,18 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	keyClaim, err := s.db.NewKeyClaim(region, originator)
+	hashId := vars["hashId"]
+
+	if hashId != "" {
+		count, err := s.db.CheckHashId(hashId)
+		if count > 0 {
+			log(ctx, err).WithField("header", hdr).Info("hashId used")
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+	}
+
+	keyClaim, err := s.db.NewKeyClaim(region, originator, hashId)
 	if err != nil {
 		log(ctx, err).Error("error constructing new key claim")
 		http.Error(w, "server error", http.StatusInternalServerError)
