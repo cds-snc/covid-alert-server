@@ -258,7 +258,7 @@ class RetrieveTest < MiniTest::Test
     digest = Digest::SHA256.digest(data)
 
     # Why doesn't this work? Our signature is in X9.62 uncompressed form, which
-    # seems to be what OpenSSL is looking for, but we get "nexted asn1 error".
+    # seems to be what OpenSSL is looking for, but we get "nested asn1 error".
     puts("WARN: not verifying signature")
     # key.dsa_verify_asn1(digest, signature)
   end
