@@ -86,7 +86,7 @@ module Helper
     end
 
     def random_hash
-      SecureRandom.hex(32)
+      SecureRandom.hex(64)
     end
     
     def new_valid_one_time_code

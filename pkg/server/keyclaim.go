@@ -29,7 +29,7 @@ type keyClaimServlet struct {
 
 func (s *keyClaimServlet) RegisterRouting(r *mux.Router) {
 	r.HandleFunc("/new-key-claim", s.newKeyClaim)
-	r.HandleFunc("/new-key-claim/{hashId:[0-9,a-z]{64}}", s.newKeyClaim)
+	r.HandleFunc("/new-key-claim/{hashId:[0-9,a-z]{128}}", s.newKeyClaim)
 	r.HandleFunc("/claim-key", s.claimKeyWrapper)
 }
 
