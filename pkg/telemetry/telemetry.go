@@ -80,7 +80,7 @@ func InitTracer() func() {
 	return cleanupFunc
 }
 
-// InitMeter initializes the global metric progider.
+// InitMeter initializes the global metric provider.
 func InitMeter() func() {
 	cleanupFunc := func() {}
 
