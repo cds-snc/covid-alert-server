@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/CovidShield/server/pkg/persistence"
+
 	"github.com/Shopify/goose/logger"
 	"go.opentelemetry.io/otel/api/correlation"
 	"go.opentelemetry.io/otel/api/global"
@@ -40,8 +42,8 @@ func (c *traceMetricCleaner) Cleanup() {
 	c.meter()
 }
 
-func Initialize() Cleanuper {
-	return &traceMetricCleaner{tracer: InitTracer(), meter: InitMeter()}
+func Initialize(db persistence.Conn) Cleanuper {
+	return &traceMetricCleaner{tracer: InitTracer(), meter: InitMeter(db)}
 }
 
 // InitTracer initializes the global trace provider.
@@ -81,7 +83,7 @@ func InitTracer() func() {
 }
 
 // InitMeter initializes the global metric progider.
-func InitMeter() func() {
+func InitMeter(db persistence.Conn) func() {
 	cleanupFunc := func() {}
 
 	metricProvider := os.Getenv("METRIC_PROVIDER")
@@ -120,7 +122,7 @@ func InitMeter() func() {
 		log(nil, err).WithField("provider", metricProvider).Fatal("failed to initialize metric stdout exporter")
 	}
 
-	initSystemStatsObserver()
+	initSystemStatsObserver(db)
 
 	return cleanupFunc
 }
