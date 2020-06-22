@@ -126,7 +126,7 @@ module Helper
     end
 
     def move_forward_seconds(seconds)
-      raise('does not adjust diagnosis_keys') if seconds >= 1200
+      # raise('does not adjust diagnosis_keys') if seconds >= 1200
 
       @dbconn.prepare(<<~SQL).execute(seconds)
         UPDATE encryption_keys SET created = created - INTERVAL ? SECOND
