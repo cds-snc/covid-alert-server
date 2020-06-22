@@ -10,6 +10,7 @@ require('faraday')
 require('rbnacl')
 require('mysql2')
 require('zip')
+require('securerandom')
 
 KEY_SUBMISSION_SERVER = File.expand_path('../../build/debug/key-submission', __dir__)
 KEY_RETRIEVAL_SERVER = File.expand_path('../../build/debug/key-retrieval', __dir__)
@@ -83,14 +84,19 @@ module Helper
     def diagnosis_originators
       @dbconn.query("SELECT originator FROM encryption_keys").map(&:values).map(&:first)
     end
-      def new_valid_one_time_code
-        resp = @sub_conn.post do |req|
-          req.url('/new-key-claim')
-          req.headers['Authorization'] = 'Bearer first-token'
-        end
-        assert_response(resp, 200, 'text/plain; charset=utf-8')
-        resp.body.chomp
+
+    def random_hash
+      SecureRandom.hex(64)
+    end
+    
+    def new_valid_one_time_code
+      resp = @sub_conn.post do |req|
+        req.url('/new-key-claim')
+        req.headers['Authorization'] = 'Bearer first-token'
       end
+      assert_response(resp, 200, 'text/plain; charset=utf-8')
+      resp.body.chomp
+    end
 
     def new_valid_keyset
       otc = new_valid_one_time_code

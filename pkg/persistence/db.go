@@ -32,7 +32,8 @@ type Conn interface {
 	// less than 14 days ago.
 	FetchKeysForDateNumber(string, uint32, int32) ([]*pb.TemporaryExposureKey, error)
 	StoreKeys(*[32]byte, []*pb.TemporaryExposureKey) error
-	NewKeyClaim(string, string) (string, error)
+	NewKeyClaim(string, string, string) (string, error)
+	CheckHashId(string) (int64, error)
 	ClaimKey(string, []byte) ([]byte, error)
 	PrivForPub([]byte) ([]byte, error)
 
@@ -111,7 +112,7 @@ func (c *conn) ClaimKey(oneTimeCode string, appPublicKey []byte) ([]byte, error)
 
 const maxOneTimeCode = 1e8
 
-func (c *conn) NewKeyClaim(region, originator string) (string, error) {
+func (c *conn) NewKeyClaim(region, originator, hashId string) (string, error) {
 	var err error
 	var n *big.Int
 
@@ -128,7 +129,7 @@ func (c *conn) NewKeyClaim(region, originator string) (string, error) {
 
 		oneTimeCode := fmt.Sprintf("%08d", n)
 
-		err = persistEncryptionKey(c.db, region, originator, pub, priv, oneTimeCode)
+		err = persistEncryptionKey(c.db, region, originator, hashId, pub, priv, oneTimeCode)
 		if err == nil {
 			return oneTimeCode, nil
 		} else if strings.Contains(err.Error(), "Duplicate entry") {
@@ -138,6 +139,10 @@ func (c *conn) NewKeyClaim(region, originator string) (string, error) {
 		}
 	}
 	return "", err
+}
+
+func (c *conn) CheckHashId(hashId string) (int64, error) {
+	return checkHashId(c.db, hashId)
 }
 
 func (c *conn) PrivForPub(pub []byte) ([]byte, error) {
