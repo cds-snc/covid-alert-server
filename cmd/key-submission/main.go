@@ -15,9 +15,9 @@ func main() {
 
 	log(nil, nil).Info("starting")
 
-	defer telemetry.Initialize().Cleanup()
+	mainApp, db := app.NewBuilder().WithSubmission().Build()
 
-	mainApp := app.NewBuilder().WithSubmission().Build()
+	defer telemetry.Initialize(db).Cleanup()
 
 	err := mainApp.RunAndWait()
 	defer log(nil, err).Info("final message before shutdown")

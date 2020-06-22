@@ -401,3 +401,29 @@ func deleteOldFailedClaimKeyAttempts(db *sql.DB) (int64, error) {
 	}
 	return res.RowsAffected()
 }
+
+func countClaimedKeys(db *sql.DB) (int64, error) {
+	var count int64
+
+	row := db.QueryRow("SELECT COUNT(*) FROM encryption_keys WHERE one_time_code IS NULL")
+	err := row.Scan(&count)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return count, err
+}
+
+func countDiagnosisKeys(db *sql.DB) (int64, error) {
+	var count int64
+
+	row := db.QueryRow("SELECT COUNT(*) FROM diagnosis_keys")
+	err := row.Scan(&count)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return count, err
+}

@@ -44,6 +44,9 @@ type Conn interface {
 	DeleteOldEncryptionKeys() (int64, error)
 	DeleteOldFailedClaimKeyAttempts() (int64, error)
 
+	CountClaimedKeys() (int64, error)
+	CountDiagnosisKeys() (int64, error)
+
 	Close() error
 }
 
@@ -201,6 +204,14 @@ func (c *conn) ClaimKeyFailure(identifier string) (int, time.Duration, error) {
 
 func (c *conn) DeleteOldFailedClaimKeyAttempts() (int64, error) {
 	return deleteOldFailedClaimKeyAttempts(c.db)
+}
+
+func (c *conn) CountClaimedKeys() (int64, error ) {
+	return countClaimedKeys(c.db)
+}
+
+func (c *conn) CountDiagnosisKeys() (int64, error ) {
+	return countDiagnosisKeys(c.db)
 }
 
 func (c *conn) Close() error {

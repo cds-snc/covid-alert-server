@@ -66,12 +66,12 @@ func (a *AppBuilder) WithRetrieval() *AppBuilder {
 	return a
 }
 
-func (a *AppBuilder) Build() *App {
+func (a *AppBuilder) Build() (*App, persistence.Conn) {
 	a.components = append(a.components, server.New(bindAddr(a.defaultServerPort), a.servlets))
 
 	main := genmain.New(a.components...)
 	main.SetShutdownDeadline(time.Duration(1) * time.Second)
-	return &App{&main}
+	return &App{&main}, a.database
 }
 
 func DatabaseURL() string {
