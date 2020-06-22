@@ -31,3 +31,6 @@ git pull upstream master
 - Add private ECR Container repositories (https://github.com/cds-snc/covid-shield-server/pull/16)
 - Replace MySQL with Aurora (https://github.com/cds-snc/covid-shield-server/pull/17)
 - Added SNS topics to facilitate monitoring and reporting to outside tools (https://github.com/cds-snc/covid-shield-server/pull/42)
+- Added basic cloudwatch alerts - more alerts to come later (https://github.com/cds-snc/covid-shield-server/pull/45)
+- Added log metrics for key counts in the database (https://github.com/cds-snc/covid-shield-server/pull/51)
+- Added `hashId` logic based on a provincial healthcare provider feature request (https://github.com/cds-snc/covid-shield-server/pull/50)
