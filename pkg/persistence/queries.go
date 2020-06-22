@@ -32,8 +32,8 @@ const initialRemainingKeys = 28
 // which really means they should submit keys for up to 14 days.
 const encryptionKeyValidityDays = 15
 
-// OneTimeCodes must be used within 10 minutes, otherwise they expire.
-const oneTimeCodeExpiryInMinutes = 10
+// OneTimeCodes must be used within 1440 minutes, otherwise they expire.
+const oneTimeCodeExpiryInMinutes = 1440
 
 func deleteOldDiagnosisKeys(db *sql.DB) (int64, error) {
 	oldestDateNumber := timemath.DateNumber(time.Now()) - maxDiagnosisKeyRetentionDays
