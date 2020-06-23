@@ -17,7 +17,8 @@ class ExpirationWorkerTest < MiniTest::Test
     new_valid_one_time_code
     expire_and_assert(encryption: 2, diagnosis: 1)
 
-    move_forward_seconds(1440 * 60 - 2) # T+23:59:58
+    move_forward_days(1)
+    move_forward_seconds(-2) # T+23:59:58
     expire_and_assert(encryption: 2, diagnosis: 1)
 
     move_forward_seconds(4) # T+24:00:02
