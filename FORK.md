@@ -33,5 +33,5 @@ git pull upstream master
 - Added SNS topics to facilitate monitoring and reporting to outside tools (https://github.com/cds-snc/covid-shield-server/pull/42)
 - Added basic cloudwatch alerts - more alerts to come later (https://github.com/cds-snc/covid-shield-server/pull/45)
 - Added log metrics for key counts in the database (https://github.com/cds-snc/covid-shield-server/pull/51)
-- Added hashId logic based on a provincial healthcare provider feature request (https://github.com/cds-snc/covid-shield-server/pull/50)
+- Added `hashID` logic based on a provincial healthcare provider feature request (https://github.com/cds-snc/covid-shield-server/pull/50)
 - Changing the code expiry window from 10 minutes to 24 hours (https://github.com/cds-snc/covid-shield-server/pull/56)

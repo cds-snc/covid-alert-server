@@ -2,10 +2,11 @@
 
 require_relative('lib/helper')
 
-class NewKeyClaimHashIdTest < MiniTest::Test
+class NewKeyClaimhashIDTest < MiniTest::Test
   include(Helper::Include)
 
   def test_new_key_claim
+    
     resp = @sub_conn.post do |req|
       req.url('/new-key-claim/abcd')
       req.headers['Authorization'] = 'Bearer second-token'
@@ -26,7 +27,7 @@ class NewKeyClaimHashIdTest < MiniTest::Test
     assert_response(resp, 200, 'text/plain; charset=utf-8', body: /\A[0-9]{8}\n\z/m)
     previous_code = resp.body
 
-    # Returns another code if HashId not claimed
+    # Returns another code if hashID not claimed
     resp = @sub_conn.post do |req|
       req.url("/new-key-claim/#{hash_id}")
       req.headers['Authorization'] = 'Bearer second-token'
@@ -35,7 +36,7 @@ class NewKeyClaimHashIdTest < MiniTest::Test
     refute_equal(previous_code, resp.body)
     valid_code = resp.body
 
-    # Ensure new codes are not generated for claimed HashIds
+    # Ensure new codes are not generated for claimed hashIDs
     kcq = Covidshield::KeyClaimRequest.new(
       one_time_code: valid_code.strip,
       app_public_key: "00001111222233334444555566667710"
