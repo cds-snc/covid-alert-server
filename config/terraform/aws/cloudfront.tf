@@ -1,5 +1,5 @@
 ###
-# AWS Cloudfront (CDN) - Key Retreval - retrieval.{$route53_zone_name}
+# AWS Cloudfront (CDN) - Key Retrieval - retrieval.{$route53_zone_name}
 ###
 
 resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
