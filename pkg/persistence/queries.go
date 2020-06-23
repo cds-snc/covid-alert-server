@@ -165,12 +165,12 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, erro
 	return serverPub, nil
 }
 
-func persistEncryptionKey(db *sql.DB, region, originator, hashId string, pub *[32]byte, priv *[32]byte, oneTimeCode string) error {
+func persistEncryptionKey(db *sql.DB, region, originator, hashID string, pub *[32]byte, priv *[32]byte, oneTimeCode string) error {
 	_, err := db.Exec(
 		`INSERT INTO encryption_keys
 			(region, originator, hash_id, server_private_key, server_public_key, one_time_code, remaining_keys)
 			VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		region, originator, hashId, priv[:], pub[:], oneTimeCode, initialRemainingKeys,
+		region, originator, hashID, priv[:], pub[:], oneTimeCode, initialRemainingKeys,
 	)
 	return err
 }
@@ -355,39 +355,25 @@ func checkClaimKeyBan(db queryRower, identifier string) (triesRemaining int, ban
 	return triesRemaining, banDuration, nil
 }
 
-func checkHashId(db *sql.DB, identifier string) (int64, error) {
-	var count int64
+func checkHashID(db *sql.DB, identifier string) (int64, error) {
+	var one_time_code string
 
-	row := db.QueryRow("SELECT COUNT(*) FROM encryption_keys WHERE hash_id = ? and one_time_code IS NULL", identifier)
-	err := row.Scan(&count)
+	row := db.QueryRow("SELECT one_time_code FROM encryption_keys WHERE hash_id = ?", identifier)
 
-	if err != nil {
+	switch err := row.Scan(&one_time_code); {
+	case err == sql.ErrNoRows: // no hashID found
+		return 0, err
+	case len(one_time_code) == 0: // used hashID found
 		return 1, err
-	}
-
-	// HashId OTC has been used
-	if count > 0 {
-		return count, err
-	}
-
-	row = db.QueryRow("SELECT COUNT(*) FROM encryption_keys WHERE hash_id = ? AND one_time_code IS NOT NULL", identifier)
-	err = row.Scan(&count)
-
-	if err != nil {
-		return 1, err
-	}
-
-	// HashId OTC exists but has not been used
-	if count > 0 {
+	case len(one_time_code) > 0: // un-used hashID found
 		_, err = db.Exec(`DELETE FROM encryption_keys WHERE hash_id = ? AND one_time_code IS NOT NULL`, identifier)
 		if err != nil {
 			return 1, err
 		}
-		count = 0
+		return 0, err
+	default:
+		return 1, err
 	}
-
-
-	return count, err
 }
 
 func registerClaimKeySuccess(db *sql.DB, identifier string) error {
