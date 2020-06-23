@@ -29,7 +29,7 @@ type keyClaimServlet struct {
 
 func (s *keyClaimServlet) RegisterRouting(r *mux.Router) {
 	r.HandleFunc("/new-key-claim", s.newKeyClaim)
-	r.HandleFunc("/new-key-claim/{hashId:[0-9,a-z]{128}}", s.newKeyClaim)
+	r.HandleFunc("/new-key-claim/{hashID:[0-9,a-z]{128}}", s.newKeyClaim)
 	r.HandleFunc("/claim-key", s.claimKeyWrapper)
 }
 
@@ -62,18 +62,18 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashId := vars["hashId"]
+	hashID := vars["hashID"]
 
-	if hashId != "" {
-		count, err := s.db.CheckHashId(hashId)
+	if len(hashID) != 0 {
+		count, err := s.db.CheckHashID(hashID)
 		if count > 0 {
-			log(ctx, err).WithField("header", hdr).Info("hashId used")
+			log(ctx, err).WithField("header", hdr).Info("hashID used")
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
 	}
 
-	keyClaim, err := s.db.NewKeyClaim(region, originator, hashId)
+	keyClaim, err := s.db.NewKeyClaim(region, originator, hashID)
 	if err != nil {
 		log(ctx, err).Error("error constructing new key claim")
 		http.Error(w, "server error", http.StatusInternalServerError)
