@@ -124,9 +124,9 @@ class UploadTest < MiniTest::Test
     resp = post_teks(teks)
     assert_result(resp, 200, :NONE)
 
-    # non-consecutive
+    # non-consecutive is no longer invalid.
     resp = post_teks(teks[0..3] + teks[5..-1])
-    assert_result(resp, 400, :INVALID_ROLLING_START_INTERVAL_NUMBER)
+    assert_result(resp, 200, :NONE)
 
     # shifted off of midnight
     resp = post_teks(teks.map { |tek| tek.rolling_start_interval_number += 1; tek })
