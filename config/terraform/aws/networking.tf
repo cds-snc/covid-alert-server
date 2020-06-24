@@ -63,27 +63,30 @@ resource "aws_subnet" "covidshield_public" {
 ###
 
 resource "aws_eip" "covidshield_natgw" {
+  count = 3
   depends_on = [aws_internet_gateway.covidshield]
 
   vpc = true
 
   tags = {
-    Name                  = "${var.vpc_name} NAT GW"
+    Name                  = "${var.vpc_name} NAT GW ${count.index}"
     (var.billing_tag_key) = var.billing_tag_value
   }
 }
 
 resource "aws_nat_gateway" "covidshield" {
+  count = 3
   depends_on = [aws_internet_gateway.covidshield]
 
   allocation_id = aws_eip.covidshield_natgw.id
-  subnet_id     = aws_subnet.covidshield_public.0.id
+  subnet_id     = aws_subnet.covidshield_public.*.id[count.index]
 
   tags = {
     Name                  = "${var.vpc_name} NAT GW"
     (var.billing_tag_key) = var.billing_tag_value
   }
 }
+
 
 ###
 # AWS Routes
@@ -104,11 +107,13 @@ resource "aws_default_route_table" "covidshield" {
 }
 
 resource "aws_route_table" "covidshield_public_subnet" {
+  count  = 3
   vpc_id = aws_vpc.covidshield.id
 
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.covidshield.id
+    nat_gateway_id = aws_nat_gateway.covidshield.*.id[count.index]
   }
 
 
