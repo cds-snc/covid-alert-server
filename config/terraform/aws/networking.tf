@@ -194,13 +194,6 @@ resource "aws_security_group" "covidshield_load_balancer" {
     cidr_blocks = [var.vpc_cidr_block]
   }
 
-  egress {
-    protocol    = "tcp"
-    from_port   = 3000
-    to_port     = 3000
-    cidr_blocks = [var.vpc_cidr_block]
-  }
-
   tags = {
     (var.billing_tag_key) = var.billing_tag_value
   }
