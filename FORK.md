@@ -36,3 +36,4 @@ git pull upstream master
 - Added `hashID` logic based on a provincial healthcare provider feature request (https://github.com/cds-snc/covid-shield-server/pull/50)
 - Changing the code expiry window from 10 minutes to 24 hours (https://github.com/cds-snc/covid-shield-server/pull/56)
 - Added example bootstrap configuration for terraform (https://github.com/cds-snc/covid-shield-server/pull/83)
+- Removed portal security group egress (https://github.com/cds-snc/covid-shield-server/pull/84)
