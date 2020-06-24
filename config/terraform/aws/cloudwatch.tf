@@ -3,7 +3,7 @@ data "aws_kms_alias" "cw" {
 }
 
 resource "aws_cloudwatch_log_group" "covidshield" {
-  name = var.cloudwatch_log_group_name
+  name       = var.cloudwatch_log_group_name
   kms_key_id = data.aws_kms_alias.cw.target_key_id
 
   tags = {
