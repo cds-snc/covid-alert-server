@@ -6,7 +6,7 @@ require('openssl')
 require_relative('../../test/lib/protocol/covidshield_pb')
 
 class Database
-  Fetch = Struct.new(:period)
+  Fetch = Struct.new(:date_number)
 
   def initialize
     @fetches = []
@@ -17,13 +17,13 @@ class Database
     @fetches.reject! { |fetch| fetch.date < min_date }
   end
 
-  def fetched?(period)
-    @fetches.include?(Fetch.new(period))
+  def fetched?(date_number)
+    @fetches.include?(Fetch.new(date_number))
   end
 
-  def mark_fetched(period)
-    return if @fetches.include?(Fetch.new(period))
-    @fetches << Fetch.new(period)
+  def mark_fetched(date_number)
+    return if @fetches.include?(Fetch.new(date_number))
+    @fetches << Fetch.new(date_number)
   end
 
   private
@@ -35,6 +35,7 @@ end
 
 class App
   KEY_RETRIEVAL_URL = "http://127.0.0.1:8001"
+  REGION = '302'
 
   def initialize
     @database = Database.new
@@ -72,7 +73,7 @@ class App
 
   def check_for_exposure
     puts "checking for exposure"
-    fetch_exposure_config('302')
+    fetch_exposure_config(REGION)
     puts "running exposure checks"
   end
 
@@ -81,10 +82,10 @@ class App
 
     @database.drop_old_data
 
-    curr = current_period
-    168.times do |n|
-      period = curr - (2 * (n + 1))
-      fetch_period(period) unless @database.fetched?(period)
+    curr = current_date_number
+    14.times do |n|
+      date_number = curr - (n + 1)
+      fetch_date_number(date_number) unless @database.fetched?(date_number)
     end
   end
 
@@ -95,20 +96,21 @@ class App
     raise("failed") unless resp['Content-Type'] == 'application/json'
   end
 
-  def fetch_period(period)
-    puts "Fetching period: #{period}"
-    resp = Faraday.get(period_url(period))
+  def fetch_date_number(date_number)
+    puts "Fetching date_number: #{date_number}"
+    resp = Faraday.get(date_number_url(date_number))
+    puts "received data: \x1b[37;3m#{resp.body[0..40].inspect}... (#{resp.body.size} bytes total)\x1b[0m"
     raise("failed") unless resp.status == 200
     raise("failed") unless resp['Content-Type'] == 'application/zip'
     db_transaction do
       keys = send_to_framework(resp)
       puts("retrieved pack")
-      @database.mark_fetched(period)
+      @database.mark_fetched(date_number)
     end
   end
 
-  def current_period
-    (Time.now.to_i / 3600 / 2) * 2
+  def current_date_number
+    Time.now.to_i / 86400
   end
 
   def send_to_framework(resp)
@@ -124,11 +126,11 @@ class App
     "#{KEY_RETRIEVAL_URL}/exposure-configuration/#{region}.json"
   end
 
-  def period_url(period)
-    message = "#{period}:#{hour_number}"
+  def date_number_url(date_number)
+    message = "#{REGION}:#{date_number}:#{hour_number}"
     key = [ENV.fetch("RETRIEVE_HMAC_KEY")].pack("H*")
     hmac = OpenSSL::HMAC.hexdigest("SHA256", key, message)
-    "#{KEY_RETRIEVAL_URL}/retrieve/#{period}/#{hmac}"
+    "#{KEY_RETRIEVAL_URL}/retrieve/#{REGION}/#{date_number}/#{hmac}"
   end
 
   def hour_number(at = Time.now)
