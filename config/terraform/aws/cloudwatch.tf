@@ -1,10 +1,6 @@
-data "aws_kms_alias" "cw" {
-  name = "alias/cloudwatch"
-}
-
 resource "aws_cloudwatch_log_group" "covidshield" {
   name       = var.cloudwatch_log_group_name
-  kms_key_id = data.aws_kms_alias.cw.target_key_id
+  kms_key_id = aws_kms_alias.cw.key_id
 
   tags = {
     (var.billing_tag_key) = var.billing_tag_value
