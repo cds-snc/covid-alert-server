@@ -5,5 +5,5 @@ resource "aws_kms_key" "cw" {
 
 resource "aws_kms_alias" "cw" {
   name          = "alias/cloudwatch"
-  target_key_id = "${aws_kms_key.cw.key_id}"
+  target_key_id = data.aws_kms_key.cw.key_id
 }
