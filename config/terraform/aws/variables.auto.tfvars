@@ -36,13 +36,13 @@ ecs_key_submission_name = "KeySubmission"
 
 #Autoscaling ECS
 submission_autoscale_enabled = true
-retrieval_autoscale_enabled = true
-scale_down_adjustment = 1
-scale_up_adjustment = 1
-scale_down_cooldown = 60
-scale_up_cooldown = 60
-max_capacity = 10
-min_capacity = 2
+retrieval_autoscale_enabled  = true
+scale_down_adjustment        = 1
+scale_up_adjustment          = 1
+scale_down_cooldown          = 60
+scale_up_cooldown            = 60
+max_capacity                 = 10
+min_capacity                 = 2
 ###
 # AWS VPC - networking.tf
 ###

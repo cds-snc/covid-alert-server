@@ -33,27 +33,27 @@ variable "ecs_name" {
 }
 
 variable "scale_down_adjustment" {
-  type = number
+  type    = number
   default = null
 }
 variable "scale_down_cooldown" {
-  type = number
+  type    = number
   default = null
 }
 variable "scale_up_adjustment" {
-  type = number
+  type    = number
   default = null
 }
 variable "scale_up_cooldown" {
-  type = number
+  type    = number
   default = null
 }
 variable "min_capacity" {
-  type = number
+  type    = number
   default = null
 }
 variable "max_capacity" {
-  type = number
+  type    = number
   default = null
 }
 
