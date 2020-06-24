@@ -32,6 +32,31 @@ variable "ecs_name" {
   type = string
 }
 
+variable "scale_down_adjustment" {
+  type = number
+  default = null
+}
+variable "scale_down_cooldown" {
+  type = number
+  default = null
+}
+variable "scale_up_adjustment" {
+  type = number
+  default = null
+}
+variable "scale_up_cooldown" {
+  type = number
+  default = null
+}
+variable "min_capacity" {
+  type = number
+  default = null
+}
+variable "max_capacity" {
+  type = number
+  default = null
+}
+
 # Task Key Retrieval
 variable "ecs_key_retrieval_name" {
   type = string
@@ -43,6 +68,10 @@ variable "ecs_task_key_retrieval_env_hmac_key" {
 
 variable "ecs_task_key_retrieval_env_ecdsa_key" {
   type = string
+}
+
+variable "retrieval_autoscale_enabled" {
+  type = bool
 }
 
 # Task Key Submission
@@ -62,6 +91,9 @@ variable "metric_provider" {
 # Tracing provider
 variable "tracer_provider" {
   type = string
+}
+variable "submission_autoscale_enabled" {
+  type = bool
 }
 
 ###
