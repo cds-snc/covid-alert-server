@@ -77,6 +77,7 @@ resource "aws_ecs_service" "covidshield_key_retrieval" {
   # Enable the new ARN format to propagate tags to containers (see config/terraform/aws/README.md)
   propagate_tags = "SERVICE"
 
+  desired_count                      = 2
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200
   health_check_grace_period_seconds  = 60
@@ -100,6 +101,7 @@ resource "aws_ecs_service" "covidshield_key_retrieval" {
     (var.billing_tag_key) = var.billing_tag_value
   }
 }
+
 resource "aws_appautoscaling_target" "retrieval" {
   count              = var.retrieval_autoscale_enabled ? 1 : 0
   service_namespace  = "ecs"
@@ -108,6 +110,7 @@ resource "aws_appautoscaling_target" "retrieval" {
   min_capacity       = var.min_capacity
   max_capacity       = var.max_capacity
 }
+
 resource "aws_appautoscaling_policy" "retrieval_up" {
   count              = var.retrieval_autoscale_enabled ? 1 : 0
   name               = "retrieval_up"
@@ -197,6 +200,7 @@ resource "aws_ecs_service" "covidshield_key_submission" {
   # Enable the new ARN format to propagate tags to containers (see config/terraform/aws/README.md)
   propagate_tags = "SERVICE"
 
+  desired_count                      = 2
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200
   health_check_grace_period_seconds  = 60
