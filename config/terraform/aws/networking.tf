@@ -78,7 +78,7 @@ resource "aws_nat_gateway" "covidshield" {
   count      = 3
   depends_on = [aws_internet_gateway.covidshield]
 
-  allocation_id = aws_eip.covidshield_natgw.id
+  allocation_id = aws_eip.covidshield_natgw.*.id[count.index]
   subnet_id     = aws_subnet.covidshield_public.*.id[count.index]
 
   tags = {
