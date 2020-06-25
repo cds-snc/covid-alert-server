@@ -19,7 +19,7 @@ resource "aws_kms_key" "cw" {
     },
     {
       "Effect": "Allow",
-      "Principal": { "Service": "logs.${var.region}.amazonaws.com" },
+      "Principal": { "Service": "logs.ca-central-1.amazonaws.com" },
       "Action": [ 
         "kms:Encrypt*",
         "kms:Decrypt*",
