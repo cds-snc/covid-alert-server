@@ -1,18 +1,54 @@
-resource "aws_flow_log" "covidshield" {
-  log_destination      = aws_s3_bucket.vpc_flow_log.arn
-  log_destination_type = "s3"
-  traffic_type         = "ALL"
-  vpc_id               = aws_vpc.covidshield.id
+resource "aws_flow_log" "vpc_flow_logs" {
+  iam_role_arn    = aws_iam_role.vpc_flow_logs.arn
+  log_destination = aws_cloudwatch_log_group.vpc_flow_logs.arn
+  traffic_type    = "ALL"
+  vpc_id          = aws_vpc.covidshield.id
 }
 
-resource "aws_s3_bucket" "vpc_flow_log" {
-  bucket = "${var.vpc_name}_flow_log_${random_string.random.result}"
-  acl    = "private"
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
-      }
+resource "aws_cloudwatch_log_group" "vpc_flow_logs" {
+  name = "vpc_flow_logs"
+}
+
+resource "aws_iam_role" "vpc_flow_logs" {
+  name = "vpc_flow_logs"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "vpc-flow-logs.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
     }
-  }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "vpc_flow_logs" {
+  name = "vpc_flow_logs"
+  role = aws_iam_role.vpc_flow_logs.id
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    }
+  ]
+}
+EOF
 }
