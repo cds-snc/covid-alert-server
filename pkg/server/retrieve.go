@@ -97,9 +97,10 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) resul
 	w.Header().Add("Content-Type", "application/zip")
 	w.Header().Add("Cache-Control", "public, max-age=3600, max-stale=600")
 
-	// TODO new format
-	if err := retrieval.SerializeTo(ctx, w, keys, region, startTimestamp, endTimestamp, s.signer); err != nil {
+	size, err := retrieval.SerializeTo(ctx, w, keys, region, startTimestamp, endTimestamp, s.signer)
+	if err != nil {
 		log(ctx, err).Info("error writing response")
 	}
+	log(ctx, nil).WithField("unzipped-size", size).WithField("keys", len(keys)).Info("Wrote retrieval")
 	return result(struct{}{})
 }
