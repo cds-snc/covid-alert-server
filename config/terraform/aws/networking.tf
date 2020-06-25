@@ -97,7 +97,7 @@ resource "aws_default_route_table" "covidshield" {
 
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.covidshield.id
+    nat_gateway_id = aws_nat_gateway.covidshield.0.id
   }
 
   tags = {
