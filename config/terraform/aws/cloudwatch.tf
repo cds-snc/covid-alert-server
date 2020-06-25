@@ -1,5 +1,6 @@
 resource "aws_cloudwatch_log_group" "covidshield" {
-  name = var.cloudwatch_log_group_name
+  name       = var.cloudwatch_log_group_name
+  kms_key_id = aws_kms_key.cw.key_id
 
   tags = {
     (var.billing_tag_key) = var.billing_tag_value

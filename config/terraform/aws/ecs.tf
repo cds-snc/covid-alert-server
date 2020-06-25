@@ -73,7 +73,6 @@ resource "aws_ecs_service" "covidshield_key_retrieval" {
   name            = var.ecs_key_retrieval_name
   cluster         = aws_ecs_cluster.covidshield.id
   task_definition = aws_ecs_task_definition.covidshield_key_retrieval.arn
-  desired_count   = 2
   launch_type     = "FARGATE"
   # Enable the new ARN format to propagate tags to containers (see config/terraform/aws/README.md)
   propagate_tags = "SERVICE"
@@ -101,7 +100,51 @@ resource "aws_ecs_service" "covidshield_key_retrieval" {
     (var.billing_tag_key) = var.billing_tag_value
   }
 }
+resource "aws_appautoscaling_target" "retrieval" {
+  count              = var.retrieval_autoscale_enabled ? 1 : 0
+  service_namespace  = "ecs"
+  resource_id        = "service/${aws_ecs_service.covidshield_key_retrieval.cluster}/${aws_ecs_service.covidshield_key_retrieval.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  min_capacity       = var.min_capacity
+  max_capacity       = var.max_capacity
+}
+resource "aws_appautoscaling_policy" "retrieval_up" {
+  count              = var.retrieval_autoscale_enabled ? 1 : 0
+  name               = "retrieval_up"
+  service_namespace  = "ecs"
+  resource_id        = "service/${aws_ecs_service.covidshield_key_retrieval.cluster}/${aws_ecs_service.covidshield_key_retrieval.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
 
+  step_scaling_policy_configuration {
+    adjustment_type         = "ChangeInCapacity"
+    cooldown                = var.scale_up_cooldown
+    metric_aggregation_type = "Average"
+
+    step_adjustment {
+      metric_interval_lower_bound = 0
+      scaling_adjustment          = var.scale_up_adjustment
+    }
+  }
+}
+
+resource "aws_appautoscaling_policy" "retrieval_down" {
+  count              = var.retrieval_autoscale_enabled ? 1 : 0
+  name               = "retrieval_down"
+  service_namespace  = "ecs"
+  resource_id        = "service/${aws_ecs_service.covidshield_key_retrieval.cluster}/${aws_ecs_service.covidshield_key_retrieval.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+
+  step_scaling_policy_configuration {
+    adjustment_type         = "ChangeInCapacity"
+    cooldown                = var.scale_down_cooldown
+    metric_aggregation_type = "Average"
+
+    step_adjustment {
+      metric_interval_upper_bound = 0
+      scaling_adjustment          = var.scale_down_adjustment
+    }
+  }
+}
 
 ###
 # ECS - Key Submission
@@ -150,7 +193,6 @@ resource "aws_ecs_service" "covidshield_key_submission" {
   name            = var.ecs_key_submission_name
   cluster         = aws_ecs_cluster.covidshield.id
   task_definition = aws_ecs_task_definition.covidshield_key_submission.arn
-  desired_count   = 2
   launch_type     = "FARGATE"
   # Enable the new ARN format to propagate tags to containers (see config/terraform/aws/README.md)
   propagate_tags = "SERVICE"
@@ -176,5 +218,50 @@ resource "aws_ecs_service" "covidshield_key_submission" {
 
   tags = {
     (var.billing_tag_key) = var.billing_tag_value
+  }
+}
+resource "aws_appautoscaling_target" "submission" {
+  count              = var.submission_autoscale_enabled ? 1 : 0
+  service_namespace  = "ecs"
+  resource_id        = "service/${aws_ecs_service.covidshield_key_submission.cluster}/${aws_ecs_service.covidshield_key_submission.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  min_capacity       = var.min_capacity
+  max_capacity       = var.max_capacity
+}
+resource "aws_appautoscaling_policy" "submission_up" {
+  count              = var.submission_autoscale_enabled ? 1 : 0
+  name               = "submission_up"
+  service_namespace  = "ecs"
+  resource_id        = "service/${aws_ecs_service.covidshield_key_submission.cluster}/${aws_ecs_service.covidshield_key_submission.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+
+  step_scaling_policy_configuration {
+    adjustment_type         = "ChangeInCapacity"
+    cooldown                = var.scale_up_cooldown
+    metric_aggregation_type = "Average"
+
+    step_adjustment {
+      metric_interval_lower_bound = 0
+      scaling_adjustment          = var.scale_up_adjustment
+    }
+  }
+}
+
+resource "aws_appautoscaling_policy" "submission_down" {
+  count              = var.submission_autoscale_enabled ? 1 : 0
+  name               = "submission_down"
+  service_namespace  = "ecs"
+  resource_id        = "service/${aws_ecs_service.covidshield_key_submission.cluster}/${aws_ecs_service.covidshield_key_submission.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+
+  step_scaling_policy_configuration {
+    adjustment_type         = "ChangeInCapacity"
+    cooldown                = var.scale_down_cooldown
+    metric_aggregation_type = "Average"
+
+    step_adjustment {
+      metric_interval_upper_bound = 0
+      scaling_adjustment          = var.scale_down_adjustment
+    }
   }
 }

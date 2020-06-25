@@ -21,7 +21,7 @@ resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
   aliases = ["retrieval.${var.route53_zone_name}"]
 
   default_cache_behavior {
-    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = aws_lb.covidshield_key_retrieval.name
 
@@ -38,6 +38,7 @@ resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
     min_ttl                = 0
     default_ttl            = 3600
     max_ttl                = 7200
+    compress               = true
   }
 
   restrictions {
