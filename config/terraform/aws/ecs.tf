@@ -74,7 +74,7 @@ resource "aws_ecs_service" "covidshield_key_retrieval" {
   cluster          = aws_ecs_cluster.covidshield.id
   task_definition  = aws_ecs_task_definition.covidshield_key_retrieval.arn
   launch_type      = "FARGATE"
-  platform_version = "1.4"
+  platform_version = "1.4.0"
   # Enable the new ARN format to propagate tags to containers (see config/terraform/aws/README.md)
   propagate_tags = "SERVICE"
 
@@ -198,7 +198,7 @@ resource "aws_ecs_service" "covidshield_key_submission" {
   cluster          = aws_ecs_cluster.covidshield.id
   task_definition  = aws_ecs_task_definition.covidshield_key_submission.arn
   launch_type      = "FARGATE"
-  platform_version = "1.4"
+  platform_version = "1.4.0"
   # Enable the new ARN format to propagate tags to containers (see config/terraform/aws/README.md)
   propagate_tags = "SERVICE"
 
