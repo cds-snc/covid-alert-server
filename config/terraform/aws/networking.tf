@@ -63,7 +63,7 @@ resource "aws_subnet" "covidshield_public" {
 ###
 
 resource "aws_eip" "covidshield_natgw" {
-  count = 3
+  count      = 3
   depends_on = [aws_internet_gateway.covidshield]
 
   vpc = true
@@ -75,7 +75,7 @@ resource "aws_eip" "covidshield_natgw" {
 }
 
 resource "aws_nat_gateway" "covidshield" {
-  count = 3
+  count      = 3
   depends_on = [aws_internet_gateway.covidshield]
 
   allocation_id = aws_eip.covidshield_natgw.id
@@ -111,8 +111,8 @@ resource "aws_route_table" "covidshield_public_subnet" {
   vpc_id = aws_vpc.covidshield.id
 
   route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.covidshield.id
+    cidr_block     = "0.0.0.0/0"
+    gateway_id     = aws_internet_gateway.covidshield.id
     nat_gateway_id = aws_nat_gateway.covidshield.*.id[count.index]
   }
 
