@@ -11,6 +11,7 @@ import (
 	"github.com/CovidShield/server/pkg/persistence"
 	pb "github.com/CovidShield/server/pkg/proto/covidshield"
 
+	"github.com/CovidShield/server/pkg/config"
 	"github.com/Shopify/goose/srvutil"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/nacl/box"
@@ -130,7 +131,7 @@ func (s *uploadServlet) upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(upload.GetKeys()) > pb.MaxKeysInUpload {
+	if len(upload.GetKeys()) > config.AppConstants.MaxKeysInUpload {
 		requestError(
 			ctx, w, err, "too many keys provided",
 			http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_TOO_MANY_KEYS),

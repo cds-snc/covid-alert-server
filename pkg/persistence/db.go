@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/CovidShield/server/pkg/config"
 	pb "github.com/CovidShield/server/pkg/proto/covidshield"
 
 	"github.com/Shopify/goose/logger"
@@ -122,7 +123,7 @@ func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 	}
 
 	for tries := 5; tries > 0; tries-- {
-		n, err = rand.Int(rand.Reader, big.NewInt(maxOneTimeCode)) // [0,max)
+		n, err = rand.Int(rand.Reader, big.NewInt(config.AppConstants.MaxOneTimeCode)) // [0,max)
 		if err != nil {
 			return "", err
 		}
@@ -211,11 +212,11 @@ func (c *conn) DeleteOldFailedClaimKeyAttempts() (int64, error) {
 	return deleteOldFailedClaimKeyAttempts(c.db)
 }
 
-func (c *conn) CountClaimedKeys() (int64, error ) {
+func (c *conn) CountClaimedKeys() (int64, error) {
 	return countClaimedKeys(c.db)
 }
 
-func (c *conn) CountDiagnosisKeys() (int64, error ) {
+func (c *conn) CountDiagnosisKeys() (int64, error) {
 	return countDiagnosisKeys(c.db)
 }
 

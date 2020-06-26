@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/CovidShield/server/pkg/config"
 	"github.com/CovidShield/server/pkg/keyclaim"
 	"github.com/CovidShield/server/pkg/persistence"
 	pb "github.com/CovidShield/server/pkg/proto/covidshield"
@@ -36,6 +37,8 @@ func (s *keyClaimServlet) RegisterRouting(r *mux.Router) {
 func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
+	/* fmt.Println("CONFIG_NAME is\t", viper.GetString(expiration.CONFIG_NAME))
+	fmt.Println("CONFIG_NAME is\t", expiration.CONSTANTS.TRYTHIS) */
 
 	if r.Method == http.MethodOptions {
 		// TODO definitely do better than this for CORS
@@ -172,7 +175,7 @@ func (s *keyClaimServlet) claimKey(w http.ResponseWriter, r *http.Request) resul
 		)
 	}
 
-	maxTries := uint32(persistence.MaxConsecutiveClaimKeyFailures)
+	maxTries := uint32(config.AppConstants.MaxConsecutiveClaimKeyFailures)
 	resp := &pb.KeyClaimResponse{ServerPublicKey: serverPub, TriesRemaining: &maxTries}
 
 	data, err = proto.Marshal(resp)

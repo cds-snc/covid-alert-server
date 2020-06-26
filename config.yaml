@@ -5,12 +5,15 @@ workerExpirationInterval: 30
 maxOneTimeCode: 1e8
 maxConsecutiveClaimKeyFailures: 8
 claimKeyBanDuration: 1
+
 #(Legal requirement: <21)
 #We serve up the last 14. This number 15 includes the current day, so 14 days
 #ago is the oldest data.
 maxDiagnosisKeyRetentionDays: 15
+
 # A generated keypair can upload up to 28 keys (14 on day 1, plus 14 subsequent days)
 initialRemainingKeys: 28
+
 # (Legal requirement: <21)
 # When we assign an Application Public Key to a server keypair, we reset the
 # created timestamp to the beginning of its existing UTC date. (i.e.
@@ -18,12 +21,14 @@ initialRemainingKeys: 28
 # From that timestamp, the Application may submit keys for up to 15 days,
 # which really means they should submit keys for up to 14 days.
 encryptionKeyValidityDays: 15
+
 #OneTimeCodes must be used within 1440 minutes, otherwise they expire.
 oneTimeCodeExpiryInMinutes: 1440
 assignmentParts: 2
 hmacKeyLength: 32
+maxKeysInUpload: 14
+
 # Number of ENIntervalNumber (600s long) after
 # which the Key is rolled.
 # 144 * 600 = 86400 (1 day)
 tekRollingPeriod: 144
-maxKeysInUpload: 14
