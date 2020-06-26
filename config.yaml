@@ -6,9 +6,8 @@ maxOneTimeCode: 1e8
 maxConsecutiveClaimKeyFailures: 8
 claimKeyBanDuration: 1
 
-#(Legal requirement: <21)
-#We serve up the last 14. This number 15 includes the current day, so 14 days
-#ago is the oldest data.
+# (Legal requirement: <21). We serve up the last 14. This number 15 includes the current day,
+# so 14 days ago is the oldest data.
 maxDiagnosisKeyRetentionDays: 15
 
 # A generated keypair can upload up to 28 keys (14 on day 1, plus 14 subsequent days)
@@ -26,9 +25,3 @@ encryptionKeyValidityDays: 15
 oneTimeCodeExpiryInMinutes: 1440
 assignmentParts: 2
 hmacKeyLength: 32
-maxKeysInUpload: 14
-
-# Number of ENIntervalNumber (600s long) after
-# which the Key is rolled.
-# 144 * 600 = 86400 (1 day)
-tekRollingPeriod: 144

@@ -3,7 +3,7 @@ package timemath
 import (
 	"time"
 
-	"github.com/CovidShield/server/pkg/config"
+	pb "github.com/CovidShield/server/pkg/proto/covidshield"
 )
 
 const (
@@ -34,7 +34,7 @@ func HourNumberPlusDays(hourNumber uint32, days int) uint32 {
 }
 
 func RollingStartIntervalNumberPlusDays(rsin int32, days int) int32 {
-	return int32(int(rsin) + days*config.AppConstants.TEKRollingPeriod)
+	return int32(int(rsin) + days*pb.TEKRollingPeriod)
 }
 
 func CurrentDateNumber() uint32 {

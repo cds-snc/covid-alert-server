@@ -1,9 +1,11 @@
 package config
 
 import (
-	"fmt"
+	"github.com/Shopify/goose/logger"
 	"github.com/spf13/viper"
 )
+
+var log = logger.New("config")
 
 type Constants struct {
 	DefaultSubmissionServerPort    uint32
@@ -19,8 +21,6 @@ type Constants struct {
 	OneTimeCodeExpiryInMinutes     uint32
 	AssignmentParts                int
 	HmacKeyLength                  int
-	TEKRollingPeriod               int
-	MaxKeysInUpload                int
 }
 
 var AppConstants Constants
@@ -31,11 +31,11 @@ func InitConfig() {
 	viper.SetConfigType("yaml")
 	setDefaults()
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Printf("Error reading config file, %s", err)
+		log(nil, err).Fatal("Error reading application configuration file")
 	}
 	err := viper.Unmarshal(&AppConstants)
 	if err != nil {
-		fmt.Printf("Unable to unmarshal the config file, %v", err)
+		log(nil, err).Fatal("Unable to unmarshal the application configuration file")
 	}
 }
 
@@ -43,7 +43,7 @@ func setDefaults() {
 	viper.SetDefault("defaultSubmissionServerPort", 8000)
 	viper.SetDefault("defaultRetrievalServerPort", 8001)
 	viper.SetDefault("defaultServerPort", 8010)
-	viper.SetDefault("expirationInterval", 30)
+	viper.SetDefault("workerExpirationInterval", 30)
 	viper.SetDefault("maxOneTimeCode", 1e8)
 	viper.SetDefault("maxConsecutiveClaimKeyFailures", 8)
 	viper.SetDefault("claimKeyBanDuration", 1)
@@ -53,6 +53,4 @@ func setDefaults() {
 	viper.SetDefault("oneTimeCodeExpiryInMinutes", 1440)
 	viper.SetDefault("assignmentParts", 2)
 	viper.SetDefault("hmacKeyLength", 32)
-	viper.SetDefault("tekRollingPeriod", 144)
-	viper.SetDefault("maxKeysInUpload", 14)
 }

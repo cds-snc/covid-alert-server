@@ -37,8 +37,6 @@ func (s *keyClaimServlet) RegisterRouting(r *mux.Router) {
 func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
-	/* fmt.Println("CONFIG_NAME is\t", viper.GetString(expiration.CONFIG_NAME))
-	fmt.Println("CONFIG_NAME is\t", expiration.CONSTANTS.TRYTHIS) */
 
 	if r.Method == http.MethodOptions {
 		// TODO definitely do better than this for CORS

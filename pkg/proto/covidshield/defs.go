@@ -2,7 +2,6 @@ package covidshield
 
 import (
 	"errors"
-	"github.com/CovidShield/server/pkg/config"
 	"time"
 )
 
@@ -13,6 +12,11 @@ const (
 	KeyLength = 32
 	// KeyDataLength is the length of an Exposure Notification Temporary Exposure Key (Data)
 	KeyDataLength = 16
+	// Number of ENIntervalNumber (600s long) after
+	// which the Key is rolled.
+	// 144 * 600 = 86400 (1 day)
+	TEKRollingPeriod = 144
+	MaxKeysInUpload  = 14
 )
 
 func IntoKey(bytes []byte) (*[KeyLength]byte, error) {
@@ -40,5 +44,5 @@ func IntoNonce(bytes []byte) (*[NonceLength]byte, error) {
 func CurrentRollingStartIntervalNumber() int32 {
 	epochTime := time.Now().Unix()
 	intervalNumber := int32(epochTime / (60 * 10))
-	return (intervalNumber / int32(config.AppConstants.TEKRollingPeriod)) * int32(config.AppConstants.TEKRollingPeriod)
+	return (intervalNumber / TEKRollingPeriod) * TEKRollingPeriod
 }
