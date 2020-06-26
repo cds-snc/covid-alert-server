@@ -1,6 +1,9 @@
-# Security Policy
+# Security
 
-COVID Shield takes security seriously. If you have found a security vulnerability
-in any of the software within this GitHub organization, please **DO NOT** create
-a public issue. Instead, send a detailed report to security@covidshield.app. We endeavour
-to respond to all security-related email within 7 days.
+**Do not post security issues to our public repositories.** Security issues must be reported by email to <john.o'brien@tbs-sct.gc.ca>.
+
+______________________
+
+# Sécurité
+
+**Ne publiez pas de problèmes de sécurité dans nos dépôts publics.** Les problèmes de sécurité doivent être signalés par courriel à <john.o'brien@tbs-sct.gc.ca>.
