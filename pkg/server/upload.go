@@ -10,6 +10,7 @@ import (
 
 	"github.com/CovidShield/server/pkg/persistence"
 	pb "github.com/CovidShield/server/pkg/proto/covidshield"
+
 	"github.com/Shopify/goose/srvutil"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/nacl/box"
