@@ -448,3 +448,16 @@ func countDiagnosisKeys(db *sql.DB) (int64, error) {
 
 	return count, err
 }
+
+func countUnclaimedKeys(db *sql.DB) (int64, error) {
+	var count int64
+
+	row := db.QueryRow("SELECT COUNT(*) FROM encryption_keys WHERE one_time_code IS NOT NULL")
+	err := row.Scan(&count)
+
+	if err != nil {
+		return -1, err
+	}
+
+	return count, err
+}

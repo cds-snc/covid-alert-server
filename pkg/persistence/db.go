@@ -47,6 +47,7 @@ type Conn interface {
 
 	CountClaimedKeys() (int64, error)
 	CountDiagnosisKeys() (int64, error)
+	CountUnclaimedKeys() (int64, error)
 
 	Close() error
 }
@@ -217,6 +218,10 @@ func (c *conn) CountClaimedKeys() (int64, error ) {
 
 func (c *conn) CountDiagnosisKeys() (int64, error ) {
 	return countDiagnosisKeys(c.db)
+}
+
+func (c *conn) CountUnclaimedKeys() (int64, error ) {
+	return countClaimedKeys(c.db)
 }
 
 func (c *conn) Close() error {
