@@ -423,7 +423,7 @@ func deleteOldFailedClaimKeyAttempts(db *sql.DB) (int64, error) {
 	return res.RowsAffected()
 }
 
-func countClaimedKeys(db *sql.DB) (int64, error) {
+func countClaimedOneTimeCodes(db *sql.DB) (int64, error) {
 	var count int64
 
 	row := db.QueryRow("SELECT COUNT(*) FROM encryption_keys WHERE one_time_code IS NULL")
@@ -449,7 +449,7 @@ func countDiagnosisKeys(db *sql.DB) (int64, error) {
 	return count, err
 }
 
-func countUnclaimedKeys(db *sql.DB) (int64, error) {
+func countUnclaimedOneTimeCodes(db *sql.DB) (int64, error) {
 	var count int64
 
 	row := db.QueryRow("SELECT COUNT(*) FROM encryption_keys WHERE one_time_code IS NOT NULL")
