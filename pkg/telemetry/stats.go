@@ -62,14 +62,14 @@ func initSystemStatsObserver(db persistence.Conn) {
 	cpuPercent = cb.NewFloat64ValueObserver("covidshield.system.cpu.percent",
 		metric.WithDescription("Percentage of all CPUs combined"),
 	)
-	claimedOneTimeCodesTotalMetric = cb.NewInt64ValueObserver("covidshield.app.claimed_keys.total",
-		metric.WithDescription("Total number of claimed keys"),
+	claimedOneTimeCodesTotalMetric = cb.NewInt64ValueObserver("covidshield.app.claimed_one_time_codes.total",
+		metric.WithDescription("Total number of claimed one time codes"),
 	)
 	diagnosisKeysTotalMetric = cb.NewInt64ValueObserver("covidshield.app.diagnosis_keys.total",
 		metric.WithDescription("Total number of diagnosis keys"),
 	)
-	unclaimedOneTimeCodesTotalMetric = cb.NewInt64ValueObserver("covidshield.app.unclaimed_keys.total",
-		metric.WithDescription("Total number of unclaimed keys"),
+	unclaimedOneTimeCodesTotalMetric = cb.NewInt64ValueObserver("covidshield.app.unclaimed_one_time_codes.total",
+		metric.WithDescription("Total number of unclaimed one time codes"),
 	)
 }
 
