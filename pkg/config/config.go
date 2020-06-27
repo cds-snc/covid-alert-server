@@ -1,6 +1,8 @@
 package config
 
 import (
+	"flag"
+
 	"github.com/Shopify/goose/logger"
 	"github.com/spf13/viper"
 )
@@ -27,8 +29,10 @@ var AppConstants Constants
 
 func InitConfig() {
 	viper.SetConfigName("config")
-	viper.AddConfigPath("/home/runner/work/covid-shield-server/covid-shield-server/")
-	viper.AddConfigPath("../../")
+	// Reading config file path from command line flag
+	configFilePath := flag.String("config_file_path", "../", "Path for Viper config.yaml")
+	flag.Parse()
+	viper.AddConfigPath(*configFilePath)
 	viper.SetConfigType("yaml")
 	setDefaults()
 	if err := viper.ReadInConfig(); err != nil {
