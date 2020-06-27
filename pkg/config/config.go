@@ -30,7 +30,7 @@ var AppConstants Constants
 func InitConfig() {
 	viper.SetConfigName("config")
 	// Reading config file path from command line flag
-	configFilePath := flag.String("config_file_path", "../", "Path for Viper config.yaml")
+	configFilePath := flag.String("config_file_path", "../../", "Path for Viper config.yaml")
 	flag.Parse()
 	viper.AddConfigPath(*configFilePath)
 	viper.SetConfigType("yaml")
