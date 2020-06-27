@@ -27,15 +27,16 @@ var AppConstants Constants
 
 func InitConfig() {
 	viper.SetConfigName("config")
+	viper.AddConfigPath("/home/runner/work/covid-shield-server/covid-shield-server/")
 	viper.AddConfigPath("../../")
 	viper.SetConfigType("yaml")
 	setDefaults()
 	if err := viper.ReadInConfig(); err != nil {
-		log(nil, err).Fatal("Error reading application configuration file")
+		log(nil, err).Info("Error reading application configuration file")
 	}
 	err := viper.Unmarshal(&AppConstants)
 	if err != nil {
-		log(nil, err).Fatal("Unable to unmarshal the application configuration file")
+		log(nil, err).Info("Unable to unmarshal the application configuration file")
 	}
 }
 
