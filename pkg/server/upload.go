@@ -227,20 +227,34 @@ func validateKeys(ctx context.Context, w http.ResponseWriter, keys []*pb.Tempora
 
 	var ints []int
 	for _, key := range keys {
-		ints = append(ints, int(key.GetRollingStartIntervalNumber()))
+		rsin := int(key.GetRollingStartIntervalNumber())
+		ints = append(ints, rsin)
 	}
 
 	sort.Ints(ints)
 
-	base := ints[0]
-	for index, rsn := range ints {
-		if rsn != base+(144*index) {
+	min := ints[0]
+	max := ints[len(ints)-1]
+	maxEnd := max + 144
+
+	if maxEnd-min > (144 * 14) {
+		requestError(
+			ctx, w, nil, "sequence of rollingStartIntervalNumbers exceeds 14 days",
+			http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_INVALID_ROLLING_START_INTERVAL_NUMBER),
+		)
+		return false
+	}
+
+	lastEnd := 0
+	for _, rsn := range ints {
+		if rsn < lastEnd {
 			requestError(
-				ctx, w, nil, "invalid sequence of rollingStartIntervalNumbers",
+				ctx, w, nil, "overlapping or duplicate rollingStartIntervalNumbers",
 				http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_INVALID_ROLLING_START_INTERVAL_NUMBER),
 			)
 			return false
 		}
+		lastEnd = rsn + 144
 	}
 
 	return true

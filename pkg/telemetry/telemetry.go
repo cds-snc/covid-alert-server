@@ -63,7 +63,7 @@ func InitTracer() func() {
 	case STDOUT, PRETTY:
 		exporter, err = tracerstdout.NewExporter(tracerstdout.Options{PrettyPrint: tracerProvider == PRETTY})
 	default:
-		log(nil, nil).WithField("provider", tracerProvider).Fatal("Unsuported trace provider")
+		log(nil, nil).WithField("provider", tracerProvider).Fatal("Unsupported trace provider")
 	}
 
 	if err != nil {
@@ -115,7 +115,7 @@ func InitMeter(db persistence.Conn) func() {
 			_ = http.ListenAndServe(":2222", nil)
 		}()
 	default:
-		log(nil, nil).WithField("provider", metricProvider).Fatal("Unsuported metric provider")
+		log(nil, nil).WithField("provider", metricProvider).Fatal("Unsupported metric provider")
 	}
 
 	if err != nil {
