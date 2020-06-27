@@ -49,7 +49,7 @@ func SerializeTo(
 	region string,
 	startTimestamp, endTimestamp time.Time,
 	signer Signer,
-) error {
+) (int, error) {
 	zipw := zip.NewWriter(w)
 
 	one := int32(1)
@@ -77,12 +77,12 @@ func SerializeTo(
 
 	exportBinData, err := proto.Marshal(tekExport)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	sig, err := signer.Sign(exportBinData)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	sigList := &pb.TEKSignatureList{
@@ -95,38 +95,43 @@ func SerializeTo(
 	}
 	exportSigData, err := proto.Marshal(sigList)
 	if err != nil {
-		return err
+		return -1, err
 	}
+
+	totalN := 0
 
 	f, err := zipw.Create("export.bin")
 	if err != nil {
-		return err
+		return -1, err
 	}
 	n, err := f.Write(binHeader)
 	if err != nil {
-		return err
+		return -1, err
 	}
+	totalN += n
 	if n != binHeaderLength {
 		panic("header len")
 	}
 	n, err = f.Write(exportBinData)
 	if err != nil {
-		return err
+		return -1, err
 	}
+	totalN += n
 	if n != len(exportBinData) {
 		panic("len")
 	}
 	f, err = zipw.Create("export.sig")
 	if err != nil {
-		return err
+		return -1, err
 	}
 	n, err = f.Write(exportSigData)
 	if err != nil {
-		return err
+		return -1, err
 	}
+	totalN += n
 	if n != len(exportSigData) {
 		panic("len")
 	}
 
-	return zipw.Close()
+	return totalN, zipw.Close()
 }
