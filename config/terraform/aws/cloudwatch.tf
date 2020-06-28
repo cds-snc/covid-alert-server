@@ -18,8 +18,7 @@ resource "aws_cloudwatch_metric_alarm" "retrieval_cpu_utilization_high" {
   threshold           = "50"
   alarm_description   = "This metric monitors ecs cpu utilization"
 
-  alarm_actions = [aws_sns_topic.alert_warning.arn, aws_appautoscaling_policy.retrieval_up.*.arn]
-
+  alarm_actions = [aws_sns_topic.alert_warning.arn, join("", aws_appautoscaling_policy.retrieval_up.*.arn)]
   dimensions = {
     ClusterName = aws_ecs_cluster.covidshield.name
     ServiceName = aws_ecs_service.covidshield_key_retrieval.name
@@ -37,7 +36,7 @@ resource "aws_cloudwatch_metric_alarm" "submission_cpu_utilization_high" {
   threshold           = "50"
   alarm_description   = "This metric monitors ecs cpu utilization"
 
-  alarm_actions = [aws_sns_topic.alert_warning.arn, aws_appautoscaling_policy.submission_up.*.arn]
+  alarm_actions = [aws_sns_topic.alert_warning.arn, join("", aws_appautoscaling_policy.submission_up.*.arn)]
 
   dimensions = {
     ClusterName = aws_ecs_cluster.covidshield.name
@@ -56,7 +55,7 @@ resource "aws_cloudwatch_metric_alarm" "retrieval_memory_utilization_high" {
   threshold           = "50"
   alarm_description   = "This metric monitors ecs memory utilization"
 
-  alarm_actions = [aws_sns_topic.alert_warning.arn, aws_appautoscaling_policy.retrieval_up.*.arn]
+  alarm_actions = [aws_sns_topic.alert_warning.arn, join("", aws_appautoscaling_policy.retrieval_up.*.arn)]
 
   dimensions = {
     ClusterName = aws_ecs_cluster.covidshield.name
@@ -75,7 +74,7 @@ resource "aws_cloudwatch_metric_alarm" "submission_memory_utilization_high" {
   threshold           = "50"
   alarm_description   = "This metric monitors ecs memory utilization"
 
-  alarm_actions = [aws_sns_topic.alert_warning.arn, aws_appautoscaling_policy.submission_up.*.arn]
+  alarm_actions = [aws_sns_topic.alert_warning.arn, join("", aws_appautoscaling_policy.submission_up.*.arn)]
 
   dimensions = {
     ClusterName = aws_ecs_cluster.covidshield.name
@@ -93,7 +92,7 @@ resource "aws_cloudwatch_metric_alarm" "retrieval_cpu_utilization_low" {
   threshold           = "25"
   alarm_description   = "This metric monitors ecs cpu utilization"
 
-  alarm_actions = [aws_sns_topic.alert_warning.arn, aws_appautoscaling_policy.retrieval_down.*.arn]
+  alarm_actions = [aws_sns_topic.alert_warning.arn, join("", aws_appautoscaling_policy.retrieval_down.*.arn)]
 
   dimensions = {
     ClusterName = aws_ecs_cluster.covidshield.name
@@ -112,7 +111,7 @@ resource "aws_cloudwatch_metric_alarm" "submission_cpu_utilization_low" {
   threshold           = "25"
   alarm_description   = "This metric monitors ecs cpu utilization"
 
-  alarm_actions = [aws_sns_topic.alert_warning.arn, aws_appautoscaling_policy.submission_down.*.arn]
+  alarm_actions = [aws_sns_topic.alert_warning.arn, join("", aws_appautoscaling_policy.submission_down.*.arn)]
 
   dimensions = {
     ClusterName = aws_ecs_cluster.covidshield.name
@@ -131,7 +130,7 @@ resource "aws_cloudwatch_metric_alarm" "retrieval_memory_utilization_low" {
   threshold           = "25"
   alarm_description   = "This metric monitors ecs memory utilization"
 
-  alarm_actions = [aws_sns_topic.alert_warning.arn, aws_appautoscaling_policy.retrieval_down.*.arn]
+  alarm_actions = [aws_sns_topic.alert_warning.arn, join("", aws_appautoscaling_policy.retrieval_down.*.arn)]
 
   dimensions = {
     ClusterName = aws_ecs_cluster.covidshield.name
@@ -150,7 +149,7 @@ resource "aws_cloudwatch_metric_alarm" "submission_memory_utilization_low" {
   threshold           = "25"
   alarm_description   = "This metric monitors ecs memory utilization"
 
-  alarm_actions = [aws_sns_topic.alert_warning.arn, aws_appautoscaling_policy.submission_down.*.arn]
+  alarm_actions = [aws_sns_topic.alert_warning.arn, join("", aws_appautoscaling_policy.submission_down.*.arn)]
 
   dimensions = {
     ClusterName = aws_ecs_cluster.covidshield.name
