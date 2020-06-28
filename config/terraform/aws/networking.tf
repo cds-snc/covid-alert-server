@@ -127,7 +127,7 @@ resource "aws_route_table_association" "covidshield" {
   count = 3
 
   subnet_id      = aws_subnet.covidshield_public.*.id[count.index]
-  route_table_id = aws_route_table.covidshield_public_subnet.id
+  route_table_id = aws_route_table.covidshield_public_subnet.*.id[count.index]
 }
 
 
