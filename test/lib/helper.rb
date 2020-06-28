@@ -12,8 +12,8 @@ require('mysql2')
 require('zip')
 require('securerandom')
 
-KEY_SUBMISSION_SERVER = File.expand_path('../../build/debug/key-submission', __dir__)
-KEY_RETRIEVAL_SERVER = File.expand_path('../../build/debug/key-retrieval', __dir__)
+KEY_SUBMISSION_SERVER = File.expand_path('../../build/debug/key-submission --config_file_path ./', __dir__)
+KEY_RETRIEVAL_SERVER = File.expand_path('../../build/debug/key-retrieval  --config_file_path ./', __dir__)
 
 begin
   DB_HOST = ENV.fetch('DB_HOST')
