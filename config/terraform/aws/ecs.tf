@@ -118,7 +118,7 @@ resource "aws_appautoscaling_policy" "retrieval_up" {
   step_scaling_policy_configuration {
     adjustment_type         = "ChangeInCapacity"
     cooldown                = var.scale_up_cooldown
-    metric_aggregation_type = "Average"
+    metric_aggregation_type = "Maximum"
 
     step_adjustment {
       metric_interval_lower_bound = 0
@@ -137,7 +137,7 @@ resource "aws_appautoscaling_policy" "retrieval_down" {
   step_scaling_policy_configuration {
     adjustment_type         = "ChangeInCapacity"
     cooldown                = var.scale_down_cooldown
-    metric_aggregation_type = "Average"
+    metric_aggregation_type = "Maximum"
 
     step_adjustment {
       metric_interval_upper_bound = 0
@@ -238,7 +238,7 @@ resource "aws_appautoscaling_policy" "submission_up" {
   step_scaling_policy_configuration {
     adjustment_type         = "ChangeInCapacity"
     cooldown                = var.scale_up_cooldown
-    metric_aggregation_type = "Average"
+    metric_aggregation_type = "Maximum"
 
     step_adjustment {
       metric_interval_lower_bound = 0
@@ -257,7 +257,7 @@ resource "aws_appautoscaling_policy" "submission_down" {
   step_scaling_policy_configuration {
     adjustment_type         = "ChangeInCapacity"
     cooldown                = var.scale_down_cooldown
-    metric_aggregation_type = "Average"
+    metric_aggregation_type = "Maximum"
 
     step_adjustment {
       metric_interval_upper_bound = 0
