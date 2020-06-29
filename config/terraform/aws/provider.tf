@@ -9,10 +9,7 @@ provider "aws" {
   region  = "us-east-1"
 }
 
-provider "github" {
-  organization = "cds-snc"
-  anonymous    = false
-}
+provider "github" {}
 
 terraform {
   required_version = "> 0.12.0"
