@@ -70,13 +70,15 @@ resource "aws_ecs_service" "covidshield_key_retrieval" {
     aws_lb_listener.covidshield_key_retrieval,
   ]
 
-  name            = var.ecs_key_retrieval_name
-  cluster         = aws_ecs_cluster.covidshield.id
-  task_definition = aws_ecs_task_definition.covidshield_key_retrieval.arn
-  launch_type     = "FARGATE"
+  name             = var.ecs_key_retrieval_name
+  cluster          = aws_ecs_cluster.covidshield.id
+  task_definition  = aws_ecs_task_definition.covidshield_key_retrieval.arn
+  launch_type      = "FARGATE"
+  platform_version = "1.4.0"
   # Enable the new ARN format to propagate tags to containers (see config/terraform/aws/README.md)
   propagate_tags = "SERVICE"
 
+  desired_count                      = 2
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200
   health_check_grace_period_seconds  = 60
@@ -100,6 +102,7 @@ resource "aws_ecs_service" "covidshield_key_retrieval" {
     (var.billing_tag_key) = var.billing_tag_value
   }
 }
+
 resource "aws_appautoscaling_target" "retrieval" {
   count              = var.retrieval_autoscale_enabled ? 1 : 0
   service_namespace  = "ecs"
@@ -108,6 +111,7 @@ resource "aws_appautoscaling_target" "retrieval" {
   min_capacity       = var.min_capacity
   max_capacity       = var.max_capacity
 }
+
 resource "aws_appautoscaling_policy" "retrieval_up" {
   count              = var.retrieval_autoscale_enabled ? 1 : 0
   name               = "retrieval_up"
@@ -190,13 +194,15 @@ resource "aws_ecs_service" "covidshield_key_submission" {
     aws_lb_listener.covidshield_key_submission,
   ]
 
-  name            = var.ecs_key_submission_name
-  cluster         = aws_ecs_cluster.covidshield.id
-  task_definition = aws_ecs_task_definition.covidshield_key_submission.arn
-  launch_type     = "FARGATE"
+  name             = var.ecs_key_submission_name
+  cluster          = aws_ecs_cluster.covidshield.id
+  task_definition  = aws_ecs_task_definition.covidshield_key_submission.arn
+  launch_type      = "FARGATE"
+  platform_version = "1.4.0"
   # Enable the new ARN format to propagate tags to containers (see config/terraform/aws/README.md)
   propagate_tags = "SERVICE"
 
+  desired_count                      = 2
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200
   health_check_grace_period_seconds  = 60
