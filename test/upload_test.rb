@@ -19,7 +19,7 @@ class UploadTest < MiniTest::Test
     req = encrypted_request(dummy_payload, new_valid_keyset)
     resp = @sub_conn.post('/upload', req.to_proto)
     assert_result(resp, 200, :NONE)
-    assert_equal(['first-token'], diagnosis_originators)
+    assert_equal(['first-very-long-token'], diagnosis_originators)
 
     # timestamp almost too old
     req = encrypted_request(dummy_payload(timestamp: Time.at(Time.now.to_i - 59*60)), new_valid_keyset)

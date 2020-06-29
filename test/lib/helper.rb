@@ -92,7 +92,7 @@ module Helper
     def new_valid_one_time_code
       resp = @sub_conn.post do |req|
         req.url('/new-key-claim')
-        req.headers['Authorization'] = 'Bearer first-token'
+        req.headers['Authorization'] = 'Bearer first-very-long-token'
       end
       assert_response(resp, 200, 'text/plain; charset=utf-8')
       resp.body.chomp
@@ -207,7 +207,7 @@ module Helper
       pid = Process.spawn(
         {
           'BIND_ADDR' => addr,
-          'KEY_CLAIM_TOKEN' => 'first-token=302:second-token=302',
+          'KEY_CLAIM_TOKEN' => 'first-very-long-token=302:second-very-long-token=302',
           'DATABASE_URL' => DATABASE_URL,
         },
         bin, STDERR => File.open('/dev/null')
