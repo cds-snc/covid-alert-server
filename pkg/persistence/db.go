@@ -32,7 +32,6 @@ type Conn interface {
 	// less than 14 days ago.
 	FetchKeysForDateNumber(string, uint32, int32) ([]*pb.TemporaryExposureKey, error)
 	StoreKeys(*[32]byte, []*pb.TemporaryExposureKey) error
-	CheckRemainingKeys(*[32]byte) (int, error)
 	NewKeyClaim(string, string, string) (string, error)
 	CheckHashID(string) (int64, error)
 	ClaimKey(string, []byte) ([]byte, error)
@@ -165,10 +164,6 @@ func (c *conn) PrivForPub(pub []byte) ([]byte, error) {
 
 func (c *conn) StoreKeys(appPubKey *[32]byte, keys []*pb.TemporaryExposureKey) error {
 	return registerDiagnosisKeys(c.db, appPubKey, keys)
-}
-
-func (c *conn) CheckRemainingKeys(appPubKey *[32]byte) (int, error){
-	return checkRemainingKeys(c.db, appPubKey)
 }
 
 func (c *conn) FetchKeysForDateNumber(region string, dateNumber uint32, currentRSIN int32) ([]*pb.TemporaryExposureKey, error) {

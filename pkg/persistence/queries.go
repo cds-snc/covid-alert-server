@@ -327,19 +327,6 @@ type queryRower interface {
 	QueryRow(query string, args ...interface{}) *sql.Row
 }
 
-func checkRemainingKeys(db *sql.DB, appPubKey *[32]byte) (int, error) {
-	var remainingKeys int
-
-	row := db.QueryRow("SELECT remaining_keys FROM encryption_keys WHERE app_public_key = ?", appPubKey[:])
-	err := row.Scan(&remainingKeys)
-
-	if err != nil {
-		return 0, err
-	}
-
-	return remainingKeys, err
-}
-
 func checkClaimKeyBan(db queryRower, identifier string) (triesRemaining int, banDuration time.Duration, err error) {
 	var failures uint16
 	var lastFailure time.Time
