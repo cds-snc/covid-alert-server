@@ -34,6 +34,15 @@ ecs_key_submission_name = "KeySubmission"
 # Must be a string of the form <secret1>=<MMC_code>:<secret2>=<MMC_code> - https://www.mcc-mnc.com
 # ecs_task_key_submission_env_key_claim_token = ""
 
+#Autoscaling ECS
+submission_autoscale_enabled = true
+retrieval_autoscale_enabled  = true
+scale_down_adjustment        = 1
+scale_up_adjustment          = 1
+scale_down_cooldown          = 60
+scale_up_cooldown            = 60
+max_capacity                 = 10
+min_capacity                 = 2
 ###
 # AWS VPC - networking.tf
 ###
@@ -53,7 +62,7 @@ rds_server_db_user = "root"
 # Value should come from a TF_VAR environment variable (e.g. set in a Github Secret)
 # rds_server_db_password       = ""
 rds_server_allocated_storage = "5"
-rds_server_instance_class    = "db.r4.large"
+rds_server_instance_class    = "db.r5.large"
 
 ###
 # AWS Route 53 - route53.tf

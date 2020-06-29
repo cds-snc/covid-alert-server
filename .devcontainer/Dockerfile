@@ -31,6 +31,9 @@ RUN apt-get update \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/*
 
+RUN mkdir /etc/aws-certs
+RUN wget -P /etc/aws-certs https://s3.amazonaws.com/rds-downloads/rds-ca-2019-root.pem
+
 ENV DEBIAN_FRONTEND=dialog
 
 RUN echo "export PATH=${GOROOT}/bin:${PATH}" >> /root/.bashrc
