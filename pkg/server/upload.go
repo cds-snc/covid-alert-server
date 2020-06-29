@@ -138,7 +138,7 @@ func (s *uploadServlet) upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if remainingKeys, _ := s.db.CheckRemainingKeys(appPubKey); remainingKeys < len(upload.GetKeys()){
+	if remainingKeys, _ := s.db.CheckRemainingKeys(appPubKey); remainingKeys <= len(upload.GetKeys()){
 		requestError(
 			ctx, w, err, "too many keys provided",
 			http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_TOO_MANY_KEYS),
