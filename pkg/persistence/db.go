@@ -2,18 +2,21 @@ package persistence
 
 import (
 	"crypto/rand"
+	"crypto/tls"
+	"crypto/x509"
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math/big"
+	"regexp"
 	"strings"
 	"time"
 
 	pb "github.com/CovidShield/server/pkg/proto/covidshield"
 
 	"github.com/Shopify/goose/logger"
-	// inject mysql support for database/sql
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/nacl/box"
 )
 
@@ -73,9 +76,36 @@ func Dial(url string) (Conn, error) {
 	} else {
 		url += "?parseTime=true"
 	}
+
+	// Check if we are connecting to RDS
+	if strings.Contains(url, "rds.amazonaws.com") {
+
+		rootCertPool := x509.NewCertPool()
+		pem, err := ioutil.ReadFile("/etc/aws-certs/rds-ca-2019-root.pem")
+		
+    if err != nil {
+			log(nil, err).Fatal("AWS RDS Cert bundle not found")
+		}
+		
+    if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
+			log(nil, err).Fatal("Could not append certs")
+		}
+
+		re := regexp.MustCompile(`tcp\((.*)\)`)
+		match := re.FindStringSubmatch(url)
+
+		if len(match) > 0 {
+			mysql.RegisterTLSConfig("custom", &tls.Config{
+				ServerName: match[1],
+				RootCAs: rootCertPool,
+			})
+			url += "&tls=custom"
+		}
+	}
+
 	db, err := sql.Open("mysql", url)
 	if err != nil {
-		return nil, err
+		log(nil, err).Fatal("Could not connect to database")
 	}
 	db.SetConnMaxLifetime(maxConnLifetime)
 	db.SetMaxOpenConns(maxOpenConns)
