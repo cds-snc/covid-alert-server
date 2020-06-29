@@ -49,6 +49,9 @@ jobs:
         run: terraform fmt -check
 
       - name: Terraform Plan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TF_VAR_github_sha: ${{ github.sha }}
         run: terraform plan
 
   terraform-apply:
@@ -84,11 +87,13 @@ jobs:
 
     - name: Terraform Plan
       env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         TF_VAR_github_sha: ${{ github.sha }}
       run: terraform plan -out terraform.tfplan
 
     - name: Terraform Apply
       env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         TF_VAR_github_sha: ${{ github.sha }}
       run: terraform apply -auto-approve terraform.tfplan
 
