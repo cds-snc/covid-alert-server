@@ -82,7 +82,7 @@ module Helper
     end
 
     def diagnosis_originators
-      @dbconn.query("SELECT originator FROM encryption_keys").map(&:values).map(&:first)
+      @dbconn.query("SELECT originator FROM diagnosis_keys").map(&:values).map(&:first)
     end
 
     def random_hash

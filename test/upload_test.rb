@@ -193,6 +193,51 @@ class UploadTest < MiniTest::Test
     assert_result(resp, 400, :INVALID_KEYPAIR)
   end
 
+  def test_variable_limits
+    keys = (1..50).map { |n| key_n(n) }
+    keyset = new_valid_keyset
+
+    # Upload first 14
+    payload = Covidshield::Upload.new(
+      timestamp: Time.now, keys: keys[0..13]
+    ).to_proto
+    req = encrypted_request(payload, keyset)
+    resp = @sub_conn.post('/upload', req.to_proto)
+    assert_result(resp, 200, :NONE)
+
+    # Upload additional 13
+    payload = Covidshield::Upload.new(
+      timestamp: Time.now, keys: keys[14..26]
+    ).to_proto
+    req = encrypted_request(payload, keyset)
+    resp = @sub_conn.post('/upload', req.to_proto)
+    assert_result(resp, 200, :NONE)
+
+    # Upload additional 2 (expect failure)
+    payload = Covidshield::Upload.new(
+      timestamp: Time.now, keys: keys[27..29]
+    ).to_proto
+    req = encrypted_request(payload, keyset)
+    resp = @sub_conn.post('/upload', req.to_proto)
+    assert_result(resp, 400, :TOO_MANY_KEYS)
+
+    # Upload additional 1 (expect success)
+    payload = Covidshield::Upload.new(
+      timestamp: Time.now, keys: [keys[27]]
+    ).to_proto
+    req = encrypted_request(payload, keyset)
+    resp = @sub_conn.post('/upload', req.to_proto)
+    assert_result(resp, 200, :NONE)
+
+    # Upload additional 1 (expect failure)
+    payload = Covidshield::Upload.new(
+      timestamp: Time.now, keys: [keys[28]]
+    ).to_proto
+    req = encrypted_request(payload, keyset)
+    resp = @sub_conn.post('/upload', req.to_proto)
+    assert_result(resp, 400, :INVALID_KEYPAIR)
+  end
+
   private
 
   def key_n(n)

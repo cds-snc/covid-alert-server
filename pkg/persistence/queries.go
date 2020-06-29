@@ -242,6 +242,10 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 		return err
 	}
 
+	if remainingKeys == 0 {
+		return ErrKeyConsumed
+	}
+
 	s, err := tx.Prepare(`
 		INSERT IGNORE INTO diagnosis_keys
 		(region, originator, key_data, rolling_start_interval_number, rolling_period, transmission_risk_level, hour_of_submission)
@@ -283,10 +287,10 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 		if err := tx.Rollback(); err != nil {
 			return err
 		}
-		return ErrKeyConsumed
+		return ErrTooManyKeys
 	}
 
-	res, err := tx.Exec(`
+	_, err = tx.Exec(`
 		UPDATE encryption_keys
 		SET remaining_keys = remaining_keys - ?
 		WHERE remaining_keys >= ?
@@ -295,34 +299,12 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 		keysInserted,
 		appPubKey[:],
 	)
+
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
 			return err
 		}
 		return ErrTooManyKeys
-	}
-
-	n, err := res.RowsAffected()
-	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			return err
-		}
-		return err
-	}
-	if n == 0 {
-		var remaining int
-		if err := tx.QueryRow("SELECT remaining_keys FROM encryption_keys WHERE app_public_key = ?", appPubKey[:]).Scan(&remaining); err != nil {
-			if err := tx.Rollback(); err != nil {
-				return err
-			}
-			return err
-		}
-		if remaining == 0 {
-			if err := tx.Rollback(); err != nil {
-				return err
-			}
-			return ErrKeyConsumed
-		}
 	}
 
 	if err = tx.Commit(); err != nil {
