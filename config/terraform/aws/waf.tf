@@ -6,7 +6,7 @@ resource "aws_wafv2_web_acl" "key_submission" {
   scope = "REGIONAL"
 
   default_action {
-    block {}
+    allow {}
   }
 
   rule {
@@ -14,7 +14,7 @@ resource "aws_wafv2_web_acl" "key_submission" {
     priority = 1
 
     override_action {
-      none {}
+      count {}
     }
 
     statement {
@@ -36,7 +36,7 @@ resource "aws_wafv2_web_acl" "key_submission" {
     priority = 2
 
     override_action {
-      none {}
+      count {}
     }
 
     statement {
@@ -58,7 +58,7 @@ resource "aws_wafv2_web_acl" "key_submission" {
     priority = 3
 
     override_action {
-      none {}
+      count {}
     }
 
     statement {
@@ -80,7 +80,7 @@ resource "aws_wafv2_web_acl" "key_submission" {
     priority = 4
 
     override_action {
-      none {}
+      count {}
     }
 
     statement {
@@ -102,7 +102,7 @@ resource "aws_wafv2_web_acl" "key_submission" {
     priority = 5
 
     override_action {
-      none {}
+      count {}
     }
 
     statement {
@@ -124,7 +124,7 @@ resource "aws_wafv2_web_acl" "key_submission" {
     priority = 100
 
     action {
-      block {}
+      count {}
     }
 
     statement {
@@ -266,4 +266,3 @@ resource "aws_wafv2_web_acl_association" "key_submission_assocation" {
   resource_arn = aws_lb.covidshield_key_submission.arn
   web_acl_arn  = aws_wafv2_web_acl.key_submission.arn
 }
-
