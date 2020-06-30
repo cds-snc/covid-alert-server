@@ -1,7 +1,0 @@
-{
-  "environments": {
-    "review": {
-      "addons": ["jawsdb-maria:kitefin"]
-    }
-  }
-}
