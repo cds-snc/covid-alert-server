@@ -32,6 +32,9 @@ func NewAuthenticator() Authenticator {
 		if len(parts[0]) > 63 {
 			panic("token too long")
 		}
+		if len(parts[0]) < 20 {
+			panic("token too short")
+		}
 		if len(parts[1]) > 31 {
 			panic("region too long")
 		}
