@@ -32,29 +32,29 @@ variable "ecs_name" {
   type = string
 }
 
-variable "scale_down_adjustment" {
+variable "scale_in_cooldown" {
   type    = number
-  default = null
+  default = 60
 }
-variable "scale_down_cooldown" {
+variable "scale_out_cooldown" {
   type    = number
-  default = null
+  default = 60
 }
-variable "scale_up_adjustment" {
+variable "cpu_scale_metric" {
   type    = number
-  default = null
+  default = 60
 }
-variable "scale_up_cooldown" {
+variable "memory_scale_metric" {
   type    = number
-  default = null
+  default = 60
 }
 variable "min_capacity" {
   type    = number
-  default = null
+  default = 2
 }
 variable "max_capacity" {
   type    = number
-  default = null
+  default = 10
 }
 
 # Task Key Retrieval

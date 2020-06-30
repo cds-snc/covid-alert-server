@@ -63,21 +63,23 @@ resource "aws_subnet" "covidshield_public" {
 ###
 
 resource "aws_eip" "covidshield_natgw" {
+  count      = 3
   depends_on = [aws_internet_gateway.covidshield]
 
   vpc = true
 
   tags = {
-    Name                  = "${var.vpc_name} NAT GW"
+    Name                  = "${var.vpc_name} NAT GW ${count.index}"
     (var.billing_tag_key) = var.billing_tag_value
   }
 }
 
 resource "aws_nat_gateway" "covidshield" {
+  count      = 3
   depends_on = [aws_internet_gateway.covidshield]
 
-  allocation_id = aws_eip.covidshield_natgw.id
-  subnet_id     = aws_subnet.covidshield_public.0.id
+  allocation_id = aws_eip.covidshield_natgw.*.id[count.index]
+  subnet_id     = aws_subnet.covidshield_public.*.id[count.index]
 
   tags = {
     Name                  = "${var.vpc_name} NAT GW"
@@ -85,23 +87,10 @@ resource "aws_nat_gateway" "covidshield" {
   }
 }
 
+
 ###
 # AWS Routes
 ###
-
-resource "aws_default_route_table" "covidshield" {
-  default_route_table_id = aws_vpc.covidshield.default_route_table_id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.covidshield.id
-  }
-
-  tags = {
-    Name                  = "Default Route Table"
-    (var.billing_tag_key) = var.billing_tag_value
-  }
-}
 
 resource "aws_route_table" "covidshield_public_subnet" {
   vpc_id = aws_vpc.covidshield.id
@@ -110,7 +99,6 @@ resource "aws_route_table" "covidshield_public_subnet" {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.covidshield.id
   }
-
 
   tags = {
     Name                  = "Public Subnet Route Table"
@@ -123,6 +111,29 @@ resource "aws_route_table_association" "covidshield" {
 
   subnet_id      = aws_subnet.covidshield_public.*.id[count.index]
   route_table_id = aws_route_table.covidshield_public_subnet.id
+}
+
+resource "aws_route_table" "covidshield_private_subnet" {
+  count = 3
+
+  vpc_id = aws_vpc.covidshield.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.covidshield.*.id[count.index]
+  }
+
+  tags = {
+    Name                  = "Private Subnet Route Table ${count.index}"
+    (var.billing_tag_key) = var.billing_tag_value
+  }
+}
+
+resource "aws_route_table_association" "covidshield_private_route" {
+  count = 3
+
+  subnet_id      = aws_subnet.covidshield_private.*.id[count.index]
+  route_table_id = aws_route_table.covidshield_private_subnet.*.id[count.index]
 }
 
 

@@ -19,7 +19,6 @@ resource "aws_cloudwatch_metric_alarm" "retrieval_cpu_utilization_high" {
   alarm_description   = "This metric monitors ecs cpu utilization"
 
   alarm_actions = [aws_sns_topic.alert_warning.arn]
-
   dimensions = {
     ClusterName = aws_ecs_cluster.covidshield.name
     ServiceName = aws_ecs_service.covidshield_key_retrieval.name

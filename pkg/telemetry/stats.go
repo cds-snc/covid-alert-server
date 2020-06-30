@@ -23,13 +23,15 @@ func initSystemStatsObserver(db persistence.Conn) {
 	var memUsed metric.Int64ValueObserver
 	var memAvailable metric.Int64ValueObserver
 	var cpuPercent metric.Float64ValueObserver
-	var claimedKeysTotalMetric metric.Int64ValueObserver
+	var claimedOneTimeCodesTotalMetric metric.Int64ValueObserver
 	var diagnosisKeysTotalMetric metric.Int64ValueObserver
+	var unclaimedOneTimeCodesTotalMetric metric.Int64ValueObserver
 
 	cb := metric.Must(meter).NewBatchObserver(func(_ context.Context, result metric.BatchObserverResult) {
 		v, _ := mem.VirtualMemory()
-		claimedKeysTotalMetricCount, _ := db.CountClaimedKeys()
+		claimedOneTimeCodesTotalMetricCount, _ := db.CountClaimedOneTimeCodes()
 		diagnosisKeysTotalMetricCount, _ := db.CountDiagnosisKeys()
+		unclaimedOneTimeCodesTotalMetricCount, _ := db.CountUnclaimedOneTimeCodes()
 		result.Observe(nil,
 			memTotal.Observation(int64(v.Total)),
 			memUsedPercent.Observation(v.UsedPercent),
@@ -37,7 +39,8 @@ func initSystemStatsObserver(db persistence.Conn) {
 			memAvailable.Observation(int64(v.Available)),
 			cpuPercent.Observation(getCPUPercentage()),
 			diagnosisKeysTotalMetric.Observation(diagnosisKeysTotalMetricCount),
-			claimedKeysTotalMetric.Observation(claimedKeysTotalMetricCount),
+			claimedOneTimeCodesTotalMetric.Observation(claimedOneTimeCodesTotalMetricCount),
+			unclaimedOneTimeCodesTotalMetric.Observation(unclaimedOneTimeCodesTotalMetricCount),
 		)
 	})
 
@@ -59,13 +62,14 @@ func initSystemStatsObserver(db persistence.Conn) {
 	cpuPercent = cb.NewFloat64ValueObserver("covidshield.system.cpu.percent",
 		metric.WithDescription("Percentage of all CPUs combined"),
 	)
-
-	claimedKeysTotalMetric = cb.NewInt64ValueObserver("covidshield.app.claimed_keys.total",
-		metric.WithDescription("Total number of claimed keys"),
+	claimedOneTimeCodesTotalMetric = cb.NewInt64ValueObserver("covidshield.app.claimed_one_time_codes.total",
+		metric.WithDescription("Total number of claimed one time codes"),
 	)
-
 	diagnosisKeysTotalMetric = cb.NewInt64ValueObserver("covidshield.app.diagnosis_keys.total",
 		metric.WithDescription("Total number of diagnosis keys"),
+	)
+	unclaimedOneTimeCodesTotalMetric = cb.NewInt64ValueObserver("covidshield.app.unclaimed_one_time_codes.total",
+		metric.WithDescription("Total number of unclaimed one time codes"),
 	)
 }
 

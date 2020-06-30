@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/CovidShield/server/pkg/config"
 	"github.com/CovidShield/server/pkg/persistence"
 
 	"github.com/Shopify/goose/genmain"
@@ -70,10 +71,8 @@ func (w *worker) Tomb() *tomb.Tomb {
 	return w.tomb
 }
 
-const expirationInterval = 30 * time.Second
-
 func StartWorker(db persistence.Conn) (Worker, error) {
-	return create(db, expirationInterval)
+	return create(db, time.Duration(config.AppConstants.WorkerExpirationInterval)*time.Second)
 }
 
 func create(db persistence.Conn, interval time.Duration) (Worker, error) {

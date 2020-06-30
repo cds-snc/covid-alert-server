@@ -17,17 +17,17 @@ class NewKeyClaimTest < MiniTest::Test
 
     resp = @sub_conn.post do |req|
       req.url('/new-key-claim')
-      req.headers['Authorization'] = 'Bearer first-token'
+      req.headers['Authorization'] = 'Bearer first-very-long-token'
     end
     assert_response(resp, 200, 'text/plain; charset=utf-8', body: /\A[0-9]{8}\n\z/m)
-    assert_equal(['first-token'], encryption_originators)
+    assert_equal(['first-very-long-token'], encryption_originators)
 
     resp = @sub_conn.post do |req|
       req.url('/new-key-claim')
-      req.headers['Authorization'] = 'Bearer second-token'
+      req.headers['Authorization'] = 'Bearer second-very-long-token'
     end
     assert_response(resp, 200, 'text/plain; charset=utf-8', body: /\A[0-9]{8}\n\z/m)
-    assert_equal(['first-token', 'second-token'], encryption_originators)
+    assert_equal(['first-very-long-token', 'second-very-long-token'], encryption_originators)
 
     %w[get patch delete put].each do |meth|
       resp = @sub_conn.send(meth, '/new-key-claim')
