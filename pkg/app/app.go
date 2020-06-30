@@ -9,6 +9,7 @@ import (
 	"github.com/Shopify/goose/logger"
 	"github.com/Shopify/goose/srvutil"
 
+	"github.com/CovidShield/server/pkg/config"
 	"github.com/CovidShield/server/pkg/expiration"
 	"github.com/CovidShield/server/pkg/keyclaim"
 	"github.com/CovidShield/server/pkg/persistence"
@@ -17,13 +18,6 @@ import (
 )
 
 var log = logger.New("app")
-
-const (
-	defaultSubmissionServerPort = 8000
-	defaultRetrievalServerPort  = 8001
-
-	defaultServerPort = 8010
-)
 
 type App struct {
 	*genmain.Main
@@ -37,8 +31,9 @@ type AppBuilder struct {
 }
 
 func NewBuilder() *AppBuilder {
+	config.InitConfig() // read configuration into a structure
 	builder := &AppBuilder{
-		defaultServerPort: defaultServerPort,
+		defaultServerPort: config.AppConstants.DefaultServerPort,
 		database:          newDatabase(DatabaseURL()),
 	}
 	builder.servlets = append(builder.servlets, server.NewServicesServlet())
@@ -46,7 +41,7 @@ func NewBuilder() *AppBuilder {
 }
 
 func (a *AppBuilder) WithSubmission() *AppBuilder {
-	a.defaultServerPort = defaultSubmissionServerPort
+	a.defaultServerPort = config.AppConstants.DefaultSubmissionServerPort
 
 	a.servlets = append(a.servlets, server.NewUploadServlet(a.database))
 	a.servlets = append(a.servlets, server.NewKeyClaimServlet(a.database, keyclaim.NewAuthenticator()))
@@ -56,7 +51,7 @@ func (a *AppBuilder) WithSubmission() *AppBuilder {
 func (a *AppBuilder) WithRetrieval() *AppBuilder {
 	migrateDB(DatabaseURL()) // This is a bit of a weird place for this but it works for now.
 
-	a.defaultServerPort = defaultRetrievalServerPort
+	a.defaultServerPort = config.AppConstants.DefaultRetrievalServerPort
 
 	a.components = append(a.components, newExpirationWorker(a.database))
 

@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/CovidShield/server/pkg/config"
 	"github.com/CovidShield/server/pkg/keyclaim"
 	"github.com/CovidShield/server/pkg/persistence"
 	pb "github.com/CovidShield/server/pkg/proto/covidshield"
@@ -172,7 +173,7 @@ func (s *keyClaimServlet) claimKey(w http.ResponseWriter, r *http.Request) resul
 		)
 	}
 
-	maxTries := uint32(persistence.MaxConsecutiveClaimKeyFailures)
+	maxTries := uint32(config.AppConstants.MaxConsecutiveClaimKeyFailures)
 	resp := &pb.KeyClaimResponse{ServerPublicKey: serverPub, TriesRemaining: &maxTries}
 
 	data, err = proto.Marshal(resp)
