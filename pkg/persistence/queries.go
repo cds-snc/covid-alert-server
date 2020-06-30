@@ -234,11 +234,16 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 
 	var region string
 	var originator string
-	if err := tx.QueryRow("SELECT region, originator FROM encryption_keys WHERE app_public_key = ?", appPubKey[:]).Scan(&region, &originator); err != nil {
+	var remainingKeys int64
+	if err := tx.QueryRow("SELECT region, originator, remaining_keys FROM encryption_keys WHERE app_public_key = ?", appPubKey[:]).Scan(&region, &originator, &remainingKeys); err != nil {
 		if err := tx.Rollback(); err != nil {
 			return err
 		}
 		return err
+	}
+
+	if remainingKeys == 0 {
+		return ErrKeyConsumed
 	}
 
 	s, err := tx.Prepare(`
@@ -278,7 +283,14 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 		keysInserted += n
 	}
 
-	res, err := tx.Exec(`
+	if remainingKeys < keysInserted {
+		if err := tx.Rollback(); err != nil {
+			return err
+		}
+		return ErrTooManyKeys
+	}
+
+	_, err = tx.Exec(`
 		UPDATE encryption_keys
 		SET remaining_keys = remaining_keys - ?
 		WHERE remaining_keys >= ?
@@ -287,6 +299,7 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 		keysInserted,
 		appPubKey[:],
 	)
+
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
 			return err
@@ -294,32 +307,10 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 		return ErrTooManyKeys
 	}
 
-	n, err := res.RowsAffected()
-	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			return err
-		}
-		return err
-	}
-	if n == 0 {
-		var remaining int
-		if err := tx.QueryRow("SELECT remaining_keys FROM encryption_keys WHERE app_public_key = ?", appPubKey[:]).Scan(&remaining); err != nil {
-			if err := tx.Rollback(); err != nil {
-				return err
-			}
-			return err
-		}
-		if remaining == 0 {
-			if err := tx.Rollback(); err != nil {
-				return err
-			}
-			return ErrKeyConsumed
-		}
-	}
-
 	if err = tx.Commit(); err != nil {
 		return err
 	}
+	log(nil, nil).WithField("keys", keysInserted).Info("Inserted keys")
 	return nil
 }
 

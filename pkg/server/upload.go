@@ -158,6 +158,12 @@ func (s *uploadServlet) upload(w http.ResponseWriter, r *http.Request) {
 			http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_INVALID_KEYPAIR),
 		)
 		return
+	} else if err == persistence.ErrTooManyKeys {
+		requestError(
+			ctx, w, err, "not enough keys remaining",
+			http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_TOO_MANY_KEYS),
+		)
+		return
 	} else if err != nil {
 		requestError(
 			ctx, w, err, "failed to store diagnosis keys",
