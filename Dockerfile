@@ -27,6 +27,9 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="${GOLDFLAGS}" -o server ./cmd/${component}
 
+RUN mkdir /etc/aws-certs
+RUN wget -P /etc/aws-certs https://s3.amazonaws.com/rds-downloads/rds-ca-2019-root.pem
+
 ###
 # Step 2 - Build
 ###
@@ -39,9 +42,11 @@ WORKDIR /usr/local/bin
 # Import the user and group files from step 1
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
+COPY --from=builder /etc/aws-certs /etc/aws-certs
+COPY --from=builder --chown=${USER}:${USER} /go/src/github.com/CovidShield/server/config.yaml /usr/local/bin/config.yaml
 COPY --from=builder --chown=${USER}:${USER} /go/src/github.com/CovidShield/server/server /usr/local/bin/server
 
 USER ${USER}:${USER}
 
 # hadolint ignore=DL3025
-ENTRYPOINT ["server"]
+ENTRYPOINT ["server", "--config_file_path", "./"]

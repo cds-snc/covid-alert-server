@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/CovidShield/server/pkg/config"
 	"github.com/CovidShield/server/pkg/keyclaim"
 	"github.com/CovidShield/server/pkg/persistence"
 	pb "github.com/CovidShield/server/pkg/proto/covidshield"
@@ -38,8 +39,7 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	if r.Method == http.MethodOptions {
-		// TODO definitely do better than this for CORS
-		w.Header().Add("Access-Control-Allow-Origin", "*")
+		w.Header().Add("Access-Control-Allow-Origin", config.AppConstants.CORSAccessControlAllowOrigin)
 		w.Header().Add("Access-Control-Allow-Methods", "POST")
 		w.Header().Add("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Referer, User-Agent")
 		if _, err := w.Write([]byte("")); err != nil {
@@ -80,7 +80,7 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Origin", config.AppConstants.CORSAccessControlAllowOrigin)
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	if _, err := w.Write([]byte(keyClaim + "\n")); err != nil {
 		log(ctx, err).Warn("error writing response")
@@ -172,7 +172,7 @@ func (s *keyClaimServlet) claimKey(w http.ResponseWriter, r *http.Request) resul
 		)
 	}
 
-	maxTries := uint32(persistence.MaxConsecutiveClaimKeyFailures)
+	maxTries := uint32(config.AppConstants.MaxConsecutiveClaimKeyFailures)
 	resp := &pb.KeyClaimResponse{ServerPublicKey: serverPub, TriesRemaining: &maxTries}
 
 	data, err = proto.Marshal(resp)
@@ -199,7 +199,8 @@ var numeric = regexp.MustCompile("^[0-9]+$")
 func getIP(r *http.Request) string {
 	forwarded := r.Header.Get("X-FORWARDED-FOR")
 	if forwarded != "" {
-		return forwarded
+		IPList := strings.Split(forwarded, ",")
+		return IPList[len(IPList)-1]
 	}
 	// If the RemoteAddr is of the form $ip:$port, return only the IP
 	parts := strings.Split(r.RemoteAddr, ":")

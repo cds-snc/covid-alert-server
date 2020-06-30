@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/CovidShield/server/pkg/config"
 	"github.com/CovidShield/server/pkg/timemath"
 )
 
@@ -19,11 +20,9 @@ type authenticator struct {
 	hmacKey []byte
 }
 
-const hmacKeyLength = 32
-
 func NewAuthenticator() Authenticator {
 	retrieveHmacKey := os.Getenv("RETRIEVE_HMAC_KEY")
-	if len(retrieveHmacKey) < hex.EncodedLen(hmacKeyLength) {
+	if len(retrieveHmacKey) < hex.EncodedLen(config.AppConstants.HmacKeyLength) {
 		log(nil, nil).Fatal("RETRIEVE_HMAC_KEY missing or too short")
 	}
 
@@ -46,7 +45,7 @@ func (a *authenticator) Authenticate(region, requestedDay, auth string) bool {
 	if err != nil {
 		return false
 	}
-	if n != hmacKeyLength {
+	if n != config.AppConstants.HmacKeyLength {
 		return false
 	}
 

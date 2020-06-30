@@ -12,8 +12,8 @@ require('mysql2')
 require('zip')
 require('securerandom')
 
-KEY_SUBMISSION_SERVER = File.expand_path('../../build/debug/key-submission', __dir__)
-KEY_RETRIEVAL_SERVER = File.expand_path('../../build/debug/key-retrieval', __dir__)
+KEY_SUBMISSION_SERVER = File.expand_path('../../build/debug/key-submission --config_file_path ./', __dir__)
+KEY_RETRIEVAL_SERVER = File.expand_path('../../build/debug/key-retrieval  --config_file_path ./', __dir__)
 
 begin
   DB_HOST = ENV.fetch('DB_HOST')
@@ -82,7 +82,7 @@ module Helper
     end
 
     def diagnosis_originators
-      @dbconn.query("SELECT originator FROM encryption_keys").map(&:values).map(&:first)
+      @dbconn.query("SELECT originator FROM diagnosis_keys").map(&:values).map(&:first)
     end
 
     def random_hash
@@ -92,7 +92,7 @@ module Helper
     def new_valid_one_time_code
       resp = @sub_conn.post do |req|
         req.url('/new-key-claim')
-        req.headers['Authorization'] = 'Bearer first-token'
+        req.headers['Authorization'] = 'Bearer first-very-long-token'
       end
       assert_response(resp, 200, 'text/plain; charset=utf-8')
       resp.body.chomp
@@ -207,7 +207,7 @@ module Helper
       pid = Process.spawn(
         {
           'BIND_ADDR' => addr,
-          'KEY_CLAIM_TOKEN' => 'first-token=302:second-token=302',
+          'KEY_CLAIM_TOKEN' => 'first-very-long-token=302:second-very-long-token=302',
           'DATABASE_URL' => DATABASE_URL,
         },
         bin, STDERR => File.open('/dev/null')

@@ -9,7 +9,7 @@ class NewKeyClaimhashIDTest < MiniTest::Test
     
     resp = @sub_conn.post do |req|
       req.url('/new-key-claim/abcd')
-      req.headers['Authorization'] = 'Bearer second-token'
+      req.headers['Authorization'] = 'Bearer second-very-long-token'
     end
     assert_response(resp, 404, 'text/plain; charset=utf-8', body: "404 page not found\n")
 
@@ -22,7 +22,7 @@ class NewKeyClaimhashIDTest < MiniTest::Test
 
     resp = @sub_conn.post do |req|
       req.url("/new-key-claim/#{hash_id}")
-      req.headers['Authorization'] = 'Bearer second-token'
+      req.headers['Authorization'] = 'Bearer second-very-long-token'
     end
     assert_response(resp, 200, 'text/plain; charset=utf-8', body: /\A[0-9]{8}\n\z/m)
     previous_code = resp.body
@@ -30,7 +30,7 @@ class NewKeyClaimhashIDTest < MiniTest::Test
     # Returns another code if hashID not claimed
     resp = @sub_conn.post do |req|
       req.url("/new-key-claim/#{hash_id}")
-      req.headers['Authorization'] = 'Bearer second-token'
+      req.headers['Authorization'] = 'Bearer second-very-long-token'
     end
     assert_response(resp, 200, 'text/plain; charset=utf-8', body: /\A[0-9]{8}\n\z/m)
     refute_equal(previous_code, resp.body)
@@ -50,7 +50,7 @@ class NewKeyClaimhashIDTest < MiniTest::Test
 
     resp = @sub_conn.post do |req|
       req.url("/new-key-claim/#{hash_id}")
-      req.headers['Authorization'] = 'Bearer second-token'
+      req.headers['Authorization'] = 'Bearer second-very-long-token'
     end
     assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
 

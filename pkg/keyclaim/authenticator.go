@@ -3,6 +3,8 @@ package keyclaim
 import (
 	"os"
 	"strings"
+
+	"github.com/CovidShield/server/pkg/config"
 )
 
 type Authenticator interface {
@@ -12,8 +14,6 @@ type Authenticator interface {
 type authenticator struct {
 	tokens map[string]string
 }
-
-const assignmentParts = 2
 
 // 1234deadbeefcafe=1:c0ffeec0ffeec0ffee=2
 // These are two keys with region IDs 1 and 2 respectively. Keys should be much
@@ -25,12 +25,16 @@ func NewAuthenticator() Authenticator {
 		panic("no KEY_CLAIM_TOKEN")
 	}
 	for _, tokenWithRegion := range strings.Split(tokens, ":") {
+		assignmentParts := config.AppConstants.AssignmentParts
 		parts := strings.SplitN(tokenWithRegion, "=", assignmentParts)
 		if len(parts) != assignmentParts {
 			panic("invalid KEY_CLAIM_TOKEN")
 		}
 		if len(parts[0]) > 63 {
 			panic("token too long")
+		}
+		if len(parts[0]) < 20 {
+			panic("token too short")
 		}
 		if len(parts[1]) > 31 {
 			panic("region too long")
