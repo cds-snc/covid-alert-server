@@ -32,21 +32,21 @@ variable "ecs_name" {
   type = string
 }
 
-variable "scale_down_adjustment" {
+variable "scale_in_cooldown" {
   type    = number
   default = null
 }
-variable "scale_down_cooldown" {
+variable "scale_out_cooldown" {
   type    = number
   default = null
 }
-variable "scale_up_adjustment" {
-  type    = number
-  default = null
+variable "cpu_scale_metric" {
+  type = number
+  default = 60
 }
-variable "scale_up_cooldown" {
-  type    = number
-  default = null
+variable "memory_scale_metric" {
+  type = number
+  default = 60
 }
 variable "min_capacity" {
   type    = number

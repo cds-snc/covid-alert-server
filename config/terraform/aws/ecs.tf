@@ -111,42 +111,36 @@ resource "aws_appautoscaling_target" "retrieval" {
   min_capacity       = var.min_capacity
   max_capacity       = var.max_capacity
 }
-
-resource "aws_appautoscaling_policy" "retrieval_up" {
+resource "aws_appautoscaling_policy" "retrieval_cpu" {
   count              = var.retrieval_autoscale_enabled ? 1 : 0
-  name               = "retrieval_up"
+  name               = "retrieval_cpu"
+  policy_type        = "TargetTrackingScaling"
   service_namespace  = "ecs"
   resource_id        = "service/${aws_ecs_service.covidshield_key_retrieval.cluster}/${aws_ecs_service.covidshield_key_retrieval.name}"
   scalable_dimension = "ecs:service:DesiredCount"
 
-  step_scaling_policy_configuration {
-    adjustment_type         = "ChangeInCapacity"
-    cooldown                = var.scale_up_cooldown
-    metric_aggregation_type = "Maximum"
-
-    step_adjustment {
-      metric_interval_lower_bound = 0
-      scaling_adjustment          = var.scale_up_adjustment
+  target_tracking_scaling_policy_configuration {
+    scale_in_cooldown                = var.scale_in_cooldown
+    scale_out_cooldown                = var.scale_out_cooldown
+      predefined_metric_specification {
+        predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
+    target_value = var.cpu_scale_metric
   }
 }
 
-resource "aws_appautoscaling_policy" "retrieval_down" {
+resource "aws_appautoscaling_policy" "retrieval_memory" {
   count              = var.retrieval_autoscale_enabled ? 1 : 0
-  name               = "retrieval_down"
+  name               = "retrieval_memory"
+  policy_type        = "TargetTrackingScaling"
   service_namespace  = "ecs"
   resource_id        = "service/${aws_ecs_service.covidshield_key_retrieval.cluster}/${aws_ecs_service.covidshield_key_retrieval.name}"
   scalable_dimension = "ecs:service:DesiredCount"
 
-  step_scaling_policy_configuration {
-    adjustment_type         = "ChangeInCapacity"
-    cooldown                = var.scale_down_cooldown
-    metric_aggregation_type = "Maximum"
-
-    step_adjustment {
-      metric_interval_upper_bound = 0
-      scaling_adjustment          = var.scale_down_adjustment
+  target_tracking_scaling_policy_configuration {                                         scale_in_cooldown                = var.scale_in_cooldown                             scale_out_cooldown                = var.scale_out_cooldown                             predefined_metric_specification {
+        predefined_metric_type = "ECSServiceAverageMemoryUtilization"
     }
+    target_value = var.memory_scale_metric
   }
 }
 
@@ -234,40 +228,38 @@ resource "aws_appautoscaling_target" "submission" {
   min_capacity       = var.min_capacity
   max_capacity       = var.max_capacity
 }
-resource "aws_appautoscaling_policy" "submission_up" {
+resource "aws_appautoscaling_policy" "submission_cpu" {
   count              = var.submission_autoscale_enabled ? 1 : 0
-  name               = "submission_up"
+  name               = "submission_cpu"
+  policy_type        = "TargetTrackingScaling"
   service_namespace  = "ecs"
   resource_id        = "service/${aws_ecs_service.covidshield_key_submission.cluster}/${aws_ecs_service.covidshield_key_submission.name}"
   scalable_dimension = "ecs:service:DesiredCount"
 
-  step_scaling_policy_configuration {
-    adjustment_type         = "ChangeInCapacity"
-    cooldown                = var.scale_up_cooldown
-    metric_aggregation_type = "Maximum"
-
-    step_adjustment {
-      metric_interval_lower_bound = 0
-      scaling_adjustment          = var.scale_up_adjustment
+  target_tracking_scaling_policy_configuration {
+    scale_in_cooldown                = var.scale_in_cooldown
+    scale_out_cooldown                = var.scale_out_cooldown
+      predefined_metric_specification {
+        predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
+    target_value = var.cpu_scale_metric
   }
 }
 
-resource "aws_appautoscaling_policy" "submission_down" {
+resource "aws_appautoscaling_policy" "submission_memory" {
   count              = var.submission_autoscale_enabled ? 1 : 0
-  name               = "submission_down"
+  name               = "submission_memory"
+  policy_type        = "TargetTrackingScaling"
   service_namespace  = "ecs"
   resource_id        = "service/${aws_ecs_service.covidshield_key_submission.cluster}/${aws_ecs_service.covidshield_key_submission.name}"
   scalable_dimension = "ecs:service:DesiredCount"
 
-  step_scaling_policy_configuration {
-    adjustment_type         = "ChangeInCapacity"
-    cooldown                = var.scale_down_cooldown
-    metric_aggregation_type = "Maximum"
-
-    step_adjustment {
-      metric_interval_upper_bound = 0
-      scaling_adjustment          = var.scale_down_adjustment
-    }
+  target_tracking_scaling_policy_configuration {
+  scale_in_cooldown                = var.scale_in_cooldown
+  scale_out_cooldown                = var.scale_out_cooldown
+  predefined_metric_specification {
+    predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+  }
+    target_value = var.memory_scale_metric
   }
 }
