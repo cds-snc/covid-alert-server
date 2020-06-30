@@ -200,7 +200,7 @@ func getIP(r *http.Request) string {
 	forwarded := r.Header.Get("X-FORWARDED-FOR")
 	if forwarded != "" {
 		IPList := strings.Split(forwarded, ",")
-		return IPList[len(IPList)-1]
+		return strings.TrimSpace(IPList[len(IPList)-1])
 	}
 	// If the RemoteAddr is of the form $ip:$port, return only the IP
 	parts := strings.Split(r.RemoteAddr, ":")
