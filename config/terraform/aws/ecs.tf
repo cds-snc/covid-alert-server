@@ -120,10 +120,10 @@ resource "aws_appautoscaling_policy" "retrieval_cpu" {
   scalable_dimension = "ecs:service:DesiredCount"
 
   target_tracking_scaling_policy_configuration {
-    scale_in_cooldown                = var.scale_in_cooldown
-    scale_out_cooldown                = var.scale_out_cooldown
-      predefined_metric_specification {
-        predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    scale_in_cooldown  = var.scale_in_cooldown
+    scale_out_cooldown = var.scale_out_cooldown
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
     target_value = var.cpu_scale_metric
   }
@@ -137,8 +137,11 @@ resource "aws_appautoscaling_policy" "retrieval_memory" {
   resource_id        = "service/${aws_ecs_service.covidshield_key_retrieval.cluster}/${aws_ecs_service.covidshield_key_retrieval.name}"
   scalable_dimension = "ecs:service:DesiredCount"
 
-  target_tracking_scaling_policy_configuration {                                         scale_in_cooldown                = var.scale_in_cooldown                             scale_out_cooldown                = var.scale_out_cooldown                             predefined_metric_specification {
-        predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+  target_tracking_scaling_policy_configuration {
+    scale_in_cooldown  = var.scale_in_cooldown
+    scale_out_cooldown = var.scale_out_cooldown
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
     }
     target_value = var.memory_scale_metric
   }
@@ -237,10 +240,10 @@ resource "aws_appautoscaling_policy" "submission_cpu" {
   scalable_dimension = "ecs:service:DesiredCount"
 
   target_tracking_scaling_policy_configuration {
-    scale_in_cooldown                = var.scale_in_cooldown
-    scale_out_cooldown                = var.scale_out_cooldown
-      predefined_metric_specification {
-        predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    scale_in_cooldown  = var.scale_in_cooldown
+    scale_out_cooldown = var.scale_out_cooldown
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
     target_value = var.cpu_scale_metric
   }
@@ -255,11 +258,11 @@ resource "aws_appautoscaling_policy" "submission_memory" {
   scalable_dimension = "ecs:service:DesiredCount"
 
   target_tracking_scaling_policy_configuration {
-  scale_in_cooldown                = var.scale_in_cooldown
-  scale_out_cooldown                = var.scale_out_cooldown
-  predefined_metric_specification {
-    predefined_metric_type = "ECSServiceAverageMemoryUtilization"
-  }
+    scale_in_cooldown  = var.scale_in_cooldown
+    scale_out_cooldown = var.scale_out_cooldown
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+    }
     target_value = var.memory_scale_metric
   }
 }
