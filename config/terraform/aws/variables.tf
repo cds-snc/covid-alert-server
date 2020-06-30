@@ -34,11 +34,11 @@ variable "ecs_name" {
 
 variable "scale_in_cooldown" {
   type    = number
-  default = null
+  default = 60
 }
 variable "scale_out_cooldown" {
   type    = number
-  default = null
+  default = 60
 }
 variable "cpu_scale_metric" {
   type    = number
@@ -50,11 +50,11 @@ variable "memory_scale_metric" {
 }
 variable "min_capacity" {
   type    = number
-  default = null
+  default = 2
 }
 variable "max_capacity" {
   type    = number
-  default = null
+  default = 10
 }
 
 # Task Key Retrieval
