@@ -23,6 +23,7 @@ type Constants struct {
 	OneTimeCodeExpiryInMinutes     uint32
 	AssignmentParts                int
 	HmacKeyLength                  int
+	CORSAccessControlAllowOrigin   string
 }
 
 var AppConstants Constants
@@ -58,4 +59,5 @@ func setDefaults() {
 	viper.SetDefault("oneTimeCodeExpiryInMinutes", 1440)
 	viper.SetDefault("assignmentParts", 2)
 	viper.SetDefault("hmacKeyLength", 32)
+	viper.SetDefault("corsAccessControlAllowOrigin", "*")
 }
