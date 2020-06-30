@@ -6,7 +6,7 @@ resource "aws_wafv2_web_acl" "key_submission" {
   scope = "REGIONAL"
 
   default_action {
-    allow {}
+    block {}
   }
 
   rule {
