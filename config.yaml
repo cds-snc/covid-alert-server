@@ -25,3 +25,4 @@ encryptionKeyValidityDays: 15
 oneTimeCodeExpiryInMinutes: 1440
 assignmentParts: 2
 hmacKeyLength: 32
+corsAccessControlAllowOrigin: "*"

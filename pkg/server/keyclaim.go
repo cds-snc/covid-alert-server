@@ -39,8 +39,7 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	if r.Method == http.MethodOptions {
-		// TODO definitely do better than this for CORS
-		w.Header().Add("Access-Control-Allow-Origin", "*")
+		w.Header().Add("Access-Control-Allow-Origin", config.AppConstants.CORSAccessControlAllowOrigin)
 		w.Header().Add("Access-Control-Allow-Methods", "POST")
 		w.Header().Add("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Referer, User-Agent")
 		if _, err := w.Write([]byte("")); err != nil {
@@ -81,7 +80,7 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Origin", config.AppConstants.CORSAccessControlAllowOrigin)
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	if _, err := w.Write([]byte(keyClaim + "\n")); err != nil {
 		log(ctx, err).Warn("error writing response")
