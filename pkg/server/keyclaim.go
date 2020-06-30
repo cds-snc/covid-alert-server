@@ -200,7 +200,8 @@ var numeric = regexp.MustCompile("^[0-9]+$")
 func getIP(r *http.Request) string {
 	forwarded := r.Header.Get("X-FORWARDED-FOR")
 	if forwarded != "" {
-		return forwarded
+		IPList := strings.Split(forwarded, ",")
+		return IPList[len(IPList)-1]
 	}
 	// If the RemoteAddr is of the form $ip:$port, return only the IP
 	parts := strings.Split(r.RemoteAddr, ":")
