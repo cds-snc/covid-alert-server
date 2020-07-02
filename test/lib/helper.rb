@@ -210,7 +210,7 @@ module Helper
           'KEY_CLAIM_TOKEN' => 'first-very-long-token=302:second-very-long-token=302',
           'DATABASE_URL' => DATABASE_URL,
         },
-        bin, STDERR => File.open('/dev/null')
+        bin, STDERR => :out
       )
       conn = Faraday.new(url: "http://#{addr}")
       20.times do
