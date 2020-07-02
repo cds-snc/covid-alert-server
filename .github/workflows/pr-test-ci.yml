@@ -20,6 +20,10 @@ jobs:
     - uses: actions/setup-ruby@v1
       with:
         ruby-version: '2.6'
+    - name: Install Protoc
+      uses: arduino/setup-protoc@7ad700d3b20e2a32b35d2c17fbdc463891608381
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Run tests
       run: |
         gem install bundler
