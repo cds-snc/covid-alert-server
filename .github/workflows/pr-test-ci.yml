@@ -25,6 +25,13 @@ jobs:
       uses: arduino/setup-protoc@7ad700d3b20e2a32b35d2c17fbdc463891608381
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Verify DB connection
+      env:
+        PORT: ${{ job.services.mysql.ports[3306] }}
+      run: |
+        while ! mysqladmin ping -h"127.0.0.1" -P"$PORT" --silent; do
+          sleep 1
+        done
     - name: Run tests
       run: |
         gem install bundler
