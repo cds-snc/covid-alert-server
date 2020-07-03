@@ -210,7 +210,7 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 	var region string
 	var originator string
 	var remainingKeys int64
-	if err := tx.QueryRow("SELECT region, originator, remaining_keys FROM encryption_keys WHERE app_public_key = ?", appPubKey[:]).Scan(&region, &originator, &remainingKeys); err != nil {
+	if err := tx.QueryRow("SELECT region, originator, remaining_keys FROM encryption_keys WHERE app_public_key = ? FOR UPDATE", appPubKey[:]).Scan(&region, &originator, &remainingKeys); err != nil {
 		if err := tx.Rollback(); err != nil {
 			return err
 		}
