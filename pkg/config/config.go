@@ -10,20 +10,21 @@ import (
 var log = logger.New("config")
 
 type Constants struct {
-	DefaultSubmissionServerPort    uint32
-	DefaultRetrievalServerPort     uint32
-	DefaultServerPort              uint32
-	WorkerExpirationInterval       uint32
-	MaxOneTimeCode                 int64
-	MaxConsecutiveClaimKeyFailures int
-	ClaimKeyBanDuration            uint32
-	MaxDiagnosisKeyRetentionDays   uint32
-	InitialRemainingKeys           uint32
-	EncryptionKeyValidityDays      uint32
-	OneTimeCodeExpiryInMinutes     uint32
-	AssignmentParts                int
-	HmacKeyLength                  int
-	CORSAccessControlAllowOrigin   string
+	DefaultSubmissionServerPort    			uint32
+	DefaultRetrievalServerPort     			uint32
+	DefaultServerPort              			uint32
+	WorkerExpirationInterval       			uint32
+	MaxOneTimeCode                 			int64
+	MaxConsecutiveClaimKeyFailures 			int
+	ClaimKeyBanDuration            			uint32
+	MaxDiagnosisKeyRetentionDays   			uint32
+	InitialRemainingKeys           			uint32
+	EncryptionKeyValidityDays      			uint32
+	OneTimeCodeExpiryInMinutes     			uint32
+	AssignmentParts                			int
+	HmacKeyLength                  			int
+	CORSAccessControlAllowOrigin   			string
+	DisableCurrentDateCheckFeatureFlag	bool
 }
 
 var AppConstants Constants
@@ -60,4 +61,5 @@ func setDefaults() {
 	viper.SetDefault("assignmentParts", 2)
 	viper.SetDefault("hmacKeyLength", 32)
 	viper.SetDefault("corsAccessControlAllowOrigin", "*")
+	viper.SetDefault("disableCurrentDateCheckFeatureFlag", true)
 }
