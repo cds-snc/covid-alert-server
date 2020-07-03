@@ -17,6 +17,8 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_REGION: ca-central-1
+  TF_VAR_AWS_ROLE_TO_ASSUME: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+  TF_VAR_AWS_ROLE_EXTERNAL_ID: ${{ secrets.AWS_ROLE_EXTERNAL_ID }}
   BACKEND_BUCKET: ${{ secrets.BACKEND_BUCKET }}
   TF_VAR_ecs_task_key_retrieval_env_hmac_key: ${{ secrets.TF_VAR_ecs_task_key_retrieval_env_hmac_key }}
   TF_VAR_ecs_task_key_retrieval_env_ecdsa_key: ${{ secrets.TF_VAR_ecs_task_key_retrieval_env_ecdsa_key }}

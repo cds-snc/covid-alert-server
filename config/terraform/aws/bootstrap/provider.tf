@@ -1,6 +1,11 @@
 provider "aws" {
   version = "~> 2.0"
   region  = "ca-central-1"
+  assume_role {
+    role_arn     = var.AWS_ROLE_TO_ASSUME
+    session_name = "Deploy CovidShield Server"
+    external_id  = var.AWS_ROLE_EXTERNAL_ID
+  }
 }
 
 resource "aws_s3_bucket" "storage_bucket" {
