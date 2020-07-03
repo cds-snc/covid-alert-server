@@ -11,6 +11,7 @@ require('rbnacl')
 require('mysql2')
 require('zip')
 require('securerandom')
+require('yaml')
 
 KEY_SUBMISSION_SERVER = File.expand_path('../../build/debug/key-submission --config_file_path ./', __dir__)
 KEY_RETRIEVAL_SERVER = File.expand_path('../../build/debug/key-retrieval  --config_file_path ./', __dir__)
@@ -88,7 +89,11 @@ module Helper
     def random_hash
       SecureRandom.hex(64)
     end
-    
+
+    def get_app_config
+      YAML.load_file(File.expand_path('../../config.yaml', __dir__))
+    end
+
     def new_valid_one_time_code
       resp = @sub_conn.post do |req|
         req.url('/new-key-claim')

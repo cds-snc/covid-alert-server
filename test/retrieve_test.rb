@@ -31,11 +31,19 @@ class RetrieveTest < MiniTest::Test
   end
 
   def test_reject_unacceptable_periods
+    
+    # Test with feature flag
+    config = get_app_config()
     resp = get_date(current_date_number)
-    assert_response(
-      resp, 404, 'text/plain; charset=utf-8',
-      body: "cannot serve data for current period for privacy reasons\n"
-    )
+
+    if config["disableCurrentDateCheckFeatureFlag"]
+      assert_response(resp, 200, 'application/zip')
+    else
+      assert_response(
+        resp, 404, 'text/plain; charset=utf-8',
+        body: "cannot serve data for current period for privacy reasons\n"
+      )
+    end
 
     resp = get_date(current_date_number - 1)
     assert_response(resp, 200, 'application/zip')

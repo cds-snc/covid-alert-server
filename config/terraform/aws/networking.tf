@@ -7,12 +7,90 @@ data "aws_availability_zones" "available" {
 }
 
 resource "aws_vpc" "covidshield" {
-  cidr_block = var.vpc_cidr_block
+  cidr_block           = var.vpc_cidr_block
+  enable_dns_hostnames = true
 
   tags = {
     Name                  = var.vpc_name
     (var.billing_tag_key) = var.billing_tag_value
   }
+}
+
+###
+# AWS VPC Privatelink Endpoints
+###
+
+resource "aws_vpc_endpoint" "ecr-dkr" {
+  vpc_id              = aws_vpc.covidshield.id
+  vpc_endpoint_type   = "Interface"
+  service_name        = "com.amazonaws.${var.region}.ecr.dkr"
+  private_dns_enabled = true
+  security_group_ids = [
+    "${aws_security_group.privatelink.id}",
+  ]
+  subnet_ids = data.aws_subnet_ids.ecr_endpoint_available.ids
+}
+
+resource "aws_vpc_endpoint" "ecr-api" {
+  vpc_id              = aws_vpc.covidshield.id
+  vpc_endpoint_type   = "Interface"
+  service_name        = "com.amazonaws.${var.region}.ecr.api"
+  private_dns_enabled = true
+  security_group_ids = [
+    "${aws_security_group.privatelink.id}",
+  ]
+  subnet_ids = data.aws_subnet_ids.ecr_endpoint_available.ids
+}
+
+resource "aws_vpc_endpoint" "kms" {
+  vpc_id              = aws_vpc.covidshield.id
+  vpc_endpoint_type   = "Interface"
+  service_name        = "com.amazonaws.${var.region}.kms"
+  private_dns_enabled = true
+  security_group_ids = [
+    "${aws_security_group.privatelink.id}",
+  ]
+  subnet_ids = aws_subnet.covidshield_public.*.id
+}
+
+resource "aws_vpc_endpoint" "secretsmanager" {
+  vpc_id              = aws_vpc.covidshield.id
+  vpc_endpoint_type   = "Interface"
+  service_name        = "com.amazonaws.${var.region}.secretsmanager"
+  private_dns_enabled = true
+  security_group_ids = [
+    "${aws_security_group.privatelink.id}",
+  ]
+  subnet_ids = aws_subnet.covidshield_public.*.id
+}
+
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.covidshield.id
+  vpc_endpoint_type = "Gateway"
+  service_name      = "com.amazonaws.${var.region}.s3"
+  route_table_ids   = [aws_vpc.covidshield.main_route_table_id]
+}
+
+resource "aws_vpc_endpoint" "logs" {
+  vpc_id              = aws_vpc.covidshield.id
+  vpc_endpoint_type   = "Interface"
+  service_name        = "com.amazonaws.${var.region}.logs"
+  private_dns_enabled = true
+  security_group_ids = [
+    "${aws_security_group.privatelink.id}",
+  ]
+  subnet_ids = aws_subnet.covidshield_public.*.id
+}
+
+resource "aws_vpc_endpoint" "monitoring" {
+  vpc_id              = aws_vpc.covidshield.id
+  vpc_endpoint_type   = "Interface"
+  service_name        = "com.amazonaws.${var.region}.monitoring"
+  private_dns_enabled = true
+  security_group_ids = [
+    "${aws_security_group.privatelink.id}",
+  ]
+  subnet_ids = aws_subnet.covidshield_public.*.id
 }
 
 ###
@@ -42,6 +120,7 @@ resource "aws_subnet" "covidshield_private" {
   tags = {
     Name                  = "Private Subnet 0${count.index + 1}"
     (var.billing_tag_key) = var.billing_tag_value
+    Access                = "private"
   }
 }
 
@@ -55,7 +134,21 @@ resource "aws_subnet" "covidshield_public" {
   tags = {
     Name                  = "Public Subnet 0${count.index + 1}"
     (var.billing_tag_key) = var.billing_tag_value
+    Access                = "public"
   }
+}
+
+data "aws_subnet_ids" "ecr_endpoint_available" {
+  vpc_id = aws_vpc.covidshield.id
+  filter {
+    name   = "tag:Access"
+    values = ["public"]
+  }
+  filter {
+    name   = "availability-zone"
+    values = ["ca-central-1a", "ca-central-1b"]
+  }
+  depends_on = [aws_subnet.covidshield_public]
 }
 
 ###
@@ -155,6 +248,15 @@ resource "aws_security_group" "covidshield_key_retrieval" {
     ]
   }
 
+  egress {
+    protocol  = "tcp"
+    from_port = 443
+    to_port   = 443
+    security_groups = [
+      aws_security_group.privatelink.id
+    ]
+  }
+
   tags = {
     (var.billing_tag_key) = var.billing_tag_value
   }
@@ -171,6 +273,15 @@ resource "aws_security_group" "covidshield_key_submission" {
     to_port   = 8000
     security_groups = [
       aws_security_group.covidshield_load_balancer.id
+    ]
+  }
+
+  egress {
+    protocol  = "tcp"
+    from_port = 443
+    to_port   = 443
+    security_groups = [
+      aws_security_group.privatelink.id
     ]
   }
 
@@ -245,6 +356,34 @@ resource "aws_security_group" "covidshield_egress_anywhere" {
   tags = {
     (var.billing_tag_key) = var.billing_tag_value
   }
+}
+
+resource "aws_security_group" "privatelink" {
+  name        = "privatelink"
+  description = "privatelink endpoints"
+  vpc_id      = aws_vpc.covidshield.id
+
+  tags = {
+    (var.billing_tag_key) = var.billing_tag_value
+  }
+}
+
+resource "aws_security_group_rule" "privatelink_retrieval_ingress" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.privatelink.id
+  source_security_group_id = aws_security_group.covidshield_key_retrieval.id
+}
+
+resource "aws_security_group_rule" "privatelink_submission_ingress" {
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.privatelink.id
+  source_security_group_id = aws_security_group.covidshield_key_submission.id
 }
 
 ###

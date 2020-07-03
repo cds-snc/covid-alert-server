@@ -26,3 +26,6 @@ oneTimeCodeExpiryInMinutes: 1440
 assignmentParts: 2
 hmacKeyLength: 32
 corsAccessControlAllowOrigin: "*"
+
+# Feature flags
+disableCurrentDateCheckFeatureFlag: true

@@ -50,7 +50,7 @@ resource "aws_lb_listener" "covidshield_key_retrieval" {
   load_balancer_arn = aws_lb.covidshield_key_retrieval.arn
   port              = "443"
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
+  ssl_policy        = "ELBSecurityPolicy-FS-1-2-Res-2019-08"
   certificate_arn   = aws_acm_certificate.covidshield.arn
 
   default_action {
@@ -111,7 +111,7 @@ resource "aws_lb_listener" "covidshield_key_submission" {
   load_balancer_arn = aws_lb.covidshield_key_submission.arn
   port              = "443"
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
+  ssl_policy        = "ELBSecurityPolicy-FS-1-2-Res-2019-08"
   certificate_arn   = aws_acm_certificate.covidshield.arn
 
   default_action {
