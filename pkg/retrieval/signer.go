@@ -1,8 +1,8 @@
 package retrieval
 
 import (
+	"crypto"
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/x509"
@@ -37,11 +37,10 @@ func NewSigner() Signer {
 }
 
 func (s *signer) Sign(data []byte) ([]byte, error) {
-	hash := sha256.Sum256(data)
-	a, b, err := ecdsa.Sign(rand.Reader, s.privateKey, hash[:])
+	digest := sha256.Sum256(data)
+	sig, err := s.privateKey.Sign(rand.Reader, digest[:], crypto.SHA256)
 	if err != nil {
 		return nil, err
 	}
-	signatureX962 := elliptic.Marshal(elliptic.P256(), a, b)
-	return signatureX962, nil
+	return sig, nil
 }
