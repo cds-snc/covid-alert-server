@@ -82,7 +82,6 @@ resource "aws_ecs_service" "covidshield_key_retrieval" {
     assign_public_ip = false
     subnets          = aws_subnet.covidshield_private.*.id
     security_groups = [
-      aws_security_group.covidshield_egress_anywhere.id,
       aws_security_group.covidshield_key_retrieval.id,
     ]
   }
@@ -203,7 +202,6 @@ resource "aws_ecs_service" "covidshield_key_submission" {
     assign_public_ip = false
     subnets          = aws_subnet.covidshield_private.*.id
     security_groups = [
-      aws_security_group.covidshield_egress_anywhere.id,
       aws_security_group.covidshield_key_submission.id,
     ]
   }

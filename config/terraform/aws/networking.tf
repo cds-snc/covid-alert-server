@@ -50,7 +50,7 @@ resource "aws_vpc_endpoint" "kms" {
   security_group_ids = [
     "${aws_security_group.privatelink.id}",
   ]
-  subnet_ids = aws_subnet.covidshield_public.*.id
+  subnet_ids = aws_subnet.covidshield_private.*.id
 }
 
 resource "aws_vpc_endpoint" "secretsmanager" {
@@ -61,7 +61,7 @@ resource "aws_vpc_endpoint" "secretsmanager" {
   security_group_ids = [
     "${aws_security_group.privatelink.id}",
   ]
-  subnet_ids = aws_subnet.covidshield_public.*.id
+  subnet_ids = aws_subnet.covidshield_private.*.id
 }
 
 resource "aws_vpc_endpoint" "s3" {
@@ -79,7 +79,7 @@ resource "aws_vpc_endpoint" "logs" {
   security_group_ids = [
     "${aws_security_group.privatelink.id}",
   ]
-  subnet_ids = aws_subnet.covidshield_public.*.id
+  subnet_ids = aws_subnet.covidshield_private.*.id
 }
 
 resource "aws_vpc_endpoint" "monitoring" {
@@ -90,7 +90,7 @@ resource "aws_vpc_endpoint" "monitoring" {
   security_group_ids = [
     "${aws_security_group.privatelink.id}",
   ]
-  subnet_ids = aws_subnet.covidshield_public.*.id
+  subnet_ids = aws_subnet.covidshield_private.*.id
 }
 
 ###
@@ -142,44 +142,14 @@ data "aws_subnet_ids" "ecr_endpoint_available" {
   vpc_id = aws_vpc.covidshield.id
   filter {
     name   = "tag:Access"
-    values = ["public"]
+    values = ["private"]
   }
   filter {
     name   = "availability-zone"
     values = ["ca-central-1a", "ca-central-1b"]
   }
-  depends_on = [aws_subnet.covidshield_public]
+  depends_on = [aws_subnet.covidshield_private]
 }
-
-###
-# AWS NAT GW
-###
-
-resource "aws_eip" "covidshield_natgw" {
-  count      = 3
-  depends_on = [aws_internet_gateway.covidshield]
-
-  vpc = true
-
-  tags = {
-    Name                  = "${var.vpc_name} NAT GW ${count.index}"
-    (var.billing_tag_key) = var.billing_tag_value
-  }
-}
-
-resource "aws_nat_gateway" "covidshield" {
-  count      = 3
-  depends_on = [aws_internet_gateway.covidshield]
-
-  allocation_id = aws_eip.covidshield_natgw.*.id[count.index]
-  subnet_id     = aws_subnet.covidshield_public.*.id[count.index]
-
-  tags = {
-    Name                  = "${var.vpc_name} NAT GW"
-    (var.billing_tag_key) = var.billing_tag_value
-  }
-}
-
 
 ###
 # AWS Routes
@@ -206,30 +176,6 @@ resource "aws_route_table_association" "covidshield" {
   route_table_id = aws_route_table.covidshield_public_subnet.id
 }
 
-resource "aws_route_table" "covidshield_private_subnet" {
-  count = 3
-
-  vpc_id = aws_vpc.covidshield.id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.covidshield.*.id[count.index]
-  }
-
-  tags = {
-    Name                  = "Private Subnet Route Table ${count.index}"
-    (var.billing_tag_key) = var.billing_tag_value
-  }
-}
-
-resource "aws_route_table_association" "covidshield_private_route" {
-  count = 3
-
-  subnet_id      = aws_subnet.covidshield_private.*.id[count.index]
-  route_table_id = aws_route_table.covidshield_private_subnet.*.id[count.index]
-}
-
-
 ###
 # AWS Security Groups
 ###
@@ -239,27 +185,47 @@ resource "aws_security_group" "covidshield_key_retrieval" {
   description = "Ingress - CovidShield Key Retrieval App"
   vpc_id      = aws_vpc.covidshield.id
 
-  ingress {
-    protocol  = "tcp"
-    from_port = 8001
-    to_port   = 8001
-    security_groups = [
-      aws_security_group.covidshield_load_balancer.id
-    ]
-  }
-
-  egress {
-    protocol  = "tcp"
-    from_port = 443
-    to_port   = 443
-    security_groups = [
-      aws_security_group.privatelink.id
-    ]
-  }
-
   tags = {
     (var.billing_tag_key) = var.billing_tag_value
   }
+}
+
+resource "aws_security_group_rule" "covidshield_key_retrieval_ingress_alb" {
+  type                     = "ingress"
+  from_port                = 8001
+  to_port                  = 8001
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.covidshield_key_retrieval.id
+  source_security_group_id = aws_security_group.covidshield_load_balancer.id
+}
+
+resource "aws_security_group_rule" "covidshield_key_retrieval_egress_privatelink" {
+  type                     = "egress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.covidshield_key_retrieval.id
+  source_security_group_id = aws_security_group.privatelink.id
+}
+
+resource "aws_security_group_rule" "covidshield_key_retrieval_egress_s3_privatelink" {
+  type              = "egress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  security_group_id = aws_security_group.covidshield_key_retrieval.id
+  prefix_list_ids = [
+    aws_vpc_endpoint.s3.prefix_list_id
+  ]
+}
+
+resource "aws_security_group_rule" "covidshield_key_retrieval_egress_database" {
+  type                     = "egress"
+  from_port                = 3306
+  to_port                  = 3306
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.covidshield_key_retrieval.id
+  source_security_group_id = aws_security_group.covidshield_database.id
 }
 
 resource "aws_security_group" "covidshield_key_submission" {
@@ -267,27 +233,47 @@ resource "aws_security_group" "covidshield_key_submission" {
   description = "Ingress - CovidShield Key Submission App"
   vpc_id      = aws_vpc.covidshield.id
 
-  ingress {
-    protocol  = "tcp"
-    from_port = 8000
-    to_port   = 8000
-    security_groups = [
-      aws_security_group.covidshield_load_balancer.id
-    ]
-  }
-
-  egress {
-    protocol  = "tcp"
-    from_port = 443
-    to_port   = 443
-    security_groups = [
-      aws_security_group.privatelink.id
-    ]
-  }
-
   tags = {
     (var.billing_tag_key) = var.billing_tag_value
   }
+}
+
+resource "aws_security_group_rule" "covidshield_key_submission_ingress_alb" {
+  type                     = "ingress"
+  from_port                = 8000
+  to_port                  = 8000
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.covidshield_key_submission.id
+  source_security_group_id = aws_security_group.covidshield_load_balancer.id
+}
+
+resource "aws_security_group_rule" "covidshield_key_submission_egress_privatelink" {
+  type                     = "egress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.covidshield_key_submission.id
+  source_security_group_id = aws_security_group.privatelink.id
+}
+
+resource "aws_security_group_rule" "covidshield_key_submission_egress_s3_privatelink" {
+  type              = "egress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  security_group_id = aws_security_group.covidshield_key_submission.id
+  prefix_list_ids = [
+    aws_vpc_endpoint.s3.prefix_list_id
+  ]
+}
+
+resource "aws_security_group_rule" "covidshield_key_submission_egress_database" {
+  type                     = "egress"
+  from_port                = 3306
+  to_port                  = 3306
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.covidshield_key_submission.id
+  source_security_group_id = aws_security_group.covidshield_database.id
 }
 
 resource "aws_security_group" "covidshield_load_balancer" {
@@ -334,23 +320,6 @@ resource "aws_security_group" "covidshield_database" {
       aws_security_group.covidshield_key_retrieval.id,
       aws_security_group.covidshield_key_submission.id
     ]
-  }
-
-  tags = {
-    (var.billing_tag_key) = var.billing_tag_value
-  }
-}
-
-resource "aws_security_group" "covidshield_egress_anywhere" {
-  name        = "egress-anywhere"
-  description = "Egress - CovidShield Anywhere"
-  vpc_id      = aws_vpc.covidshield.id
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
