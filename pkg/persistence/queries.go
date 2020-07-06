@@ -202,6 +202,9 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 	}
 
 	if remainingKeys == 0 {
+		if err := tx.Rollback(); err != nil {
+			return err
+		}
 		return ErrKeyConsumed
 	}
 
