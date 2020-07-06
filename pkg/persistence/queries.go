@@ -185,22 +185,6 @@ func diagnosisKeysForDateNumber(db *sql.DB, region string, dateNumber uint32, cu
 	)
 }
 
-func postDateKeyIfNecessary(hourOfSubmission uint32, key *pb.TemporaryExposureKey) uint32 {
-	// ENIntervalNumber at which the key became inactive
-	keyEnd := key.GetRollingStartIntervalNumber() + key.GetRollingPeriod()
-
-	// ENIntervalNumber at which we can safely serve the key
-	canServeAt := keyEnd + (144/24)*2
-
-	// interval to hour
-	minBoundForHour := uint32(canServeAt / 6)
-	if minBoundForHour > hourOfSubmission {
-		log(nil, nil).WithField("distance", minBoundForHour-hourOfSubmission).Info("post-dating key")
-		return minBoundForHour
-	}
-	return hourOfSubmission
-}
-
 func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.TemporaryExposureKey) error {
 	tx, err := db.Begin()
 	if err != nil {
@@ -238,9 +222,7 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 	var keysInserted int64
 
 	for _, key := range keys {
-		hourForKey := postDateKeyIfNecessary(hourOfSubmission, key)
-
-		result, err := s.Exec(region, originator, key.GetKeyData(), key.GetRollingStartIntervalNumber(), key.GetRollingPeriod(), key.GetTransmissionRiskLevel(), hourForKey)
+		result, err := s.Exec(region, originator, key.GetKeyData(), key.GetRollingStartIntervalNumber(), key.GetRollingPeriod(), key.GetTransmissionRiskLevel(), hourOfSubmission)
 		if err != nil {
 			if err := tx.Rollback(); err != nil {
 				return err
