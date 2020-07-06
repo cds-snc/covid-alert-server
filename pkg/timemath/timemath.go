@@ -9,7 +9,6 @@ import (
 const (
 	SecondsInHour  = 3600
 	SecondsInDay   = 86400
-	HoursPerPeriod = 6
 	HoursInDay     = 24
 )
 
