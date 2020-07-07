@@ -31,7 +31,7 @@ class NewKeyClaimTest < MiniTest::Test
 
     %w[get patch delete put].each do |meth|
       resp = @sub_conn.send(meth, '/new-key-claim')
-      assert_response(resp, 405, 'text/plain; charset=utf-8', body: "method not allowed\n")
+      assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
     end
   end
 end
