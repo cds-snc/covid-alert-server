@@ -17,7 +17,7 @@ class NewKeyClaimhashIDTest < MiniTest::Test
 
     %w[get patch delete put].each do |meth|
       resp = @sub_conn.send(meth, "/new-key-claim/#{hash_id}")
-      assert_response(resp, 405, 'text/plain; charset=utf-8', body: "method not allowed\n")
+      assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
     end
 
     resp = @sub_conn.post do |req|
@@ -52,7 +52,7 @@ class NewKeyClaimhashIDTest < MiniTest::Test
       req.url("/new-key-claim/#{hash_id}")
       req.headers['Authorization'] = 'Bearer second-very-long-token'
     end
-    assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
+    assert_response(resp, 403, 'text/plain; charset=utf-8', body: "forbidden\n")
 
   end
 end
