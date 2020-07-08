@@ -135,10 +135,6 @@ class UploadTest < MiniTest::Test
     random_tek_interval = rand(100...144)
     resp = post_teks(teks.map { |tek| tek.rolling_period = random_tek_interval; tek })
     assert_result(resp, 200, :NONE)
-
-    # only one tek shifted off of midnight
-    # resp = post_teks(teks.map.with_index { |tek, index| tek.rolling_start_interval_number += 1 if index == 4; tek })
-    # assert_result(resp, 400, :INVALID_ROLLING_START_INTERVAL_NUMBER)
   end
 
   def test_invalid_timestamp

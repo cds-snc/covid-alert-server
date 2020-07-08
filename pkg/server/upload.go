@@ -251,21 +251,5 @@ func validateKeys(ctx context.Context, w http.ResponseWriter, keys []*pb.Tempora
 		return false
 	}
 
-	// if len(ints) > 1 {
-	//	lastEnd := 0
-	//	rollingPeriod := ints[1] - ints[0]
-		
-	//	for _, rsn := range ints {
-	//		if rsn < lastEnd {
-	//			requestError(
-	//				ctx, w, nil, "overlapping or duplicate rollingStartIntervalNumbers",
-	//				http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_INVALID_ROLLING_START_INTERVAL_NUMBER),
-	//			)
-	//			return false
-	//		}
-	//		lastEnd = rsn + rollingPeriod
-	//	}
-	// }
-
 	return true
 }
