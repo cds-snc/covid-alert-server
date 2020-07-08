@@ -293,7 +293,7 @@ resource "aws_security_group" "covidshield_load_balancer" {
     protocol    = "tcp"
     from_port   = 443
     to_port     = 443
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"] #tfsec:ignore:AWS008
   }
 
   egress {
@@ -346,6 +346,7 @@ resource "aws_security_group" "privatelink" {
 }
 
 resource "aws_security_group_rule" "privatelink_retrieval_ingress" {
+  description              = "Security group rule for Retrieval ingress"
   type                     = "ingress"
   from_port                = 443
   to_port                  = 443
@@ -355,6 +356,7 @@ resource "aws_security_group_rule" "privatelink_retrieval_ingress" {
 }
 
 resource "aws_security_group_rule" "privatelink_submission_ingress" {
+  description              = "Security group rule for Submission ingressk"
   type                     = "ingress"
   from_port                = 443
   to_port                  = 443
