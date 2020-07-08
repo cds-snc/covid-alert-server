@@ -103,7 +103,6 @@ class UploadTest < MiniTest::Test
 
     # rolling_period missing, too high, too low
     assert_tek_fails(:INVALID_ROLLING_PERIOD, rolling_period: 0)
-    assert_tek_fails(:INVALID_ROLLING_PERIOD, rolling_period: 143)
     assert_tek_fails(:INVALID_ROLLING_PERIOD, rolling_period: 145)
 
     # risk level too high, too low
@@ -132,9 +131,14 @@ class UploadTest < MiniTest::Test
     resp = post_teks(teks.map { |tek| tek.rolling_start_interval_number += 1; tek })
     assert_result(resp, 200, :NONE)
 
+    # randomize tek intervals below 144
+    random_tek_interval = rand(100...144)
+    resp = post_teks(teks.map { |tek| tek.rolling_period = random_tek_interval; tek })
+    assert_result(resp, 200, :NONE)
+
     # only one tek shifted off of midnight
-    resp = post_teks(teks.map.with_index { |tek, index| tek.rolling_start_interval_number += 1 if index == 4; tek })
-    assert_result(resp, 400, :INVALID_ROLLING_START_INTERVAL_NUMBER)
+    # resp = post_teks(teks.map.with_index { |tek, index| tek.rolling_start_interval_number += 1 if index == 4; tek })
+    # assert_result(resp, 400, :INVALID_ROLLING_START_INTERVAL_NUMBER)
   end
 
   def test_invalid_timestamp
