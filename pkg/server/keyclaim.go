@@ -50,7 +50,7 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "POST" {
 		log(ctx, nil).WithField("method", r.Method).Info("disallowed method")
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
@@ -63,6 +63,16 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 	}
 
 	hashID := vars["hashID"]
+
+	if len(hashID) != 0 {
+		count, err := s.db.CheckHashID(hashID)
+		if count > 0 {
+			log(ctx, err).WithField("header", hdr).Info("hashID used")
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+	}
+
 	keyClaim, err := s.db.NewKeyClaim(region, originator, hashID)
 	if err == persistence.ErrHashIDClaimed {
 		log(ctx, err).WithField("header", hdr).Info("hashID used")
