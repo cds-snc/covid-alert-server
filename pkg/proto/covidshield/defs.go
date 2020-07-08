@@ -15,7 +15,7 @@ const (
 	// Number of ENIntervalNumber (600s long) after
 	// which the Key is rolled.
 	// 144 * 600 = 86400 (1 day)
-	TEKRollingPeriod = 144
+	MaxTEKRollingPeriod = 144
 	MaxKeysInUpload  = 14
 )
 
@@ -44,5 +44,5 @@ func IntoNonce(bytes []byte) (*[NonceLength]byte, error) {
 func CurrentRollingStartIntervalNumber() int32 {
 	epochTime := time.Now().Unix()
 	intervalNumber := int32(epochTime / (60 * 10))
-	return (intervalNumber / TEKRollingPeriod) * TEKRollingPeriod
+	return (intervalNumber / MaxTEKRollingPeriod) * MaxTEKRollingPeriod
 }
