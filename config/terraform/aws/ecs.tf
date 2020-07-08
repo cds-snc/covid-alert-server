@@ -15,11 +15,6 @@ resource "aws_ecs_cluster" "covidshield" {
   }
 }
 
-data "github_branch" "server" {
-  repository = "covid-shield-server"
-  branch     = "master"
-}
-
 locals {
   retrieval_repo  = values(aws_ecr_repository.repository)[0].repository_url
   submission_repo = values(aws_ecr_repository.repository)[1].repository_url
@@ -35,7 +30,7 @@ data "template_file" "covidshield_key_retrieval_task" {
   template = file("task-definitions/covidshield_key_retrieval.json")
 
   vars = {
-    image                 = "${local.retrieval_repo}:${coalesce(var.github_sha, data.github_branch.server.sha)}"
+    image                 = "${local.retrieval_repo}:${var.github_sha}"
     awslogs-group         = aws_cloudwatch_log_group.covidshield.name
     awslogs-region        = var.region
     awslogs-stream-prefix = "ecs-${var.ecs_key_retrieval_name}"
@@ -87,7 +82,6 @@ resource "aws_ecs_service" "covidshield_key_retrieval" {
     assign_public_ip = false
     subnets          = aws_subnet.covidshield_private.*.id
     security_groups = [
-      aws_security_group.covidshield_egress_anywhere.id,
       aws_security_group.covidshield_key_retrieval.id,
     ]
   }
@@ -157,7 +151,7 @@ data "template_file" "covidshield_key_submission_task" {
   template = file("task-definitions/covidshield_key_submission.json")
 
   vars = {
-    image                 = "${local.submission_repo}:${coalesce(var.github_sha, data.github_branch.server.sha)}"
+    image                 = "${local.submission_repo}:${var.github_sha}"
     awslogs-group         = aws_cloudwatch_log_group.covidshield.name
     awslogs-region        = var.region
     awslogs-stream-prefix = "ecs-${var.ecs_key_submission_name}"
@@ -208,7 +202,6 @@ resource "aws_ecs_service" "covidshield_key_submission" {
     assign_public_ip = false
     subnets          = aws_subnet.covidshield_private.*.id
     security_groups = [
-      aws_security_group.covidshield_egress_anywhere.id,
       aws_security_group.covidshield_key_submission.id,
     ]
   }

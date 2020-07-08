@@ -26,10 +26,6 @@ output "security_group_load_balancer" {
   value = aws_security_group.covidshield_load_balancer
 }
 
-output "security_group_egress_anywhere" {
-  value = aws_security_group.covidshield_egress_anywhere
-}
-
 output "aws_db_subnet_group" {
   value = aws_db_subnet_group.covidshield
 }

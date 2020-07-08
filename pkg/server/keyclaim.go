@@ -50,7 +50,7 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "POST" {
 		log(ctx, nil).WithField("method", r.Method).Info("disallowed method")
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
@@ -68,7 +68,7 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 		count, err := s.db.CheckHashID(hashID)
 		if count > 0 {
 			log(ctx, err).WithField("header", hdr).Info("hashID used")
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
 	}
@@ -200,7 +200,7 @@ func getIP(r *http.Request) string {
 	forwarded := r.Header.Get("X-FORWARDED-FOR")
 	if forwarded != "" {
 		IPList := strings.Split(forwarded, ",")
-		return IPList[len(IPList)-1]
+		return strings.TrimSpace(IPList[len(IPList)-1])
 	}
 	// If the RemoteAddr is of the form $ip:$port, return only the IP
 	parts := strings.Split(r.RemoteAddr, ":")

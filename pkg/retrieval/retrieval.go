@@ -80,7 +80,7 @@ func SerializeTo(
 		return -1, err
 	}
 
-	sig, err := signer.Sign(exportBinData)
+	sig, err := signer.Sign(append(binHeader, exportBinData...))
 	if err != nil {
 		return -1, err
 	}

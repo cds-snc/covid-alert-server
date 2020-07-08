@@ -17,8 +17,8 @@ class RetrieveTest < MiniTest::Test
     assert_equal(resp.headers['Cache-Control'], 'public, max-age=3600, max-stale=600')
     export_proto, siglist_proto = extract_zip(resp.body)
     assert_equal("EK Export v1    ", export_proto[0...16])
-    export_proto = export_proto[16..-1]
     assert_valid_signature_list(siglist_proto, export_proto)
+    export_proto = export_proto[16..-1]
     export = Covidshield::TemporaryExposureKeyExport.decode(export_proto)
     export
   end
@@ -31,11 +31,19 @@ class RetrieveTest < MiniTest::Test
   end
 
   def test_reject_unacceptable_periods
+    
+    # Test with feature flag
+    config = get_app_config()
     resp = get_date(current_date_number)
-    assert_response(
-      resp, 404, 'text/plain; charset=utf-8',
-      body: "cannot serve data for current period for privacy reasons\n"
-    )
+
+    if config["disableCurrentDateCheckFeatureFlag"]
+      assert_response(resp, 200, 'application/zip')
+    else
+      assert_response(
+        resp, 404, 'text/plain; charset=utf-8',
+        body: "cannot serve data for current period for privacy reasons\n"
+      )
+    end
 
     resp = get_date(current_date_number - 1)
     assert_response(resp, 200, 'application/zip')
@@ -254,13 +262,8 @@ class RetrieveTest < MiniTest::Test
     key_der = [key_hex].pack('H*')
     key = OpenSSL::PKey::EC.new(key_der)
     key.check_key
-
     digest = Digest::SHA256.digest(data)
-
-    # Why doesn't this work? Our signature is in X9.62 uncompressed form, which
-    # seems to be what OpenSSL is looking for, but we get "nested asn1 error".
-    puts("WARN: not verifying signature")
-    # key.dsa_verify_asn1(digest, signature)
+    key.dsa_verify_asn1(digest, signature)
   end
 
   def assert_keys(export, keys, region:, date_number:)
