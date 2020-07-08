@@ -191,6 +191,7 @@ resource "aws_security_group" "covidshield_key_retrieval" {
 }
 
 resource "aws_security_group_rule" "covidshield_key_retrieval_ingress_alb" {
+  description              = "Security group rule for Retrieval Ingress ALB"
   type                     = "ingress"
   from_port                = 8001
   to_port                  = 8001
@@ -200,6 +201,7 @@ resource "aws_security_group_rule" "covidshield_key_retrieval_ingress_alb" {
 }
 
 resource "aws_security_group_rule" "covidshield_key_retrieval_egress_privatelink" {
+  description              = "Security group rule for Retrieval egress through privatelink"
   type                     = "egress"
   from_port                = 443
   to_port                  = 443
@@ -209,6 +211,7 @@ resource "aws_security_group_rule" "covidshield_key_retrieval_egress_privatelink
 }
 
 resource "aws_security_group_rule" "covidshield_key_retrieval_egress_s3_privatelink" {
+  description       = "Security group rule for Retrieval S3 egress through privatelink"
   type              = "egress"
   from_port         = 443
   to_port           = 443
@@ -220,6 +223,7 @@ resource "aws_security_group_rule" "covidshield_key_retrieval_egress_s3_privatel
 }
 
 resource "aws_security_group_rule" "covidshield_key_retrieval_egress_database" {
+  description              = "Security group rule for Retrieval DB egress through privatelink"
   type                     = "egress"
   from_port                = 3306
   to_port                  = 3306
@@ -239,6 +243,7 @@ resource "aws_security_group" "covidshield_key_submission" {
 }
 
 resource "aws_security_group_rule" "covidshield_key_submission_ingress_alb" {
+  description              = "Security group rule for Submission ingress"
   type                     = "ingress"
   from_port                = 8000
   to_port                  = 8000
@@ -248,6 +253,7 @@ resource "aws_security_group_rule" "covidshield_key_submission_ingress_alb" {
 }
 
 resource "aws_security_group_rule" "covidshield_key_submission_egress_privatelink" {
+  description              = "Security group rule for Submission egress through privatelink"
   type                     = "egress"
   from_port                = 443
   to_port                  = 443
@@ -257,6 +263,7 @@ resource "aws_security_group_rule" "covidshield_key_submission_egress_privatelin
 }
 
 resource "aws_security_group_rule" "covidshield_key_submission_egress_s3_privatelink" {
+  description       = "Security group rule for Submission S3 egress through privatelink"
   type              = "egress"
   from_port         = 443
   to_port           = 443
@@ -268,6 +275,7 @@ resource "aws_security_group_rule" "covidshield_key_submission_egress_s3_private
 }
 
 resource "aws_security_group_rule" "covidshield_key_submission_egress_database" {
+  description              = "Security group rule for Submission DB egress through privatelink"
   type                     = "egress"
   from_port                = 3306
   to_port                  = 3306
