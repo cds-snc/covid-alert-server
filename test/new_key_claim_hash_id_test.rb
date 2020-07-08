@@ -52,7 +52,7 @@ class NewKeyClaimhashIDTest < MiniTest::Test
       req.url("/new-key-claim/#{hash_id}")
       req.headers['Authorization'] = 'Bearer second-very-long-token'
     end
-    assert_response(resp, 401, 'text/plain; charset=utf-8', body: "unauthorized\n")
+    assert_response(resp, 403, 'text/plain; charset=utf-8', body: "forbidden\n")
 
   end
 end
