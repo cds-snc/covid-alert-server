@@ -153,6 +153,12 @@ func persistEncryptionKey(db *sql.DB, region, originator, hashID string, pub *[3
 
 		switch err := row.Scan(&one_time_code); {
 		case err == sql.ErrNoRows: // no hashID found
+		case err != nil:
+			log(nil, err).Error(err.Error())
+			if err := tx.Rollback(); err != nil {
+				return err
+			}
+			return err
 		case len(one_time_code) == 0: // used hashID found
 			if err := tx.Rollback(); err != nil {
 				return err
