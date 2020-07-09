@@ -86,8 +86,8 @@ class UploadTest < MiniTest::Test
     resp = @sub_conn.post('/upload', req.to_proto)
     assert_result(resp, 400, :INVALID_PAYLOAD)
 
-    # max acceptable number of keys (14)
-    req = encrypted_request(dummy_payload(14), new_valid_keyset)
+    # max acceptable number of keys (28)
+    req = encrypted_request(dummy_payload(28, make_half_day=true), new_valid_keyset)
     resp = @sub_conn.post('/upload', req.to_proto)
     assert_result(resp, 200, :NONE)
 
@@ -97,7 +97,7 @@ class UploadTest < MiniTest::Test
     assert_result(resp, 400, :NO_KEYS_IN_PAYLOAD)
 
     # too many keys
-    req = encrypted_request(dummy_payload(15), new_valid_keyset)
+    req = encrypted_request(dummy_payload(29), new_valid_keyset)
     resp = @sub_conn.post('/upload', req.to_proto)
     assert_result(resp, 400, :TOO_MANY_KEYS)
 
@@ -167,47 +167,31 @@ class UploadTest < MiniTest::Test
     @sub_conn.post('/upload', req.to_proto)
   end
 
-  def test_key_limit
-    keys = (1..50).map { |n| key_n(n) }
-
-    offset = 0
-
-    keyset = new_valid_keyset
-
-    upload_at_offset = ->(offset) {
-      payload = Covidshield::Upload.new(
-        timestamp: Time.now, keys: keys[offset...(offset+14)]
-      ).to_proto
-      req = encrypted_request(payload, keyset)
-      @sub_conn.post('/upload', req.to_proto)
-    }
-
-    # Day zero, plus 14 subsequent days
-    15.times do |offset|
-      resp = upload_at_offset.call(offset)
-      assert_result(resp, 200, :NONE)
-    end
-
-    # 15th subsequent day
-    resp = upload_at_offset.call(15)
-    assert_result(resp, 400, :INVALID_KEYPAIR)
-  end
-
   def test_variable_limits
     keys = (1..50).map { |n| key_n(n) }
+
+    # Keep 14 days as single key days and make the rest double keys (28 for the next 14 days)
+    (13..30).each do |n| 
+      keys[n]["rolling_period"] = rand(1...144)
+      keys[n + 18]["rolling_period"] = rand(1...144)
+      keys[n + 18]["rolling_start_interval_number"] = keys[n]["rolling_start_interval_number"] 
+    end
+
+    keys = keys.sort_by { |k| k["rolling_start_interval_number"] }.reverse
+
     keyset = new_valid_keyset
 
-    # Upload first 14
+    # Upload first 15
     payload = Covidshield::Upload.new(
-      timestamp: Time.now, keys: keys[0..13]
+      timestamp: Time.now, keys: keys[0..14]
     ).to_proto
     req = encrypted_request(payload, keyset)
     resp = @sub_conn.post('/upload', req.to_proto)
     assert_result(resp, 200, :NONE)
 
-    # Upload additional 13
+    # Upload additional 27
     payload = Covidshield::Upload.new(
-      timestamp: Time.now, keys: keys[14..26]
+      timestamp: Time.now, keys: keys[15..41]
     ).to_proto
     req = encrypted_request(payload, keyset)
     resp = @sub_conn.post('/upload', req.to_proto)
@@ -215,7 +199,7 @@ class UploadTest < MiniTest::Test
 
     # Upload additional 2 (expect failure)
     payload = Covidshield::Upload.new(
-      timestamp: Time.now, keys: keys[27..29]
+      timestamp: Time.now, keys: keys[42..43]
     ).to_proto
     req = encrypted_request(payload, keyset)
     resp = @sub_conn.post('/upload', req.to_proto)
@@ -223,7 +207,7 @@ class UploadTest < MiniTest::Test
 
     # Upload additional 1 (expect success)
     payload = Covidshield::Upload.new(
-      timestamp: Time.now, keys: [keys[27]]
+      timestamp: Time.now, keys: [keys[42]]
     ).to_proto
     req = encrypted_request(payload, keyset)
     resp = @sub_conn.post('/upload', req.to_proto)
@@ -231,7 +215,7 @@ class UploadTest < MiniTest::Test
 
     # Upload additional 1 (expect failure)
     payload = Covidshield::Upload.new(
-      timestamp: Time.now, keys: [keys[28]]
+      timestamp: Time.now, keys: [keys[43]]
     ).to_proto
     req = encrypted_request(payload, keyset)
     resp = @sub_conn.post('/upload', req.to_proto)
@@ -255,8 +239,15 @@ class UploadTest < MiniTest::Test
     Covidshield::Upload.new(timestamp: Time.now, keys: [tek]).to_proto
   end
 
-  def dummy_payload(nkeys=1, timestamp: Time.now)
-    Covidshield::Upload.new(timestamp: timestamp, keys: nkeys.times.map{tek}).to_proto
+  def dummy_payload(nkeys=1, make_half_day=false, timestamp: Time.now)
+    if make_half_day # This makes the keys have the same RSIN with different rolling periods
+      keys = (nkeys / 2).times.map{tek}
+      keys = (keys + keys).map{ |k| k.rolling_period = rand(1...144); k}
+    else 
+      keys = nkeys.times.map{tek}
+    end
+
+    Covidshield::Upload.new(timestamp: timestamp, keys: keys).to_proto
   end
 
   def encrypted_request(

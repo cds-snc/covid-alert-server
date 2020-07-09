@@ -243,9 +243,9 @@ func validateKeys(ctx context.Context, w http.ResponseWriter, keys []*pb.Tempora
 	max := ints[len(ints)-1]
 	maxEnd := max + 144
 
-	if maxEnd-min > (144 * 14) {
+	if maxEnd-min > (144 * 15) {
 		requestError(
-			ctx, w, nil, "sequence of rollingStartIntervalNumbers exceeds 14 days",
+			ctx, w, nil, "sequence of rollingStartIntervalNumbers exceeds 15 days",
 			http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_INVALID_ROLLING_START_INTERVAL_NUMBER),
 		)
 		return false
