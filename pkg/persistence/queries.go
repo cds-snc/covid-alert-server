@@ -148,7 +148,7 @@ func persistEncryptionKey(db *sql.DB, region, originator, hashID string, pub *[3
 	}
 
 	if len(hashID) > 0 {
-		var one_time_code string
+		var one_time_code sql.NullString
 		row := tx.QueryRow("SELECT one_time_code FROM encryption_keys WHERE hash_id = ? FOR UPDATE", hashID)
 
 		switch err := row.Scan(&one_time_code); {
@@ -159,12 +159,12 @@ func persistEncryptionKey(db *sql.DB, region, originator, hashID string, pub *[3
 				return err
 			}
 			return err
-		case len(one_time_code) == 0: // used hashID found
+		case !one_time_code.Valid: // used hashID found
 			if err := tx.Rollback(); err != nil {
 				return err
 			}
 			return errors.New("used hashID found")
-		case len(one_time_code) > 0: // un-used hashID found
+		case one_time_code.Valid: // un-used hashID found
 			_, err = tx.Exec(`DELETE FROM encryption_keys WHERE hash_id = ? AND one_time_code IS NOT NULL`, hashID)
 			if err != nil {
 				if err := tx.Rollback(); err != nil {
