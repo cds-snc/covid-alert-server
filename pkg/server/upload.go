@@ -243,6 +243,8 @@ func validateKeys(ctx context.Context, w http.ResponseWriter, keys []*pb.Tempora
 	max := ints[len(ints)-1]
 	maxEnd := max + 144
 
+	// Changed from 14 to 15 because you can have a case where you submit for the
+	// past 14 days plus part of today
 	if maxEnd-min > (144 * 15) {
 		requestError(
 			ctx, w, nil, "sequence of rollingStartIntervalNumbers exceeds 15 days",
