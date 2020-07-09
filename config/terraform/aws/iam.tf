@@ -100,3 +100,29 @@ resource "aws_iam_role_policy_attachment" "secrets_manager_key_submission" {
   role       = aws_iam_role.covidshield_key_submission.name
   policy_arn = aws_iam_policy.covidshield_secrets_manager_key_submission.arn
 }
+
+###
+# AWS IAM - Codedeploy
+###
+
+resource "aws_iam_role" "codedeploy" {
+  name               = "codedeploy"
+  assume_role_policy = data.aws_iam_policy_document.assume_role_policy_codedeploy.json
+  path               = "/"
+}
+
+data "aws_iam_policy_document" "assume_role_policy_codedeploy" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["codedeploy.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "codedeploy" {
+  role       = aws_iam_role.codedeploy.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS"
+}

@@ -74,6 +74,11 @@ variable "retrieval_autoscale_enabled" {
   type = bool
 }
 
+variable "manual_deploy_enabled" {
+  type    = bool
+  default = false
+}
+
 # Task Key Submission
 variable "ecs_key_submission_name" {
   type = string
