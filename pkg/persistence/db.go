@@ -142,7 +142,7 @@ func (c *conn) ClaimKey(oneTimeCode string, appPublicKey []byte) ([]byte, error)
 }
 
 // ErrHashIDClaimed is returned when the client tries to get a new code for a 
-// HashID that has laready used the code
+// HashID that has already used the code
 var ErrHashIDClaimed = errors.New("HashID claimed")
 
 const maxOneTimeCode = 1e8
