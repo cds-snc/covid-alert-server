@@ -188,7 +188,7 @@ func (s *uploadServlet) upload(w http.ResponseWriter, r *http.Request) {
 }
 
 func validateKey(ctx context.Context, w http.ResponseWriter, key *pb.TemporaryExposureKey) bool {
-	if key.GetRollingPeriod() != 144 {
+	if key.GetRollingPeriod() < 1 || key.GetRollingPeriod() > 144{
 		requestError(
 			ctx, w, nil, "missing or invalid rollingPeriod",
 			http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_INVALID_ROLLING_PERIOD),
@@ -243,24 +243,14 @@ func validateKeys(ctx context.Context, w http.ResponseWriter, keys []*pb.Tempora
 	max := ints[len(ints)-1]
 	maxEnd := max + 144
 
-	if maxEnd-min > (144 * 14) {
+	// Changed from 14 to 15 because you can have a case where you submit for the
+	// past 14 days plus part of today
+	if maxEnd-min > (144 * 15) {
 		requestError(
-			ctx, w, nil, "sequence of rollingStartIntervalNumbers exceeds 14 days",
+			ctx, w, nil, "sequence of rollingStartIntervalNumbers exceeds 15 days",
 			http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_INVALID_ROLLING_START_INTERVAL_NUMBER),
 		)
 		return false
-	}
-
-	lastEnd := 0
-	for _, rsn := range ints {
-		if rsn < lastEnd {
-			requestError(
-				ctx, w, nil, "overlapping or duplicate rollingStartIntervalNumbers",
-				http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_INVALID_ROLLING_START_INTERVAL_NUMBER),
-			)
-			return false
-		}
-		lastEnd = rsn + 144
 	}
 
 	return true

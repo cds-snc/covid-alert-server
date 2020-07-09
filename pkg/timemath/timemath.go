@@ -33,7 +33,7 @@ func HourNumberPlusDays(hourNumber uint32, days int) uint32 {
 }
 
 func RollingStartIntervalNumberPlusDays(rsin int32, days int) int32 {
-	return int32(int(rsin) + days*pb.TEKRollingPeriod)
+	return int32(int(rsin) + days*pb.MaxTEKRollingPeriod)
 }
 
 func CurrentDateNumber() uint32 {
