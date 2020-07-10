@@ -71,14 +71,11 @@ jobs:
 
       - name: Render image for retrieval service
         id: taskdef-retrieval
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: covid-server/key-retrieval
         uses: aws-actions/amazon-ecs-render-task-definition@9666dc9
         with:
           task-definition: task-definition-retrieval.json
           container-name: ${{ steps.download-taskdef-retrieval.outputs.container_name }}
-          image: $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA
+          image: ${{ steps.login-ecr.outputs.registry }}/covid-server/key-retrieval:${{ github.ref }}
 
       - name: Render appspec for retrieval service
         run: |
@@ -96,6 +93,7 @@ jobs:
           cluster: ${{ steps.cluster.outputs.name }}
           wait-for-service-stability: true
           codedeploy-appspec: ${{ github.workspace }}/covidshield-retrieval-appspec.json
+
       - name: Download submission task definition
         id: download-taskdef-submission
         run: |
@@ -104,14 +102,11 @@ jobs:
 
       - name: Render image for submission service
         id: taskdef-submission
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: covid-server/key-retrieval
         uses: aws-actions/amazon-ecs-render-task-definition@9666dc9
         with:
           task-definition: task-definition-submission.json
           container-name: ${{ steps.download-taskdef-submission.outputs.container_name }}
-          image: $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA
+          image: ${{ steps.login-ecr.outputs.registry }}/covid-server/key-submission:${{ github.ref }}
 
       - name: Render appspec for submission service
         run: |
