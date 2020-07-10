@@ -31,7 +31,7 @@
 #
 # The problem is that this array has 8 items and AWS Cloudwatch can't filter on
 # a variable position. ex: {$.updates[*].name = ... The order of the array
-# is also always different, so we need a metric for each possible position it
+# is also always different, so we need a metric filter for each possible position
 # can be in. :/
 
 
