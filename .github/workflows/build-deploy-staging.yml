@@ -86,7 +86,7 @@ jobs:
           CONTAINER_PORT=`jq '.containerDefinitions[0].portMappings[0].containerPort' task-definition-retrieval.json`
           CONTAINER_NAME=${{ steps.download-taskdef-retrieval.outputs.container_name }}
           TASKDEF_ARN=`jq -r '.taskDefinitionArn' task-definition-retrieval.json | cut -f 1-6 -d "/"`
-          jq  --argjson port "$CONTAINER_PORT" --arg cname "$CONTAINER_NAME" --arg taskdefarn "$TASKDEF_ARN" '.Resources[0].TargetService.Properties.TaskDefinition = $taskdefarn | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerName = $cname | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerPort = $port ' server/aws/appspec-template.json > retrieval-appspec.json
+          jq  --argjson port "$CONTAINER_PORT" --arg cname "$CONTAINER_NAME" --arg taskdefarn "$TASKDEF_ARN" '.Resources[0].TargetService.Properties.TaskDefinition = $taskdefarn | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerName = $cname | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerPort = $port ' config/infrastructure/aws/appspec-template.json > covidshield-retrieval-appspec.json
 
       - name: Deploy image for retrieval service
         timeout-minutes: 10
@@ -116,7 +116,7 @@ jobs:
           CONTAINER_PORT=`jq '.containerDefinitions[0].portMappings[0].containerPort' task-definition-submission.json`
           CONTAINER_NAME=${{ steps.download-taskdef-submission.outputs.container_name }}
           TASKDEF_ARN=`jq -r '.taskDefinitionArn' task-definition-submission.json | cut -f 1-6 -d "/"`
-          jq  --argjson port "$CONTAINER_PORT" --arg cname "$CONTAINER_NAME" --arg taskdefarn "$TASKDEF_ARN" '.Resources[0].TargetService.Properties.TaskDefinition = $taskdefarn | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerName = $cname | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerPort = $port ' server/aws/appspec-template.json > submission-appspec.json
+          jq  --argjson port "$CONTAINER_PORT" --arg cname "$CONTAINER_NAME" --arg taskdefarn "$TASKDEF_ARN" '.Resources[0].TargetService.Properties.TaskDefinition = $taskdefarn | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerName = $cname | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerPort = $port ' config/infrastructure/aws/appspec-template.json > covidshield-submission-appspec.json
 
       - name: Deploy image for submission service
         timeout-minutes: 10
