@@ -64,17 +64,12 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 
 	hashID := vars["hashID"]
 
-	if len(hashID) != 0 {
-		count, err := s.db.CheckHashID(hashID)
-		if count > 0 {
-			log(ctx, err).WithField("header", hdr).Info("hashID used")
-			http.Error(w, "forbidden", http.StatusForbidden)
-			return
-		}
-	}
-
 	keyClaim, err := s.db.NewKeyClaim(region, originator, hashID)
-	if err != nil {
+	if err == persistence.ErrHashIDClaimed {
+		log(ctx, err).WithField("header", hdr).Info("hashID used")
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	} else if err != nil {
 		log(ctx, err).Error("error constructing new key claim")
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
