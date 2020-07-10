@@ -170,6 +170,7 @@ func persistEncryptionKey(db *sql.DB, region, originator, hashID string, pub *[3
 				if err := tx.Rollback(); err != nil {
 					return err
 				}
+				return err
 			}
 		default:
 		}
@@ -186,6 +187,7 @@ func persistEncryptionKey(db *sql.DB, region, originator, hashID string, pub *[3
 		if err := tx.Rollback(); err != nil {
 			return err
 		}
+		return err
 	}
 	
 	if err = tx.Commit(); err != nil {
