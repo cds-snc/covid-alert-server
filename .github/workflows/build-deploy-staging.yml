@@ -112,7 +112,6 @@ jobs:
           image: ${{ secrets.ECR_REGISTRY }}/covid-server/key-submission:${{ github.sha }}
 
       - name: Render appspec for submission service
-        env:
         run: |
           CONTAINER_PORT=`jq '.containerDefinitions[0].portMappings[0].containerPort' task-definition-submission.json`
           CONTAINER_NAME=${{ steps.download-taskdef-submission.outputs.container_name }}
