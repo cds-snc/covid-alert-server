@@ -43,8 +43,8 @@ resource "aws_cloudwatch_log_metric_filter" "UnclaimedOneTimeCodeTotal" {
   log_group_name = aws_cloudwatch_log_group.covidshield.name
 
   metric_transformation {
-    name      = "CovidShield"
-    namespace = "UnclaimedOneTimeCodeTotal"
+    name      = "UnclaimedOneTimeCodeTotal"
+    namespace = "CovidShield"
     value     = "$.updates[${count.index}].sum"
   }
 }
@@ -57,8 +57,8 @@ resource "aws_cloudwatch_log_metric_filter" "ClaimedOneTimeCodeTotal" {
   log_group_name = aws_cloudwatch_log_group.covidshield.name
 
   metric_transformation {
-    name      = "CovidShield"
-    namespace = "ClaimedOneTimeCodeTotal"
+    name      = "ClaimedOneTimeCodeTotal"
+    namespace = "CovidShield"
     value     = "$.updates[${count.index}].sum"
   }
 }
@@ -71,8 +71,8 @@ resource "aws_cloudwatch_log_metric_filter" "DiagnosisKeyTotal" {
   log_group_name = aws_cloudwatch_log_group.covidshield.name
 
   metric_transformation {
-    name      = "CovidShield"
-    namespace = "DiagnosisKeyTotal"
+    name      = "DiagnosisKeyTotal"
+    namespace = "CovidShield"
     value     = "$.updates[${count.index}].sum"
   }
 }
