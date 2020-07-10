@@ -75,7 +75,7 @@ jobs:
         with:
           task-definition: task-definition-retrieval.json
           container-name: ${{ steps.download-taskdef-retrieval.outputs.container_name }}
-          image: ${{ steps.login-ecr.outputs.registry }}/covid-server/key-retrieval:${{ github.ref }}
+          image: ${{ steps.login-ecr.outputs.registry }}/covid-server/key-retrieval:${{ github.sha }}
 
       - name: Render appspec for retrieval service
         run: |
@@ -106,7 +106,7 @@ jobs:
         with:
           task-definition: task-definition-submission.json
           container-name: ${{ steps.download-taskdef-submission.outputs.container_name }}
-          image: ${{ steps.login-ecr.outputs.registry }}/covid-server/key-submission:${{ github.ref }}
+          image: ${{ steps.login-ecr.outputs.registry }}/covid-server/key-submission:${{ github.sha }}
 
       - name: Render appspec for submission service
         run: |
