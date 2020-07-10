@@ -25,6 +25,29 @@ resource "aws_lb_target_group" "covidshield_key_retrieval" {
   }
 }
 
+resource "aws_lb_target_group" "covidshield_key_retrieval_2" {
+  name                 = "covidshield-key-retrieval-2"
+  port                 = 8001
+  protocol             = "HTTP"
+  target_type          = "ip"
+  deregistration_delay = 30
+  vpc_id               = aws_vpc.covidshield.id
+
+  health_check {
+    enabled             = true
+    interval            = 10
+    path                = "/services/ping"
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
+
+  tags = {
+    Name                  = "covidshield-key-retrieval-2"
+    (var.billing_tag_key) = var.billing_tag_value
+  }
+}
+
 resource "aws_lb" "covidshield_key_retrieval" {
   name               = "covidshield-key-retrieval"
   internal           = false
@@ -57,6 +80,13 @@ resource "aws_lb_listener" "covidshield_key_retrieval" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.covidshield_key_retrieval.arn
   }
+
+  lifecycle {
+    ignore_changes = [
+      default_action,
+    ]
+  }
+
 }
 
 ###
@@ -82,6 +112,29 @@ resource "aws_lb_target_group" "covidshield_key_submission" {
 
   tags = {
     Name                  = "covidshield-key-submission"
+    (var.billing_tag_key) = var.billing_tag_value
+  }
+}
+
+resource "aws_lb_target_group" "covidshield_key_submission_2" {
+  name                 = "covidshield-key-submission-2"
+  port                 = 8000
+  protocol             = "HTTP"
+  target_type          = "ip"
+  deregistration_delay = 30
+  vpc_id               = aws_vpc.covidshield.id
+
+  health_check {
+    enabled             = true
+    interval            = 10
+    path                = "/services/ping"
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
+
+  tags = {
+    Name                  = "covidshield-key-submission-2"
     (var.billing_tag_key) = var.billing_tag_value
   }
 }
