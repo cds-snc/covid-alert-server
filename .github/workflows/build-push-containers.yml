@@ -15,116 +15,97 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Configure AWS credentials
+      - name: Configure Staging AWS credentials
+        id: aws-staging
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ca-central-1
 
-      - name: Login to Amazon ECR
-        id: login-ecr
+      - name: Configure Production AWS credentials
+        id: aws-production
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ca-central-1
+
+      - name: Login to Staging Amazon ECR
+        id: login-ecr-staging
         uses: aws-actions/amazon-ecr-login@v1
+        with:
+          registries: ${{ steps.aws-staging.outputs.aws-account-id }}
+
+      - name: Login to Production Amazon ECR
+        id: login-ecr-prod
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          registries: ${{ steps.aws-production.outputs.aws-account-id }}
 
       - name: Build Key Retrieval
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
+          PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
           ECR_REPOSITORY: covid-server/key-retrieval
           COMPONENT: key-retrieval
         run: |
-          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT -t $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT \
+          -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
+          -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
+          -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:latest \
+          -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:latest .
 
       - name: Build Key Submission
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
+          PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
           ECR_REPOSITORY: covid-server/key-submission
           GITHUB_SHA: ${{ github.sha }}
           BRANCH: ${{ github.ref }}
           COMPONENT: key-submission
         run: |
-          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT -t $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT \
+          -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
+          -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
+          -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:latest \
+          -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:latest .
 
       - name: Build Monolith
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
+          PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
           ECR_REPOSITORY: covid-server/monolith
           COMPONENT: monolith
         run: |
-          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT -t $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT \
+          -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
+          -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
+          -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:latest \
+          -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:latest .
 
-      - name: Get Cluster Name
-        id: cluster
+      - name: Push all containers to Amazon ECR
+        env:
+          STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
+          PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
         run: |
-          echo "##[set-output name=name;]$(aws ecs list-clusters | jq -r '.clusterArns[0]' | cut -f 2 -d "/" )"
+          docker push $STG_ECR_REGISTRY/covid-server/key-retrieval:$GITHUB_SHA
+          docker push $STG_ECR_REGISTRY/covid-server/key-retrieval:latest
+          docker push $STG_ECR_REGISTRY/covid-server/key-submission:$GITHUB_SHA
+          docker push $STG_ECR_REGISTRY/covid-server/key-submission:latest
+          docker push $STG_ECR_REGISTRY/covid-server/monolith:$GITHUB_SHA
+          docker push $STG_ECR_REGISTRY/covid-server/monolith:latest
+          docker push $PROD_ECR_REGISTRY/covid-server/key-retrieval:$GITHUB_SHA
+          docker push $PROD_ECR_REGISTRY/covid-server/key-retrieval:latest
+          docker push $PROD_ECR_REGISTRY/covid-server/key-submission:$GITHUB_SHA
+          docker push $PROD_ECR_REGISTRY/covid-server/key-submission:latest
+          docker push $PROD_ECR_REGISTRY/covid-server/monolith:$GITHUB_SHA
+          docker push $PROD_ECR_REGISTRY/covid-server/monolith:latest
 
-      - name: Download retrieval task definition
-        id: download-taskdef-retrieval
-        run: |
-          aws ecs describe-task-definition --task-definition KeyRetrieval --query taskDefinition > task-definition-retrieval.json
-          echo "##[set-output name=container_name;]$(jq -r '.containerDefinitions[0].name' task-definition-retrieval.json)"
-
-      - name: Render image for retrieval service
-        id: taskdef-retrieval
-        uses: aws-actions/amazon-ecs-render-task-definition@9666dc9
-        with:
-          task-definition: task-definition-retrieval.json
-          container-name: ${{ steps.download-taskdef-retrieval.outputs.container_name }}
-          image: ${{ steps.login-ecr.outputs.registry }}/covid-server/key-retrieval:${{ github.sha }}
-
-      - name: Render appspec for retrieval service
-        run: |
-          CONTAINER_PORT=`jq '.containerDefinitions[0].portMappings[0].containerPort' task-definition-retrieval.json`
-          CONTAINER_NAME=${{ steps.download-taskdef-retrieval.outputs.container_name }}
-          TASKDEF_ARN=`jq -r '.taskDefinitionArn' task-definition-retrieval.json | cut -f 1-6 -d "/"`
-          jq  --argjson port "$CONTAINER_PORT" --arg cname "$CONTAINER_NAME" --arg taskdefarn "$TASKDEF_ARN" '.Resources[0].TargetService.Properties.TaskDefinition = $taskdefarn | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerName = $cname | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerPort = $port ' config/infrastructure/aws/appspec-template.json > covidshield-retrieval-appspec.json
-
-      - name: Deploy image for retrieval service
-        timeout-minutes: 10
-        uses: aws-actions/amazon-ecs-deploy-task-definition@7218b9c
-        with:
-          task-definition: ${{ steps.taskdef-retrieval.outputs.task-definition }}
-          service: KeyRetrieval
-          cluster: ${{ steps.cluster.outputs.name }}
-          wait-for-service-stability: true
-          codedeploy-appspec: ${{ github.workspace }}/covidshield-retrieval-appspec.json
-
-      - name: Download submission task definition
-        id: download-taskdef-submission
-        run: |
-          aws ecs describe-task-definition --task-definition KeySubmission --query taskDefinition > task-definition-submission.json
-          echo "##[set-output name=container_name;]$(jq -r '.containerDefinitions[0].name' task-definition-submission.json)"
-
-      - name: Render image for submission service
-        id: taskdef-submission
-        uses: aws-actions/amazon-ecs-render-task-definition@9666dc9
-        with:
-          task-definition: task-definition-submission.json
-          container-name: ${{ steps.download-taskdef-submission.outputs.container_name }}
-          image: ${{ steps.login-ecr.outputs.registry }}/covid-server/key-submission:${{ github.sha }}
-
-      - name: Render appspec for submission service
-        run: |
-          CONTAINER_PORT=`jq '.containerDefinitions[0].portMappings[0].containerPort' task-definition-submission.json`
-          CONTAINER_NAME=${{ steps.download-taskdef-submission.outputs.container_name }}
-          TASKDEF_ARN=`jq -r '.taskDefinitionArn' task-definition-submission.json | cut -f 1-6 -d "/"`
-          jq  --argjson port "$CONTAINER_PORT" --arg cname "$CONTAINER_NAME" --arg taskdefarn "$TASKDEF_ARN" '.Resources[0].TargetService.Properties.TaskDefinition = $taskdefarn | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerName = $cname | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerPort = $port ' config/infrastructure/aws/appspec-template.json > covidshield-submission-appspec.json
-
-      - name: Deploy image for submission service
-        timeout-minutes: 10
-        uses: aws-actions/amazon-ecs-deploy-task-definition@7218b9c
-        with:
-          task-definition: ${{ steps.taskdef-submission.outputs.task-definition }}
-          service: KeySubmission
-          cluster: ${{ steps.cluster.outputs.name }}
-          wait-for-service-stability: true
-          codedeploy-appspec: ${{ github.workspace }}/covidshield-submission-appspec.json
-
-      - name: Logout of Amazon ECR
+      - name: Logout of Staging Amazon ECR
         if: always()
-        run: docker logout ${{ steps.login-ecr.outputs.registry }}
+        run: docker logout ${{ steps.login-ecr-staging.outputs.registry }}
+
+      - name: Logout of Production Amazon ECR
+        if: always()
+        run: docker logout ${{ steps.login-ecr-prod.outputs.registry }}
