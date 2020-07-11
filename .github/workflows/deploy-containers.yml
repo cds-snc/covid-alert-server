@@ -1,4 +1,4 @@
-name: Build and Deploy Staging
+name: Deploy to Staging
 
 on:
   push:
@@ -9,10 +9,20 @@ env:
   BRANCH: ${{ github.ref }}
 
 jobs:
-  build-n-push:
+  deploy:
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
+      - name: Wait for container to be built and pushed
+        uses: fountainhead/action-wait-for-check@v1.0.0
+        id: wait-for-build
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: build-n-push
+          ref: ${{ github.sha }}
+
       - name: Checkout
+        if: steps.wait-for-build.outputs.conclusion == 'success'
         uses: actions/checkout@v2
 
       - name: Configure AWS credentials
@@ -25,38 +35,6 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Build Key Retrieval
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: covid-server/key-retrieval
-          COMPONENT: key-retrieval
-        run: |
-          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT -t $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-      - name: Build Key Submission
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: covid-server/key-submission
-          GITHUB_SHA: ${{ github.sha }}
-          BRANCH: ${{ github.ref }}
-          COMPONENT: key-submission
-        run: |
-          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT -t $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-      - name: Build Monolith
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: covid-server/monolith
-          COMPONENT: monolith
-        run: |
-          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT -t $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       - name: Get Cluster Name
         id: cluster
