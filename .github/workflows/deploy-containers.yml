@@ -9,7 +9,7 @@ env:
   BRANCH: ${{ github.ref }}
 
 jobs:
-  deploy:
+  deploy-retrieval-service:
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
@@ -71,6 +71,42 @@ jobs:
           cluster: ${{ steps.cluster.outputs.name }}
           wait-for-service-stability: true
           codedeploy-appspec: ${{ github.workspace }}/covidshield-retrieval-appspec.json
+
+      - name: Logout of Amazon ECR
+        if: always()
+        run: docker logout ${{ steps.login-ecr.outputs.registry }}
+
+  deploy-submission-service:
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for container to be built and pushed
+        uses: fountainhead/action-wait-for-check@v1.0.0
+        id: wait-for-build
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: build-n-push
+          ref: ${{ github.sha }}
+
+      - name: Checkout
+        if: steps.wait-for-build.outputs.conclusion == 'success'
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ca-central-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Get Cluster Name
+        id: cluster
+        run: |
+          echo "##[set-output name=name;]$(aws ecs list-clusters | jq -r '.clusterArns[0]' | cut -f 2 -d "/" )"
 
       - name: Download submission task definition
         id: download-taskdef-submission
