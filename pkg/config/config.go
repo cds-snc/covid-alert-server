@@ -25,6 +25,7 @@ type Constants struct {
 	HmacKeyLength                  			int
 	CORSAccessControlAllowOrigin   			string
 	DisableCurrentDateCheckFeatureFlag	bool
+	EnableEntirePeriodBundle						bool
 }
 
 var AppConstants Constants
@@ -62,4 +63,5 @@ func setDefaults() {
 	viper.SetDefault("hmacKeyLength", 32)
 	viper.SetDefault("corsAccessControlAllowOrigin", "*")
 	viper.SetDefault("disableCurrentDateCheckFeatureFlag", true)
+	viper.SetDefault("enableEntirePeriodBundle", false)
 }

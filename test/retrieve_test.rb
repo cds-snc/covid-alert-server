@@ -100,24 +100,31 @@ class RetrieveTest < MiniTest::Test
     rsin = rolling_start_interval_number(active_at)
 
     resp = get_date("00000")
-    export = assert_happy_zip_response(resp)
-    keys = [tek(
-      rolling_start_interval_number: rsin,
-      transmission_risk_level: 8,
-      data: "1111111111111111",
-    ), tek(
-      rolling_start_interval_number: rsin,
-      transmission_risk_level: 8,
-      data: "2222222222222222",
-    ), tek(
-      rolling_start_interval_number: rsin,
-      transmission_risk_level: 8,
-      data: "3333333333333333",
-    ), tek(
-      rolling_start_interval_number: rsin,
-      transmission_risk_level: 8,
-      data: "4444444444444444",
-    )]
+
+    config = get_app_config()
+
+    if config["enableEntirePeriodBundle"]
+      export = assert_happy_zip_response(resp)
+      keys = [tek(
+        rolling_start_interval_number: rsin,
+        transmission_risk_level: 8,
+        data: "1111111111111111",
+      ), tek(
+        rolling_start_interval_number: rsin,
+        transmission_risk_level: 8,
+        data: "2222222222222222",
+      ), tek(
+        rolling_start_interval_number: rsin,
+        transmission_risk_level: 8,
+        data: "3333333333333333",
+      ), tek(
+        rolling_start_interval_number: rsin,
+        transmission_risk_level: 8,
+        data: "4444444444444444",
+      )]
+    else
+      assert_response(resp, 410, 'text/plain; charset=utf-8', body: "requested data no longer valid\n")
+    end
   end
 
   def test_period_bounds

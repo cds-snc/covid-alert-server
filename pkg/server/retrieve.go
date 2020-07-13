@@ -72,7 +72,7 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) resul
 	var endTimestamp time.Time
 	var dateNumber uint32
 
-	if vars["day"] == "00000" {
+	if config.AppConstants.EnableEntirePeriodBundle == true && vars["day"] == "00000" {
 
 		endDate := timemath.CurrentDateNumber() - 1
 		startDate := endDate - numberOfDaysToServe
