@@ -68,24 +68,42 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) resul
 		return s.fail(log(ctx, nil).WithField("method", r.Method), w, "method not allowed", "", http.StatusMethodNotAllowed)
 	}
 
-	dateNumber64, err := strconv.ParseUint(vars["day"], 10, 32)
-	if err != nil {
-		return s.fail(log(ctx, err), w, "invalid day parameter", "", http.StatusBadRequest)
-	}
-	dateNumber := uint32(dateNumber64)
+	var startTimestamp time.Time
+	var endTimestamp time.Time
+	var dateNumber uint32
 
-	startTimestamp := time.Unix(int64(dateNumber*86400), 0)
-	endTimestamp := time.Unix(int64((dateNumber+1)*86400), 0)
+	if vars["day"] == "00000" {
+
+		endDate := timemath.CurrentDateNumber() - 1
+		startDate := endDate - numberOfDaysToServe
+
+		dateNumber = endDate
+
+		startTimestamp = time.Unix(int64(startDate*86400), 0)
+		endTimestamp = time.Unix(int64((endDate+1)*86400), 0)
+
+	} else {
+
+		dateNumber64, err := strconv.ParseUint(vars["day"], 10, 32)
+		if err != nil {
+			return s.fail(log(ctx, err), w, "invalid day parameter", "", http.StatusBadRequest)
+		}
+		dateNumber = uint32(dateNumber64)
+
+		startTimestamp = time.Unix(int64(dateNumber*86400), 0)
+		endTimestamp = time.Unix(int64((dateNumber+1)*86400), 0)
+
+	}
 
 	currentRSIN := pb.CurrentRollingStartIntervalNumber()
 	currentDateNumber := timemath.CurrentDateNumber()
 
 	if config.AppConstants.DisableCurrentDateCheckFeatureFlag == false && dateNumber == currentDateNumber {
-		return s.fail(log(ctx, err), w, "request for current date", "cannot serve data for current period for privacy reasons", http.StatusNotFound)
+		return s.fail(log(ctx, nil), w, "request for current date", "cannot serve data for current period for privacy reasons", http.StatusNotFound)
 	} else if dateNumber > currentDateNumber {
-		return s.fail(log(ctx, err), w, "request for future data", "cannot request future data", http.StatusNotFound)
+		return s.fail(log(ctx, nil), w, "request for future data", "cannot request future data", http.StatusNotFound)
 	} else if dateNumber < (currentDateNumber - numberOfDaysToServe) {
-		return s.fail(log(ctx, err), w, "request for too-old data", "requested data no longer valid", http.StatusGone)
+		return s.fail(log(ctx, nil), w, "request for too-old data", "requested data no longer valid", http.StatusGone)
 	}
 
 	// TODO: Maybe implement multi-pack linked-list scheme depending on what we hear back from G/A

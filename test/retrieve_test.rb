@@ -87,6 +87,39 @@ class RetrieveTest < MiniTest::Test
     assert_keys(export, keys, region: 'CA', date_number: dn)
   end
 
+  def test_all_keys
+    active_at = time_in_date('10:00', today_utc.prev_day(8))
+    two_days_ago = yesterday_utc.prev_day(1)
+
+    # Our retrieve endpoint returns keys SUBMITTED within the given period.
+    add_key(active_at: active_at, submitted_at: time_in_date("23:59:59", two_days_ago), data: '1' * 16)
+    add_key(active_at: active_at, submitted_at: time_in_date("00:00", yesterday_utc), data: '2' * 16)
+    add_key(active_at: active_at, submitted_at: time_in_date("01:59:59", yesterday_utc), data: '3' * 16)
+    add_key(active_at: active_at, submitted_at: time_in_date("02:00", yesterday_utc), data: '4' * 16)
+
+    rsin = rolling_start_interval_number(active_at)
+
+    resp = get_date("00000")
+    export = assert_happy_zip_response(resp)
+    keys = [tek(
+      rolling_start_interval_number: rsin,
+      transmission_risk_level: 8,
+      data: "1111111111111111",
+    ), tek(
+      rolling_start_interval_number: rsin,
+      transmission_risk_level: 8,
+      data: "2222222222222222",
+    ), tek(
+      rolling_start_interval_number: rsin,
+      transmission_risk_level: 8,
+      data: "3333333333333333",
+    ), tek(
+      rolling_start_interval_number: rsin,
+      transmission_risk_level: 8,
+      data: "4444444444444444",
+    )]
+  end
+
   def test_period_bounds
     active_at = time_in_date('10:00', today_utc.prev_day(8))
     two_days_ago = yesterday_utc.prev_day(1)
