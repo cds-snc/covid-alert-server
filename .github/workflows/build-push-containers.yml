@@ -23,14 +23,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ca-central-1
 
-      - name: Configure Production AWS credentials
-        id: aws-production
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
-          aws-region: ca-central-1
-
       - name: Login to Staging Amazon ECR
         id: login-ecr-staging
         uses: aws-actions/amazon-ecr-login@v1
@@ -90,6 +82,14 @@ jobs:
       - name: Logout of Staging Amazon ECR
         if: always()
         run: docker logout ${{ steps.login-ecr-staging.outputs.registry }}
+
+      - name: Configure Production AWS credentials
+        id: aws-production
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ca-central-1
 
       - name: Login to Production Amazon ECR
         id: login-ecr-prod
