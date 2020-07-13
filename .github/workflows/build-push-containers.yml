@@ -34,14 +34,6 @@ jobs:
       - name: Login to Staging Amazon ECR
         id: login-ecr-staging
         uses: aws-actions/amazon-ecr-login@v1
-        with:
-          registries: ${{ steps.aws-staging.outputs.aws-account-id }}
-
-      - name: Login to Production Amazon ECR
-        id: login-ecr-prod
-        uses: aws-actions/amazon-ecr-login@v1
-        with:
-          registries: ${{ steps.aws-production.outputs.aws-account-id }}
 
       - name: Build Key Retrieval
         env:
@@ -84,10 +76,9 @@ jobs:
           -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:latest \
           -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:latest .
 
-      - name: Push all containers to Amazon ECR
+      - name: Push containers to Amazon staging ECR
         env:
           STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
-          PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
         run: |
           docker push $STG_ECR_REGISTRY/covid-server/key-retrieval:$GITHUB_SHA
           docker push $STG_ECR_REGISTRY/covid-server/key-retrieval:latest
@@ -95,16 +86,25 @@ jobs:
           docker push $STG_ECR_REGISTRY/covid-server/key-submission:latest
           docker push $STG_ECR_REGISTRY/covid-server/monolith:$GITHUB_SHA
           docker push $STG_ECR_REGISTRY/covid-server/monolith:latest
+
+      - name: Logout of Staging Amazon ECR
+        if: always()
+        run: docker logout ${{ steps.login-ecr-staging.outputs.registry }}
+
+      - name: Login to Production Amazon ECR
+        id: login-ecr-prod
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Push all containers to production Amazon ECR
+        env:
+          PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
+        run: |
           docker push $PROD_ECR_REGISTRY/covid-server/key-retrieval:$GITHUB_SHA
           docker push $PROD_ECR_REGISTRY/covid-server/key-retrieval:latest
           docker push $PROD_ECR_REGISTRY/covid-server/key-submission:$GITHUB_SHA
           docker push $PROD_ECR_REGISTRY/covid-server/key-submission:latest
           docker push $PROD_ECR_REGISTRY/covid-server/monolith:$GITHUB_SHA
           docker push $PROD_ECR_REGISTRY/covid-server/monolith:latest
-
-      - name: Logout of Staging Amazon ECR
-        if: always()
-        run: docker logout ${{ steps.login-ecr-staging.outputs.registry }}
 
       - name: Logout of Production Amazon ECR
         if: always()
