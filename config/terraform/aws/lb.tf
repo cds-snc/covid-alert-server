@@ -83,7 +83,7 @@ resource "aws_lb_listener" "covidshield_key_retrieval" {
 
   lifecycle {
     ignore_changes = [
-      default_action,
+      default_action # updated by codedeploy
     ]
   }
 
@@ -114,6 +114,7 @@ resource "aws_lb_target_group" "covidshield_key_submission" {
     Name                  = "covidshield-key-submission"
     (var.billing_tag_key) = var.billing_tag_value
   }
+
 }
 
 resource "aws_lb_target_group" "covidshield_key_submission_2" {
@@ -171,4 +172,11 @@ resource "aws_lb_listener" "covidshield_key_submission" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.covidshield_key_submission.arn
   }
+
+  lifecycle {
+    ignore_changes = [
+      default_action # updated by codedeploy
+    ]
+  }
+
 }
