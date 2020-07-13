@@ -174,20 +174,20 @@ func persistEncryptionKey(db *sql.DB, region, originator, hashID string, pub *[3
 		default:
 		}
 	}
-	
+
 	_, err = tx.Exec(
 		`INSERT INTO encryption_keys
 			(region, originator, hash_id, server_private_key, server_public_key, one_time_code, remaining_keys)
 			VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		region, originator, hashID, priv[:], pub[:], oneTimeCode, config.AppConstants.InitialRemainingKeys,
 	)
-	
+
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
 			return err
 		}
 	}
-	
+
 	if err = tx.Commit(); err != nil {
 		return err
 	}
