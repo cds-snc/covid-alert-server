@@ -1,8 +1,8 @@
 name: Build and Push to Container Registries
 
-on:
-  push:
-    branches: [master]
+on: [pull_request]
+  # push:
+  #   branches: [master]
 
 env:
   GITHUB_SHA: ${{ github.sha }}
@@ -46,7 +46,7 @@ jobs:
       - name: Build Key Retrieval
         env:
           STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
-          PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
+          PROD_ECR_REGISTRY: ${{ steps.login-ecr-prod.outputs.registry }}
           ECR_REPOSITORY: covid-server/key-retrieval
           COMPONENT: key-retrieval
         run: |
@@ -59,7 +59,7 @@ jobs:
       - name: Build Key Submission
         env:
           STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
-          PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
+          PROD_ECR_REGISTRY: ${{ steps.login-ecr-prod.outputs.registry }}
           ECR_REPOSITORY: covid-server/key-submission
           GITHUB_SHA: ${{ github.sha }}
           BRANCH: ${{ github.ref }}
@@ -74,7 +74,7 @@ jobs:
       - name: Build Monolith
         env:
           STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
-          PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
+          PROD_ECR_REGISTRY: ${{ steps.login-ecr-prod.outputs.registry }}
           ECR_REPOSITORY: covid-server/monolith
           COMPONENT: monolith
         run: |
@@ -87,7 +87,7 @@ jobs:
       - name: Push all containers to Amazon ECR
         env:
           STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
-          PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
+          PROD_ECR_REGISTRY: ${{ steps.login-ecr-prod.outputs.registry }}
         run: |
           docker push $STG_ECR_REGISTRY/covid-server/key-retrieval:$GITHUB_SHA
           docker push $STG_ECR_REGISTRY/covid-server/key-retrieval:latest
