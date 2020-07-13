@@ -8,6 +8,11 @@ variable "action_on_timeout" {
   description = "Action to take on deployment timeout"
 }
 
+variable "termination_wait_time_in_minutes" {
+  type        = number
+  description = "minutes to wait to terminate old deploy"
+}
+
 variable "cluster_name" {
   type        = string
   description = "The ECS cluster name"
