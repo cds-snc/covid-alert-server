@@ -10,22 +10,22 @@ import (
 var log = logger.New("config")
 
 type Constants struct {
-	DefaultSubmissionServerPort    			uint32
-	DefaultRetrievalServerPort     			uint32
-	DefaultServerPort              			uint32
-	WorkerExpirationInterval       			uint32
-	MaxOneTimeCode                 			int64
-	MaxConsecutiveClaimKeyFailures 			int
-	ClaimKeyBanDuration            			uint32
-	MaxDiagnosisKeyRetentionDays   			uint32
-	InitialRemainingKeys           			uint32
-	EncryptionKeyValidityDays      			uint32
-	OneTimeCodeExpiryInMinutes     			uint32
-	AssignmentParts                			int
-	HmacKeyLength                  			int
-	CORSAccessControlAllowOrigin   			string
-	DisableCurrentDateCheckFeatureFlag	bool
-	EnableEntirePeriodBundle						bool
+	DefaultSubmissionServerPort        uint32
+	DefaultRetrievalServerPort         uint32
+	DefaultServerPort                  uint32
+	WorkerExpirationInterval           uint32
+	MaxOneTimeCode                     int64
+	MaxConsecutiveClaimKeyFailures     int
+	ClaimKeyBanDuration                uint32
+	MaxDiagnosisKeyRetentionDays       uint32
+	InitialRemainingKeys               uint32
+	EncryptionKeyValidityDays          uint32
+	OneTimeCodeExpiryInMinutes         uint32
+	AssignmentParts                    int
+	HmacKeyLength                      int
+	CORSAccessControlAllowOrigin       string
+	DisableCurrentDateCheckFeatureFlag bool
+	EnableEntirePeriodBundle           bool
 }
 
 var AppConstants Constants
