@@ -30,3 +30,4 @@ corsAccessControlAllowOrigin: "*"
 
 # Feature flags
 disableCurrentDateCheckFeatureFlag: true
+enableEntirePeriodBundle: true

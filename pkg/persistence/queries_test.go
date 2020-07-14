@@ -9,6 +9,9 @@ import (
 	"github.com/CovidShield/server/pkg/config"
 	"github.com/CovidShield/server/pkg/timemath"
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/Shopify/goose/logger"
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/nacl/box"
 )
@@ -58,10 +61,10 @@ func TestCaimKey(t *testing.T) {
 	pub, _, _ := box.GenerateKey(rand.Reader)
 	oneTimeCode := "80311300"
 
-	// If query fails rollback transaction
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	defer db.Close()
 
+	// If query fails rollback transaction
 	mock.ExpectBegin()
 	mock.ExpectQuery(`SELECT COUNT(*) FROM encryption_keys WHERE app_public_key = ?`).WithArgs(pub[:]).WillReturnError(fmt.Errorf("error"))
 	mock.ExpectRollback()
@@ -237,4 +240,186 @@ func TestCaimKey(t *testing.T) {
 
 	assert.Equal(t, pub[:], serverKey, "should return server key")
 
+}
+
+func TestPersistEncryptionKey(t *testing.T) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	defer db.Close()
+
+	// Capture logs
+	oldLog := log
+	defer func() { log = oldLog }()
+
+	nullLog, hook := test.NewNullLogger()
+	nullLog.ExitFunc = func(code int) {}
+
+	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
+		return logrus.NewEntry(nullLog)
+	}
+
+	region := "302"
+	originator := "randomOrigin"
+	hashID := ""
+	pub, priv, _ := box.GenerateKey(rand.Reader)
+	oneTimeCode := "80311300"
+
+	// Rolls back if insert without HashID fails
+	mock.ExpectBegin()
+	mock.ExpectExec(
+		`INSERT INTO encryption_keys
+		(region, originator, hash_id, server_private_key, server_public_key, one_time_code, remaining_keys)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`).WithArgs(
+		region,
+		originator,
+		hashID,
+		priv[:],
+		pub[:],
+		oneTimeCode,
+		config.AppConstants.InitialRemainingKeys,
+	).WillReturnError(fmt.Errorf("error"))
+	mock.ExpectRollback()
+
+	receivedErr := persistEncryptionKey(db, region, originator, hashID, pub, priv, oneTimeCode)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	expectedErr := fmt.Errorf("error")
+	assert.Equal(t, expectedErr, receivedErr, "Expected error if could not execute update")
+
+	// Commits if insert without HashID
+	mock.ExpectBegin()
+	mock.ExpectExec(
+		`INSERT INTO encryption_keys
+		(region, originator, hash_id, server_private_key, server_public_key, one_time_code, remaining_keys)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`).WithArgs(
+		region,
+		originator,
+		hashID,
+		priv[:],
+		pub[:],
+		oneTimeCode,
+		config.AppConstants.InitialRemainingKeys,
+	).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	receivedResult := persistEncryptionKey(db, region, originator, hashID, pub, priv, oneTimeCode)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Nil(t, receivedResult, "Expected error if could not execute insert")
+
+	hashID = "abcd"
+
+	// Commit if HashID is unique
+	mock.ExpectBegin()
+	mock.ExpectQuery(
+		`SELECT one_time_code FROM encryption_keys WHERE hash_id = ? FOR UPDATE`).WithArgs(hashID).WillReturnRows(sqlmock.NewRows([]string{"one_time_code"}))
+
+	mock.ExpectExec(
+		`INSERT INTO encryption_keys
+			(region, originator, hash_id, server_private_key, server_public_key, one_time_code, remaining_keys)
+			VALUES (?, ?, ?, ?, ?, ?, ?)`).WithArgs(
+		region,
+		originator,
+		hashID,
+		priv[:],
+		pub[:],
+		oneTimeCode,
+		config.AppConstants.InitialRemainingKeys,
+	).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	receivedResult = persistEncryptionKey(db, region, originator, hashID, pub, priv, oneTimeCode)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Nil(t, receivedResult, "Expected nil if new HashID is passed")
+
+	// Rolls back if insert fails because the table is locked
+	mock.ExpectBegin()
+	mock.ExpectQuery(
+		`SELECT one_time_code FROM encryption_keys WHERE hash_id = ? FOR UPDATE`).WithArgs(hashID).WillReturnError(fmt.Errorf("table locked"))
+	mock.ExpectRollback()
+
+	receivedErr = persistEncryptionKey(db, region, originator, hashID, pub, priv, oneTimeCode)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	expectedErr = fmt.Errorf("table locked")
+	assert.Equal(t, expectedErr, receivedErr, "Expected table locked error if the select fails")
+
+	assert.Equal(t, 1, len(hook.Entries))
+	assert.Equal(t, logrus.ErrorLevel, hook.LastEntry().Level)
+	assert.Equal(t, "table locked", hook.LastEntry().Message)
+	hook.Reset()
+
+	// Rolls back if a used HashID is found
+	mock.ExpectBegin()
+
+	rows := sqlmock.NewRows([]string{"one_time_code"}).AddRow(nil)
+	mock.ExpectQuery(
+		`SELECT one_time_code FROM encryption_keys WHERE hash_id = ? FOR UPDATE`).WithArgs(hashID).WillReturnRows(rows)
+	mock.ExpectRollback()
+
+	receivedErr = persistEncryptionKey(db, region, originator, hashID, pub, priv, oneTimeCode)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	expectedErr = fmt.Errorf("used hashID found")
+	assert.Equal(t, expectedErr, receivedErr, "Expected used hashID found error if the select fails")
+
+	// Rolls back if a un-used HashID is found and delete fails
+	mock.ExpectBegin()
+	rows = sqlmock.NewRows([]string{"one_time_code"}).AddRow(oneTimeCode)
+	mock.ExpectQuery(
+		`SELECT one_time_code FROM encryption_keys WHERE hash_id = ? FOR UPDATE`).WithArgs(hashID).WillReturnRows(rows)
+	mock.ExpectExec(`DELETE FROM encryption_keys WHERE hash_id = ? AND one_time_code IS NOT NULL`).WithArgs(hashID).WillReturnError(fmt.Errorf("error"))
+	mock.ExpectRollback()
+
+	receivedErr = persistEncryptionKey(db, region, originator, hashID, pub, priv, oneTimeCode)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	expectedErr = fmt.Errorf("error")
+	assert.Equal(t, expectedErr, receivedErr, "Expected error if could not delete un-used HashID")
+
+	// Commits if a un-used HashID is found and delete passes
+	mock.ExpectBegin()
+	rows = sqlmock.NewRows([]string{"one_time_code"}).AddRow(oneTimeCode)
+	mock.ExpectQuery(
+		`SELECT one_time_code FROM encryption_keys WHERE hash_id = ? FOR UPDATE`).WithArgs(hashID).WillReturnRows(rows)
+	mock.ExpectExec(`DELETE FROM encryption_keys WHERE hash_id = ? AND one_time_code IS NOT NULL`).WithArgs(hashID).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec(
+		`INSERT INTO encryption_keys
+			(region, originator, hash_id, server_private_key, server_public_key, one_time_code, remaining_keys)
+			VALUES (?, ?, ?, ?, ?, ?, ?)`).WithArgs(
+		region,
+		originator,
+		hashID,
+		priv[:],
+		pub[:],
+		oneTimeCode,
+		config.AppConstants.InitialRemainingKeys,
+	).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	receivedResult = persistEncryptionKey(db, region, originator, hashID, pub, priv, oneTimeCode)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Nil(t, receivedResult, "Expected nil if new OTC could be generated with un-used HashID")
 }
