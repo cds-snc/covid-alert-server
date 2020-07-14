@@ -71,6 +71,8 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) resul
 	var startTimestamp time.Time
 	var endTimestamp time.Time
 	var dateNumber uint32
+	var startHour uint32
+	var endHour uint32
 
 	if config.AppConstants.EnableEntirePeriodBundle == true && vars["day"] == "00000" {
 
@@ -82,6 +84,9 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) resul
 		startTimestamp = time.Unix(int64(startDate*86400), 0)
 		endTimestamp = time.Unix(int64((endDate+1)*86400), 0)
 
+		startHour = startDate * 24
+		endHour = (endDate * 24) + 24
+
 	} else {
 
 		dateNumber64, err := strconv.ParseUint(vars["day"], 10, 32)
@@ -92,6 +97,9 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) resul
 
 		startTimestamp = time.Unix(int64(dateNumber*86400), 0)
 		endTimestamp = time.Unix(int64((dateNumber+1)*86400), 0)
+
+		startHour = dateNumber * 24
+		endHour = startHour + 24
 
 	}
 
@@ -108,7 +116,7 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) resul
 
 	// TODO: Maybe implement multi-pack linked-list scheme depending on what we hear back from G/A
 
-	keys, err := s.db.FetchKeysForDateNumber(region, dateNumber, currentRSIN)
+	keys, err := s.db.FetchKeysForHours(region, startHour, endHour, currentRSIN)
 	if err != nil {
 		return s.fail(log(ctx, err), w, "database error", "", http.StatusInternalServerError)
 	}
