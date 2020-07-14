@@ -34,7 +34,7 @@ type Conn interface {
 	//
 	// Only returns keys that correspond to a Key for a date
 	// less than 14 days ago.
-	FetchKeysForDateNumber(string, uint32, int32) ([]*pb.TemporaryExposureKey, error)
+	FetchKeysForHours(string, uint32, uint32, int32) ([]*pb.TemporaryExposureKey, error)
 	StoreKeys(*[32]byte, []*pb.TemporaryExposureKey) error
 	NewKeyClaim(string, string, string) (string, error)
 	ClaimKey(string, []byte) ([]byte, error)
@@ -82,12 +82,12 @@ func Dial(url string) (Conn, error) {
 
 		rootCertPool := x509.NewCertPool()
 		pem, err := ioutil.ReadFile("/etc/aws-certs/rds-ca-2019-root.pem")
-		
-    if err != nil {
+
+		if err != nil {
 			log(nil, err).Fatal("AWS RDS Cert bundle not found")
 		}
-		
-    if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
+
+		if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
 			log(nil, err).Fatal("Could not append certs")
 		}
 
@@ -97,7 +97,7 @@ func Dial(url string) (Conn, error) {
 		if len(match) > 0 {
 			mysql.RegisterTLSConfig("custom", &tls.Config{
 				ServerName: match[1],
-				RootCAs: rootCertPool,
+				RootCAs:    rootCertPool,
 			})
 			url += "&tls=custom"
 		}
@@ -141,7 +141,7 @@ func (c *conn) ClaimKey(oneTimeCode string, appPublicKey []byte) ([]byte, error)
 	return claimKey(c.db, oneTimeCode, appPublicKey)
 }
 
-// ErrHashIDClaimed is returned when the client tries to get a new code for a 
+// ErrHashIDClaimed is returned when the client tries to get a new code for a
 // HashID that has already used the code
 var ErrHashIDClaimed = errors.New("HashID claimed")
 
@@ -198,8 +198,8 @@ func (c *conn) StoreKeys(appPubKey *[32]byte, keys []*pb.TemporaryExposureKey) e
 	return registerDiagnosisKeys(c.db, appPubKey, keys)
 }
 
-func (c *conn) FetchKeysForDateNumber(region string, dateNumber uint32, currentRSIN int32) ([]*pb.TemporaryExposureKey, error) {
-	rows, err := diagnosisKeysForDateNumber(c.db, region, dateNumber, currentRSIN)
+func (c *conn) FetchKeysForHours(region string, startHour uint32, endHour uint32, currentRSIN int32) ([]*pb.TemporaryExposureKey, error) {
+	rows, err := diagnosisKeysForHours(c.db, region, startHour, endHour, currentRSIN)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +244,7 @@ func (c *conn) DeleteOldFailedClaimKeyAttempts() (int64, error) {
 	return deleteOldFailedClaimKeyAttempts(c.db)
 }
 
-func (c *conn) CountClaimedOneTimeCodes() (int64, error ) {
+func (c *conn) CountClaimedOneTimeCodes() (int64, error) {
 	return countClaimedOneTimeCodes(c.db)
 }
 
@@ -252,7 +252,7 @@ func (c *conn) CountDiagnosisKeys() (int64, error) {
 	return countDiagnosisKeys(c.db)
 }
 
-func (c *conn) CountUnclaimedOneTimeCodes() (int64, error ) {
+func (c *conn) CountUnclaimedOneTimeCodes() (int64, error) {
 	return countUnclaimedOneTimeCodes(c.db)
 }
 
