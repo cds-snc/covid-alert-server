@@ -1,0 +1,144 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [master]
+
+env:
+  GITHUB_SHA: ${{ github.sha }}
+  BRANCH: ${{ github.ref }}
+
+jobs:
+  deploy-retrieval-service:
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for container to be built and pushed
+        uses: fountainhead/action-wait-for-check@v1.0.0
+        id: wait-for-build
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: build-n-push
+          ref: ${{ github.sha }}
+
+      - name: Checkout
+        if: steps.wait-for-build.outputs.conclusion == 'success'
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ca-central-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Get Cluster Name
+        id: cluster
+        run: |
+          echo "##[set-output name=name;]$(aws ecs list-clusters | jq -r '.clusterArns[0]' | cut -f 2 -d "/" )"
+
+      - name: Download retrieval task definition
+        id: download-taskdef-retrieval
+        run: |
+          aws ecs describe-task-definition --task-definition KeyRetrieval --query taskDefinition > task-definition-retrieval.json
+          echo "##[set-output name=container_name;]$(jq -r '.containerDefinitions[0].name' task-definition-retrieval.json)"
+
+      - name: Render image for retrieval service
+        id: taskdef-retrieval
+        uses: aws-actions/amazon-ecs-render-task-definition@9666dc9
+        with:
+          task-definition: task-definition-retrieval.json
+          container-name: ${{ steps.download-taskdef-retrieval.outputs.container_name }}
+          image: ${{ steps.login-ecr.outputs.registry }}/covid-server/key-retrieval:${{ github.sha }}
+
+      - name: Render appspec for retrieval service
+        run: |
+          CONTAINER_PORT=`jq '.containerDefinitions[0].portMappings[0].containerPort' task-definition-retrieval.json`
+          CONTAINER_NAME=${{ steps.download-taskdef-retrieval.outputs.container_name }}
+          TASKDEF_ARN=`jq -r '.taskDefinitionArn' task-definition-retrieval.json | cut -f 1-6 -d "/"`
+          jq  --argjson port "$CONTAINER_PORT" --arg cname "$CONTAINER_NAME" --arg taskdefarn "$TASKDEF_ARN" '.Resources[0].TargetService.Properties.TaskDefinition = $taskdefarn | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerName = $cname | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerPort = $port ' config/infrastructure/aws/appspec-template.json > covidshield-retrieval-appspec.json
+
+      - name: Deploy image for retrieval service
+        timeout-minutes: 10
+        uses: aws-actions/amazon-ecs-deploy-task-definition@7218b9c
+        with:
+          task-definition: ${{ steps.taskdef-retrieval.outputs.task-definition }}
+          service: KeyRetrieval
+          cluster: ${{ steps.cluster.outputs.name }}
+          wait-for-service-stability: true
+          codedeploy-appspec: ${{ github.workspace }}/covidshield-retrieval-appspec.json
+
+      - name: Logout of Amazon ECR
+        if: always()
+        run: docker logout ${{ steps.login-ecr.outputs.registry }}
+
+  deploy-submission-service:
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for container to be built and pushed
+        uses: fountainhead/action-wait-for-check@v1.0.0
+        id: wait-for-build
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: build-n-push
+          ref: ${{ github.sha }}
+
+      - name: Checkout
+        if: steps.wait-for-build.outputs.conclusion == 'success'
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ca-central-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Get Cluster Name
+        id: cluster
+        run: |
+          echo "##[set-output name=name;]$(aws ecs list-clusters | jq -r '.clusterArns[0]' | cut -f 2 -d "/" )"
+
+      - name: Download submission task definition
+        id: download-taskdef-submission
+        run: |
+          aws ecs describe-task-definition --task-definition KeySubmission --query taskDefinition > task-definition-submission.json
+          echo "##[set-output name=container_name;]$(jq -r '.containerDefinitions[0].name' task-definition-submission.json)"
+
+      - name: Render image for submission service
+        id: taskdef-submission
+        uses: aws-actions/amazon-ecs-render-task-definition@9666dc9
+        with:
+          task-definition: task-definition-submission.json
+          container-name: ${{ steps.download-taskdef-submission.outputs.container_name }}
+          image: ${{ steps.login-ecr.outputs.registry }}/covid-server/key-submission:${{ github.sha }}
+
+      - name: Render appspec for submission service
+        run: |
+          CONTAINER_PORT=`jq '.containerDefinitions[0].portMappings[0].containerPort' task-definition-submission.json`
+          CONTAINER_NAME=${{ steps.download-taskdef-submission.outputs.container_name }}
+          TASKDEF_ARN=`jq -r '.taskDefinitionArn' task-definition-submission.json | cut -f 1-6 -d "/"`
+          jq  --argjson port "$CONTAINER_PORT" --arg cname "$CONTAINER_NAME" --arg taskdefarn "$TASKDEF_ARN" '.Resources[0].TargetService.Properties.TaskDefinition = $taskdefarn | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerName = $cname | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerPort = $port ' config/infrastructure/aws/appspec-template.json > covidshield-submission-appspec.json
+
+      - name: Deploy image for submission service
+        timeout-minutes: 10
+        uses: aws-actions/amazon-ecs-deploy-task-definition@7218b9c
+        with:
+          task-definition: ${{ steps.taskdef-submission.outputs.task-definition }}
+          service: KeySubmission
+          cluster: ${{ steps.cluster.outputs.name }}
+          wait-for-service-stability: true
+          codedeploy-appspec: ${{ github.workspace }}/covidshield-submission-appspec.json
+
+      - name: Logout of Amazon ECR
+        if: always()
+        run: docker logout ${{ steps.login-ecr.outputs.registry }}

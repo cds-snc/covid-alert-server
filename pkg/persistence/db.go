@@ -37,7 +37,6 @@ type Conn interface {
 	FetchKeysForDateNumber(string, uint32, int32) ([]*pb.TemporaryExposureKey, error)
 	StoreKeys(*[32]byte, []*pb.TemporaryExposureKey) error
 	NewKeyClaim(string, string, string) (string, error)
-	CheckHashID(string) (int64, error)
 	ClaimKey(string, []byte) ([]byte, error)
 	PrivForPub([]byte) ([]byte, error)
 
@@ -142,6 +141,10 @@ func (c *conn) ClaimKey(oneTimeCode string, appPublicKey []byte) ([]byte, error)
 	return claimKey(c.db, oneTimeCode, appPublicKey)
 }
 
+// ErrHashIDClaimed is returned when the client tries to get a new code for a 
+// HashID that has already used the code
+var ErrHashIDClaimed = errors.New("HashID claimed")
+
 const maxOneTimeCode = 1e8
 
 func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
@@ -164,6 +167,8 @@ func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 		err = persistEncryptionKey(c.db, region, originator, hashID, pub, priv, oneTimeCode)
 		if err == nil {
 			return oneTimeCode, nil
+		} else if strings.Contains(err.Error(), "used hashID found") {
+			return "", ErrHashIDClaimed
 		} else if strings.Contains(err.Error(), "Duplicate entry") {
 			log(nil, err).Warn("duplicate one_time_code")
 		} else {
@@ -171,10 +176,6 @@ func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 		}
 	}
 	return "", err
-}
-
-func (c *conn) CheckHashID(hashID string) (int64, error) {
-	return checkHashID(c.db, hashID)
 }
 
 func (c *conn) PrivForPub(pub []byte) ([]byte, error) {

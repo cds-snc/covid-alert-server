@@ -77,6 +77,9 @@ resource "aws_ecs_service" "covidshield_key_retrieval" {
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200
   health_check_grace_period_seconds  = 60
+  deployment_controller {
+    type = "CODE_DEPLOY"
+  }
 
   network_configuration {
     assign_public_ip = false
@@ -95,6 +98,15 @@ resource "aws_ecs_service" "covidshield_key_retrieval" {
   tags = {
     (var.billing_tag_key) = var.billing_tag_value
   }
+
+  lifecycle {
+    ignore_changes = [
+      desired_count,   # updated by autoscaling
+      task_definition, # updated by codedeploy
+      load_balancer    # updated by codedeploy
+    ]
+  }
+
 }
 
 resource "aws_appautoscaling_target" "retrieval" {
@@ -197,6 +209,9 @@ resource "aws_ecs_service" "covidshield_key_submission" {
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200
   health_check_grace_period_seconds  = 60
+  deployment_controller {
+    type = "CODE_DEPLOY"
+  }
 
   network_configuration {
     assign_public_ip = false
@@ -214,6 +229,14 @@ resource "aws_ecs_service" "covidshield_key_submission" {
 
   tags = {
     (var.billing_tag_key) = var.billing_tag_value
+  }
+
+  lifecycle {
+    ignore_changes = [
+      desired_count,   # updated by autoscaling
+      task_definition, # updated by codedeploy
+      load_balancer    # updated by codedeploy
+    ]
   }
 }
 resource "aws_appautoscaling_target" "submission" {

@@ -408,6 +408,11 @@ resource "aws_default_network_acl" "covidshield" {
     to_port    = 0
   }
 
+  // See https://www.terraform.io/docs/providers/aws/r/default_network_acl.html#managing-subnets-in-the-default-network-acl
+  lifecycle {
+    ignore_changes = [subnet_ids]
+  }
+
   tags = {
     (var.billing_tag_key) = var.billing_tag_value
   }
