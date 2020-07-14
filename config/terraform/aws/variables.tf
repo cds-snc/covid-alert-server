@@ -79,6 +79,12 @@ variable "manual_deploy_enabled" {
   default = false
 }
 
+variable "termination_wait_time_in_minutes" {
+  type        = number
+  description = "minutes to wait to terminate old deploy"
+  default     = 1
+}
+
 # Task Key Submission
 variable "ecs_key_submission_name" {
   type = string

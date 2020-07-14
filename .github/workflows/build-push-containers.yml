@@ -1,0 +1,111 @@
+name: Build and Push to Container Registries
+
+on:
+  push:
+    branches: [master]
+
+env:
+  GITHUB_SHA: ${{ github.sha }}
+  BRANCH: ${{ github.ref }}
+
+jobs:
+  build-n-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure Staging AWS credentials
+        id: aws-staging
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ca-central-1
+
+      - name: Login to Staging Amazon ECR
+        id: login-ecr-staging
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build Key Retrieval
+        env:
+          STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
+          PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
+          ECR_REPOSITORY: covid-server/key-retrieval
+          COMPONENT: key-retrieval
+        run: |
+          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT \
+          -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
+          -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
+          -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:latest \
+          -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:latest .
+
+      - name: Build Key Submission
+        env:
+          STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
+          PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
+          ECR_REPOSITORY: covid-server/key-submission
+          GITHUB_SHA: ${{ github.sha }}
+          BRANCH: ${{ github.ref }}
+          COMPONENT: key-submission
+        run: |
+          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT \
+          -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
+          -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
+          -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:latest \
+          -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:latest .
+
+      - name: Build Monolith
+        env:
+          STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
+          PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
+          ECR_REPOSITORY: covid-server/monolith
+          COMPONENT: monolith
+        run: |
+          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT \
+          -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
+          -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
+          -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:latest \
+          -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:latest .
+
+      - name: Push containers to Amazon staging ECR
+        env:
+          STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
+        run: |
+          docker push $STG_ECR_REGISTRY/covid-server/key-retrieval:$GITHUB_SHA
+          docker push $STG_ECR_REGISTRY/covid-server/key-retrieval:latest
+          docker push $STG_ECR_REGISTRY/covid-server/key-submission:$GITHUB_SHA
+          docker push $STG_ECR_REGISTRY/covid-server/key-submission:latest
+          docker push $STG_ECR_REGISTRY/covid-server/monolith:$GITHUB_SHA
+          docker push $STG_ECR_REGISTRY/covid-server/monolith:latest
+
+      - name: Logout of Staging Amazon ECR
+        if: always()
+        run: docker logout ${{ steps.login-ecr-staging.outputs.registry }}
+
+      - name: Configure Production AWS credentials
+        id: aws-production
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.PROD_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.PROD_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ca-central-1
+
+      - name: Login to Production Amazon ECR
+        id: login-ecr-prod
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Push all containers to production Amazon ECR
+        env:
+          PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
+        run: |
+          docker push $PROD_ECR_REGISTRY/covid-server/key-retrieval:$GITHUB_SHA
+          docker push $PROD_ECR_REGISTRY/covid-server/key-retrieval:latest
+          docker push $PROD_ECR_REGISTRY/covid-server/key-submission:$GITHUB_SHA
+          docker push $PROD_ECR_REGISTRY/covid-server/key-submission:latest
+          docker push $PROD_ECR_REGISTRY/covid-server/monolith:$GITHUB_SHA
+          docker push $PROD_ECR_REGISTRY/covid-server/monolith:latest
+
+      - name: Logout of Production Amazon ECR
+        if: always()
+        run: docker logout ${{ steps.login-ecr-prod.outputs.registry }}
