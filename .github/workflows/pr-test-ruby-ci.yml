@@ -1,4 +1,4 @@
-name: Testing CI
+name: Testing Ruby CI
 on: [pull_request]
 jobs:
   testing:
@@ -20,7 +20,7 @@ jobs:
     - uses: actions/setup-ruby@v1
       with:
         ruby-version: '2.6'
-    - name: Run tests
+    - name: Run Ruby tests
       run: |
         gem install bundler
         bundle install
