@@ -90,8 +90,8 @@ class RetrieveTest < MiniTest::Test
   def test_all_keys
     active_at = time_in_date('10:00', today_utc.prev_day(8))
     two_days_ago = yesterday_utc.prev_day(1)
-    fourteen_days_ago = yesterday_utc.prev_day(13)
-    fiveteen_days_ago = yesterday_utc.prev_day(14)
+    fourteen_days_ago = yesterday_utc.prev_day(14)
+    fiveteen_days_ago = yesterday_utc.prev_day(15)
 
     # Our retrieve endpoint returns keys SUBMITTED within the given period.
     add_key(active_at: active_at, submitted_at: time_in_date("23:59:59", fiveteen_days_ago), data: '1' * 16)
@@ -126,6 +126,7 @@ class RetrieveTest < MiniTest::Test
         transmission_risk_level: 8,
         data: "5555555555555555",
       )]
+      assert_equal(keys, export.keys)
     else
       assert_response(resp, 410, 'text/plain; charset=utf-8', body: "requested data no longer valid\n")
     end
@@ -155,7 +156,12 @@ class RetrieveTest < MiniTest::Test
       rolling_start_interval_number: rsin,
       transmission_risk_level: 8,
       data: "3333333333333333",
+    ), tek(
+      rolling_start_interval_number: rsin,
+      transmission_risk_level: 8,
+      data: "4444444444444444",
     )]
+    assert_equal(keys, export.keys)
   end
 
   def test_invalid_auth

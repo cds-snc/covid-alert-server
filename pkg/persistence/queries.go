@@ -215,9 +215,7 @@ func privForPub(db *sql.DB, pub []byte) *sql.Row {
 // Only return keys that correspond to a Key valid for a date less than 14 days ago.
 //
 // TODO: this might be the right place to pad inappropriately small batches
-func diagnosisKeysForDateNumber(db *sql.DB, region string, dateNumber uint32, currentRollingStartIntervalNumber int32) (*sql.Rows, error) {
-	startHour := dateNumber * 24
-	endHour := startHour + 24
+func diagnosisKeysForHours(db *sql.DB, region string, startHour uint32, endHour uint32, currentRollingStartIntervalNumber int32) (*sql.Rows, error) {
 	minRollingStartIntervalNumber := timemath.RollingStartIntervalNumberPlusDays(currentRollingStartIntervalNumber, -14)
 
 	return db.Query(
