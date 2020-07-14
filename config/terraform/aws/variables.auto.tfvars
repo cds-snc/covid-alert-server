@@ -35,6 +35,7 @@ ecs_key_submission_name = "KeySubmission"
 # ecs_task_key_submission_env_key_claim_token = ""
 
 #Autoscaling ECS
+
 submission_autoscale_enabled = true
 retrieval_autoscale_enabled  = true
 

@@ -55,6 +55,18 @@ jobs:
           TF_VAR_github_sha: ${{ github.sha }}
         run: terraform plan
 
+  terraform-security-scan:
+    if: github.ref != 'refs/heads/master'
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Terraform security scan
+        uses: triat/terraform-security-scan@v1.2.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   terraform-apply:
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
