@@ -423,3 +423,70 @@ func TestPersistEncryptionKey(t *testing.T) {
 
 	assert.Nil(t, receivedResult, "Expected nil if new OTC could be generated with un-used HashID")
 }
+
+func TestPrivForPub(t *testing.T) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	defer db.Close()
+
+	pub, priv, _ := box.GenerateKey(rand.Reader)
+
+	query := fmt.Sprintf(`
+	SELECT server_private_key FROM encryption_keys
+		WHERE server_public_key = ?
+		AND created > (NOW() - INTERVAL %d DAY)
+		LIMIT 1`,
+		config.AppConstants.EncryptionKeyValidityDays,
+	)
+
+	rows := sqlmock.NewRows([]string{"server_private_key"}).AddRow(priv[:])
+	mock.ExpectQuery(query).WithArgs(pub[:]).WillReturnRows(rows)
+
+	expectedResult := priv[:]
+	var receivedResult []byte
+	privForPub(db, pub[:]).Scan(&receivedResult)
+
+	assert.Equal(t, expectedResult, receivedResult, "Expected private key for public key")
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestDiagnosisKeysForHours(t *testing.T) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	defer db.Close()
+
+	region := "302"
+	startHour := uint32(100)
+	endHour := uint32(200)
+	currentRollingStartIntervalNumber := int32(2651450)
+	minRollingStartIntervalNumber := timemath.RollingStartIntervalNumberPlusDays(currentRollingStartIntervalNumber, -14)
+
+	query := `
+	SELECT region, key_data, rolling_start_interval_number, rolling_period, transmission_risk_level FROM diagnosis_keys
+		WHERE hour_of_submission >= ?
+		AND hour_of_submission < ?
+		AND rolling_start_interval_number > ?
+		AND region = ?
+		ORDER BY key_data`
+
+	row := sqlmock.NewRows([]string{"region", "key_data", "rolling_start_interval_number", "rolling_period", "transmission_risk_level"}).AddRow("302", []byte{}, 2651450, 144, 4)
+	mock.ExpectQuery(query).WithArgs(
+		startHour,
+		endHour,
+		minRollingStartIntervalNumber,
+		region).WillReturnRows(row)
+
+	expectedResult := []byte("302")
+	rows, _ := diagnosisKeysForHours(db, region, startHour, endHour, currentRollingStartIntervalNumber)
+	var receivedResult []byte
+	for rows.Next() {
+		rows.Scan(&receivedResult, nil, nil, nil, nil)
+	}
+
+	assert.Equal(t, expectedResult, receivedResult, "Expected rows for the query")
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
