@@ -50,7 +50,7 @@ resource "aws_lb_target_group" "covidshield_key_retrieval_2" {
 
 resource "aws_lb" "covidshield_key_retrieval" {
   name               = "covidshield-key-retrieval"
-  internal           = false
+  internal           = false #tfsec:ignore:AWS005
   load_balancer_type = "application"
   security_groups = [
     aws_security_group.covidshield_load_balancer.id
@@ -142,7 +142,7 @@ resource "aws_lb_target_group" "covidshield_key_submission_2" {
 
 resource "aws_lb" "covidshield_key_submission" {
   name               = "covidshield-key-submission"
-  internal           = false
+  internal           = false #tfsec:ignore:AWS005
   load_balancer_type = "application"
   security_groups = [
     aws_security_group.covidshield_load_balancer.id
