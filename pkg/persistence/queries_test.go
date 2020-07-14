@@ -148,8 +148,7 @@ func TestCaimKey(t *testing.T) {
 
 	created = timemath.MostRecentUTCMidnight(created)
 
-	mock.ExpectPrepare(query)
-	mock.ExpectExec(query).WithArgs(pub[:], created, oneTimeCode).WillReturnError(fmt.Errorf("error"))
+	mock.ExpectPrepare(query).ExpectExec().WithArgs(pub[:], created, oneTimeCode).WillReturnError(fmt.Errorf("error"))
 
 	mock.ExpectRollback()
 	_, receivedErr = claimKey(db, oneTimeCode, pub[:])
@@ -173,8 +172,7 @@ func TestCaimKey(t *testing.T) {
 
 	created = timemath.MostRecentUTCMidnight(created)
 
-	mock.ExpectPrepare(query)
-	mock.ExpectExec(query).WithArgs(pub[:], created, oneTimeCode).WillReturnResult(sqlmock.NewResult(1, 2))
+	mock.ExpectPrepare(query).ExpectExec().WithArgs(pub[:], created, oneTimeCode).WillReturnResult(sqlmock.NewResult(1, 2))
 
 	mock.ExpectRollback()
 	_, receivedErr = claimKey(db, oneTimeCode, pub[:])
@@ -185,4 +183,58 @@ func TestCaimKey(t *testing.T) {
 
 	expectedErr = ErrInvalidOneTimeCode
 	assert.Equal(t, expectedErr, receivedErr, "Expected ErrInvalidOneTimeCode if rowsAffected was not 1")
+
+	// Getting public key throws an error
+	mock.ExpectBegin()
+	rows = sqlmock.NewRows([]string{"count"}).AddRow(0)
+	mock.ExpectQuery(`SELECT COUNT(*) FROM encryption_keys WHERE app_public_key = ?`).WithArgs(pub[:]).WillReturnRows(rows)
+
+	created = time.Now()
+
+	rows = sqlmock.NewRows([]string{"created"}).AddRow(created)
+	mock.ExpectQuery(`SELECT created FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
+
+	created = timemath.MostRecentUTCMidnight(created)
+
+	mock.ExpectPrepare(query).ExpectExec().WithArgs(pub[:], created, oneTimeCode).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	mock.ExpectPrepare(`SELECT server_public_key FROM encryption_keys WHERE app_public_key = ?`).ExpectQuery().WithArgs(pub[:]).WillReturnError(fmt.Errorf("error"))
+
+	mock.ExpectRollback()
+	_, receivedErr = claimKey(db, oneTimeCode, pub[:])
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	expectedErr = fmt.Errorf("error")
+	assert.Equal(t, expectedErr, receivedErr, "Expected error if server_public_key was not queried")
+
+	// Commits and returns a server key
+	mock.ExpectBegin()
+	rows = sqlmock.NewRows([]string{"count"}).AddRow(0)
+	mock.ExpectQuery(`SELECT COUNT(*) FROM encryption_keys WHERE app_public_key = ?`).WithArgs(pub[:]).WillReturnRows(rows)
+
+	created = time.Now()
+
+	rows = sqlmock.NewRows([]string{"created"}).AddRow(created)
+	mock.ExpectQuery(`SELECT created FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
+
+	created = timemath.MostRecentUTCMidnight(created)
+
+	mock.ExpectPrepare(query).ExpectExec().WithArgs(pub[:], created, oneTimeCode).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	rows = sqlmock.NewRows([]string{"server_public_key"}).AddRow(pub[:])
+	mock.ExpectPrepare(`SELECT server_public_key FROM encryption_keys WHERE app_public_key = ?`).ExpectQuery().WithArgs(pub[:]).WillReturnRows(rows)
+
+	mock.ExpectCommit()
+
+	serverKey, _ := claimKey(db, oneTimeCode, pub[:])
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Equal(t, pub[:], serverKey, "should return server key")
+
 }
