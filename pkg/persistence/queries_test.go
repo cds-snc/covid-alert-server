@@ -742,6 +742,281 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	hook.Reset()
 }
 
+func TestCheckClaimKeyBan(t *testing.T) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	defer db.Close()
+
+	var maxConsecutiveClaimKeyFailures = config.AppConstants.MaxConsecutiveClaimKeyFailures
+
+	identifier := "127.0.0.1"
+
+	// Queries and succeeds if no result is found
+	row := sqlmock.NewRows([]string{"failures", "last_failure"})
+	mock.ExpectQuery(`SELECT failures, last_failure FROM failed_key_claim_attempts WHERE identifier = ?`).WithArgs(identifier).WillReturnRows(row)
+
+	expectedTriesRemaining := maxConsecutiveClaimKeyFailures
+	expectedBanDuration := time.Duration(0)
+
+	receivedTriesRemaining, receivedBanDuration, _ := checkClaimKeyBan(db, identifier)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Equal(t, expectedTriesRemaining, receivedTriesRemaining, "Expected maxConsecutiveClaimKeyFailures as tries remaining")
+	assert.Equal(t, expectedBanDuration, receivedBanDuration, "Expected 0 as ban duration")
+
+	// Queries and fails if an unkown error is returned
+	mock.ExpectQuery(`SELECT failures, last_failure FROM failed_key_claim_attempts WHERE identifier = ?`).WithArgs(identifier).WillReturnError(fmt.Errorf("error"))
+
+	expectedTriesRemaining = 0
+	expectedBanDuration = time.Duration(0)
+	expectedErr := fmt.Errorf("error")
+
+	receivedTriesRemaining, receivedBanDuration, receivedErr := checkClaimKeyBan(db, identifier)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Equal(t, expectedTriesRemaining, receivedTriesRemaining, "Expected maxConsecutiveClaimKeyFailures as tries remaining")
+	assert.Equal(t, expectedBanDuration, receivedBanDuration, "Expected 0 as ban duration")
+	assert.Equal(t, expectedErr, receivedErr, "Expected error if unkown error occures")
+
+	// Returns correct tries remaining if not banned
+	attempts := 1
+	row = sqlmock.NewRows([]string{"failures", "last_failure"}).AddRow(attempts, time.Now())
+	mock.ExpectQuery(`SELECT failures, last_failure FROM failed_key_claim_attempts WHERE identifier = ?`).WithArgs(identifier).WillReturnRows(row)
+
+	expectedTriesRemaining = maxConsecutiveClaimKeyFailures - attempts
+	expectedBanDuration = time.Duration(0)
+
+	receivedTriesRemaining, receivedBanDuration, _ = checkClaimKeyBan(db, identifier)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Equal(t, expectedTriesRemaining, receivedTriesRemaining, "Expected maxConsecutiveClaimKeyFailures - attempts as tries remaining")
+	assert.Equal(t, expectedBanDuration, receivedBanDuration, "Expected 0 as ban duration")
+
+	// Returns correct banDuration if banned
+	attempts = maxConsecutiveClaimKeyFailures
+	row = sqlmock.NewRows([]string{"failures", "last_failure"}).AddRow(attempts, time.Now())
+	mock.ExpectQuery(`SELECT failures, last_failure FROM failed_key_claim_attempts WHERE identifier = ?`).WithArgs(identifier).WillReturnRows(row)
+
+	expectedTriesRemaining = maxConsecutiveClaimKeyFailures - attempts
+	expectedBanDuration, _ = time.ParseDuration("59m59s")
+
+	receivedTriesRemaining, receivedBanDuration, _ = checkClaimKeyBan(db, identifier)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Equal(t, expectedTriesRemaining, receivedTriesRemaining, "Expected 0 as tries remaining")
+	assert.GreaterOrEqual(t, receivedBanDuration.Seconds(), expectedBanDuration.Seconds(), "Expected something greater than 59m59s as ban duration")
+
+	// Resets if banDuration has expired
+	attempts = maxConsecutiveClaimKeyFailures
+	row = sqlmock.NewRows([]string{"failures", "last_failure"}).AddRow(attempts, time.Now().Add(-time.Hour*1))
+	mock.ExpectQuery(`SELECT failures, last_failure FROM failed_key_claim_attempts WHERE identifier = ?`).WithArgs(identifier).WillReturnRows(row)
+
+	expectedTriesRemaining = maxConsecutiveClaimKeyFailures
+	expectedBanDuration = time.Duration(0)
+
+	receivedTriesRemaining, receivedBanDuration, _ = checkClaimKeyBan(db, identifier)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Equal(t, expectedTriesRemaining, receivedTriesRemaining, "Expected maxConsecutiveClaimKeyFailures as tries remaining")
+	assert.Equal(t, expectedBanDuration, receivedBanDuration, "Expected 0 as ban duration")
+}
+
+func TestRegisterClaimKeySuccess(t *testing.T) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	defer db.Close()
+
+	identifier := "127.0.0.1"
+
+	mock.ExpectExec(`DELETE FROM failed_key_claim_attempts WHERE identifier = ?`).WithArgs(identifier).WillReturnResult(sqlmock.NewResult(1, 1))
+	receivedResult := registerClaimKeySuccess(db, identifier)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Nil(t, receivedResult, "Expected nil if executed delete")
+}
+
+func TestRegisterClaimKeyFailure(t *testing.T) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	defer db.Close()
+
+	identifier := "127.0.0.1"
+	var maxConsecutiveClaimKeyFailures = config.AppConstants.MaxConsecutiveClaimKeyFailures
+
+	// Roll back if insert fails
+	mock.ExpectBegin()
+	mock.ExpectExec(
+		`INSERT INTO failed_key_claim_attempts (identifier) VALUES (?)
+		ON DUPLICATE KEY UPDATE
+      failures = failures + 1,
+			last_failure = NOW()`).WithArgs(
+		identifier,
+	).WillReturnError(fmt.Errorf("error"))
+	mock.ExpectRollback()
+
+	expectedTriesRemaining := 0
+	expectedBanDuration := time.Duration(0)
+	expectedErr := fmt.Errorf("error")
+
+	receivedTriesRemaining, receivedBanDuration, receivedErr := registerClaimKeyFailure(db, identifier)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Equal(t, expectedTriesRemaining, receivedTriesRemaining, "Expected maxConsecutiveClaimKeyFailures as tries remaining")
+	assert.Equal(t, expectedBanDuration, receivedBanDuration, "Expected 0 as ban duration")
+	assert.Equal(t, expectedErr, receivedErr, "Expected error if could not execute update")
+
+	// Rolls back if checkClaimKeyBan returns an error
+	mock.ExpectBegin()
+	mock.ExpectExec(
+		`INSERT INTO failed_key_claim_attempts (identifier) VALUES (?)
+		ON DUPLICATE KEY UPDATE
+      failures = failures + 1,
+			last_failure = NOW()`).WithArgs(
+		identifier,
+	).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	//--> Called in checkClaimKeyBan
+	mock.ExpectQuery(`SELECT failures, last_failure FROM failed_key_claim_attempts WHERE identifier = ?`).WithArgs(identifier).WillReturnError(fmt.Errorf("error"))
+
+	mock.ExpectRollback()
+
+	expectedTriesRemaining = 0
+	expectedBanDuration = time.Duration(0)
+	expectedErr = fmt.Errorf("error")
+
+	receivedTriesRemaining, receivedBanDuration, receivedErr = registerClaimKeyFailure(db, identifier)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Equal(t, expectedTriesRemaining, receivedTriesRemaining, "Expected maxConsecutiveClaimKeyFailures as tries remaining")
+	assert.Equal(t, expectedBanDuration, receivedBanDuration, "Expected 0 as ban duration")
+	assert.Equal(t, expectedErr, receivedErr, "Expected error if could not execute update")
+
+	// Commits and returns the correct data from checkClaimKeyBan
+
+	mock.ExpectBegin()
+	mock.ExpectExec(
+		`INSERT INTO failed_key_claim_attempts (identifier) VALUES (?)
+		ON DUPLICATE KEY UPDATE
+      failures = failures + 1,
+			last_failure = NOW()`).WithArgs(
+		identifier,
+	).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	//--> Called in checkClaimKeyBan
+	row := sqlmock.NewRows([]string{"failures", "last_failure"}).AddRow(1, time.Now())
+	mock.ExpectQuery(`SELECT failures, last_failure FROM failed_key_claim_attempts WHERE identifier = ?`).WithArgs(identifier).WillReturnRows(row)
+
+	mock.ExpectCommit()
+
+	expectedTriesRemaining = maxConsecutiveClaimKeyFailures - 1
+	expectedBanDuration = time.Duration(0)
+
+	receivedTriesRemaining, receivedBanDuration, receivedErr = registerClaimKeyFailure(db, identifier)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Equal(t, expectedTriesRemaining, receivedTriesRemaining, "Expected maxConsecutiveClaimKeyFailures - 1 as tries remaining")
+	assert.Equal(t, expectedBanDuration, receivedBanDuration, "Expected 0 as ban duration")
+	assert.Nil(t, receivedErr, "Expected no error if inserted")
+}
+
+func TestDeleteOldFailedClaimKeyAttempts(t *testing.T) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	defer db.Close()
+
+	mock.ExpectExec(`DELETE FROM failed_key_claim_attempts WHERE last_failure < ?`).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	expectedResult := int64(1)
+	receivedResult, receivedError := deleteOldFailedClaimKeyAttempts(db)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Equal(t, expectedResult, receivedResult, "Expected to only affect one row")
+	assert.Nil(t, receivedError, "Expected nil if executed delete")
+}
+
+func TestCountClaimedOneTimeCodes(t *testing.T) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	defer db.Close()
+
+	row := sqlmock.NewRows([]string{"count"}).AddRow(100)
+	mock.ExpectQuery(`SELECT COUNT(*) FROM encryption_keys WHERE one_time_code IS NULL`).WillReturnRows(row)
+
+	expectedResult := int64(100)
+
+	receivedResult, receivedErr := countClaimedOneTimeCodes(db)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Equal(t, expectedResult, receivedResult, "Expected to receive count of 100")
+	assert.Nil(t, receivedErr, "Expected nil if query ran")
+}
+
+func TestCountDiagnosisKeys(t *testing.T) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	defer db.Close()
+
+	row := sqlmock.NewRows([]string{"count"}).AddRow(100)
+	mock.ExpectQuery(`SELECT COUNT(*) FROM diagnosis_keys`).WillReturnRows(row)
+
+	expectedResult := int64(100)
+
+	receivedResult, receivedErr := countDiagnosisKeys(db)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Equal(t, expectedResult, receivedResult, "Expected to receive count of 100")
+	assert.Nil(t, receivedErr, "Expected nil if query ran")
+}
+
+func TestCountUnclaimedOneTimeCodes(t *testing.T) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	defer db.Close()
+
+	row := sqlmock.NewRows([]string{"count"}).AddRow(100)
+	mock.ExpectQuery(`SELECT COUNT(*) FROM encryption_keys WHERE one_time_code IS NOT NULL`).WillReturnRows(row)
+
+	expectedResult := int64(100)
+
+	receivedResult, receivedErr := countUnclaimedOneTimeCodes(db)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Equal(t, expectedResult, receivedResult, "Expected to receive count of 100")
+	assert.Nil(t, receivedErr, "Expected nil if query ran")
+}
+
 func randomKey() *pb.TemporaryExposureKey {
 	token := make([]byte, 16)
 	rand.Read(token)
