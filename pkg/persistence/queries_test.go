@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/CovidShield/server/pkg/config"
+	pb "github.com/CovidShield/server/pkg/proto/covidshield"
 	"github.com/CovidShield/server/pkg/timemath"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/Shopify/goose/logger"
@@ -489,4 +490,269 @@ func TestDiagnosisKeysForHours(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
+}
+
+func TestRegisterDiagnosisKeys(t *testing.T) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	defer db.Close()
+
+	// Capture logs
+	oldLog := log
+	defer func() { log = oldLog }()
+
+	nullLog, hook := test.NewNullLogger()
+	nullLog.ExitFunc = func(code int) {}
+
+	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
+		return logrus.NewEntry(nullLog)
+	}
+
+	pub, _, _ := box.GenerateKey(rand.Reader)
+	keys := []*pb.TemporaryExposureKey{}
+	region := "302"
+	originator := "randomOrigin"
+
+	// Roll back if table is locked
+	mock.ExpectBegin()
+	mock.ExpectQuery(`SELECT region, originator, remaining_keys FROM encryption_keys WHERE app_public_key = ? FOR UPDATE`).WithArgs(pub[:]).WillReturnError(fmt.Errorf("error"))
+	mock.ExpectRollback()
+	receivedErr := registerDiagnosisKeys(db, pub, keys)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	expectedErr := fmt.Errorf("error")
+	assert.Equal(t, expectedErr, receivedErr, "Expected error if table is locked")
+
+	// Roll back if 0 keys are left and return error
+	mock.ExpectBegin()
+	row := sqlmock.NewRows([]string{"region", "originator", "remaining_keys"}).AddRow(region, originator, 0)
+	mock.ExpectQuery(`SELECT region, originator, remaining_keys FROM encryption_keys WHERE app_public_key = ? FOR UPDATE`).WillReturnRows(row)
+	mock.ExpectRollback()
+	receivedErr = registerDiagnosisKeys(db, pub, keys)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	expectedErr = ErrKeyConsumed
+	assert.Equal(t, expectedErr, receivedErr, "Expected ErrKeyConsumed if 0 keys are left")
+
+	// Roll back if prepare fails
+	mock.ExpectBegin()
+	row = sqlmock.NewRows([]string{"region", "originator", "remaining_keys"}).AddRow("302", "randomOrigin", 1)
+	mock.ExpectQuery(`SELECT region, originator, remaining_keys FROM encryption_keys WHERE app_public_key = ? FOR UPDATE`).WillReturnRows(row)
+	mock.ExpectPrepare(
+		`INSERT IGNORE INTO diagnosis_keys
+		(region, originator, key_data, rolling_start_interval_number, rolling_period, transmission_risk_level, hour_of_submission)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`,
+	).WillReturnError(fmt.Errorf("error"))
+
+	mock.ExpectRollback()
+	receivedErr = registerDiagnosisKeys(db, pub, keys)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	expectedErr = fmt.Errorf("error")
+	assert.Equal(t, expectedErr, receivedErr, "Expected error if prepare to insert fails")
+
+	// Rolls back if it fails to execute insertion of keys
+	key := randomKey()
+	keys = []*pb.TemporaryExposureKey{key}
+
+	hourOfSubmission := timemath.HourNumber(time.Now())
+
+	mock.ExpectBegin()
+	row = sqlmock.NewRows([]string{"region", "originator", "remaining_keys"}).AddRow("302", "randomOrigin", 1)
+	mock.ExpectQuery(`SELECT region, originator, remaining_keys FROM encryption_keys WHERE app_public_key = ? FOR UPDATE`).WillReturnRows(row)
+	mock.ExpectPrepare(
+		`INSERT IGNORE INTO diagnosis_keys
+		(region, originator, key_data, rolling_start_interval_number, rolling_period, transmission_risk_level, hour_of_submission)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`,
+	).ExpectExec().WithArgs(
+		region,
+		originator,
+		key.GetKeyData(),
+		key.GetRollingStartIntervalNumber(),
+		key.GetRollingPeriod(),
+		key.GetTransmissionRiskLevel(),
+		hourOfSubmission,
+	).WillReturnError(fmt.Errorf("error"))
+
+	mock.ExpectRollback()
+	receivedErr = registerDiagnosisKeys(db, pub, keys)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	expectedErr = fmt.Errorf("error")
+	assert.Equal(t, expectedErr, receivedErr, "Expected error if execute insert fails")
+
+	// Rolls back if more keys are inserted that are allowed
+	keyOne := randomKey()
+	keyTwo := randomKey()
+	keys = []*pb.TemporaryExposureKey{keyOne, keyTwo}
+
+	hourOfSubmission = timemath.HourNumber(time.Now())
+
+	mock.ExpectBegin()
+	row = sqlmock.NewRows([]string{"region", "originator", "remaining_keys"}).AddRow("302", "randomOrigin", 1)
+	mock.ExpectQuery(`SELECT region, originator, remaining_keys FROM encryption_keys WHERE app_public_key = ? FOR UPDATE`).WillReturnRows(row)
+
+	mock.ExpectPrepare(
+		`INSERT IGNORE INTO diagnosis_keys
+		(region, originator, key_data, rolling_start_interval_number, rolling_period, transmission_risk_level, hour_of_submission)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`,
+	)
+
+	for _, key := range keys {
+		mock.ExpectExec(`INSERT IGNORE INTO diagnosis_keys
+		(region, originator, key_data, rolling_start_interval_number, rolling_period, transmission_risk_level, hour_of_submission)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`).WithArgs(
+			region,
+			originator,
+			key.GetKeyData(),
+			key.GetRollingStartIntervalNumber(),
+			key.GetRollingPeriod(),
+			key.GetTransmissionRiskLevel(),
+			hourOfSubmission,
+		).WillReturnResult(sqlmock.NewResult(1, 1))
+	}
+
+	mock.ExpectRollback()
+	receivedErr = registerDiagnosisKeys(db, pub, keys)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	expectedErr = ErrTooManyKeys
+	assert.Equal(t, expectedErr, receivedErr, "Expected error more keys than allowed are inserted")
+
+	// Rolls back if final update fails
+	keyOne = randomKey()
+	keyTwo = randomKey()
+	keys = []*pb.TemporaryExposureKey{keyOne, keyTwo}
+
+	hourOfSubmission = timemath.HourNumber(time.Now())
+
+	mock.ExpectBegin()
+	row = sqlmock.NewRows([]string{"region", "originator", "remaining_keys"}).AddRow("302", "randomOrigin", 3)
+	mock.ExpectQuery(`SELECT region, originator, remaining_keys FROM encryption_keys WHERE app_public_key = ? FOR UPDATE`).WillReturnRows(row)
+
+	mock.ExpectPrepare(
+		`INSERT IGNORE INTO diagnosis_keys
+		(region, originator, key_data, rolling_start_interval_number, rolling_period, transmission_risk_level, hour_of_submission)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`,
+	)
+
+	for _, key := range keys {
+		mock.ExpectExec(`INSERT IGNORE INTO diagnosis_keys
+		(region, originator, key_data, rolling_start_interval_number, rolling_period, transmission_risk_level, hour_of_submission)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`).WithArgs(
+			region,
+			originator,
+			key.GetKeyData(),
+			key.GetRollingStartIntervalNumber(),
+			key.GetRollingPeriod(),
+			key.GetTransmissionRiskLevel(),
+			hourOfSubmission,
+		).WillReturnResult(sqlmock.NewResult(1, 1))
+	}
+
+	mock.ExpectExec(
+		`UPDATE encryption_keys
+	SET remaining_keys = remaining_keys - ?
+	WHERE remaining_keys >= ?
+	AND app_public_key = ?`,
+	).WithArgs(
+		len(keys),
+		len(keys),
+		pub[:],
+	).WillReturnError(fmt.Errorf("error"))
+
+	mock.ExpectRollback()
+	receivedErr = registerDiagnosisKeys(db, pub, keys)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	expectedErr = ErrTooManyKeys
+	assert.Equal(t, expectedErr, receivedErr, "Expected error more keys than allowed are inserted")
+
+	// Commits and logs how many keys were inserted
+	keyOne = randomKey()
+	keyTwo = randomKey()
+	keys = []*pb.TemporaryExposureKey{keyOne, keyTwo}
+
+	hourOfSubmission = timemath.HourNumber(time.Now())
+
+	mock.ExpectBegin()
+	row = sqlmock.NewRows([]string{"region", "originator", "remaining_keys"}).AddRow("302", "randomOrigin", 3)
+	mock.ExpectQuery(`SELECT region, originator, remaining_keys FROM encryption_keys WHERE app_public_key = ? FOR UPDATE`).WillReturnRows(row)
+
+	mock.ExpectPrepare(
+		`INSERT IGNORE INTO diagnosis_keys
+		(region, originator, key_data, rolling_start_interval_number, rolling_period, transmission_risk_level, hour_of_submission)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`,
+	)
+
+	for _, key := range keys {
+		mock.ExpectExec(`INSERT IGNORE INTO diagnosis_keys
+		(region, originator, key_data, rolling_start_interval_number, rolling_period, transmission_risk_level, hour_of_submission)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`).WithArgs(
+			region,
+			originator,
+			key.GetKeyData(),
+			key.GetRollingStartIntervalNumber(),
+			key.GetRollingPeriod(),
+			key.GetTransmissionRiskLevel(),
+			hourOfSubmission,
+		).WillReturnResult(sqlmock.NewResult(1, 1))
+	}
+
+	mock.ExpectExec(
+		`UPDATE encryption_keys
+	SET remaining_keys = remaining_keys - ?
+	WHERE remaining_keys >= ?
+	AND app_public_key = ?`,
+	).WithArgs(
+		len(keys),
+		len(keys),
+		pub[:],
+	).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	mock.ExpectCommit()
+	receivedResult := registerDiagnosisKeys(db, pub, keys)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Nil(t, receivedResult, "Expected nil when keys are commited")
+
+	assert.Equal(t, 1, len(hook.Entries))
+	assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
+	assert.Equal(t, "Inserted keys", hook.LastEntry().Message)
+	hook.Reset()
+}
+
+func randomKey() *pb.TemporaryExposureKey {
+	token := make([]byte, 16)
+	rand.Read(token)
+	transmissionRiskLevel := int32(2)
+	rollingStartIntervalNumber := int32(2651450)
+	rollingPeriod := int32(144)
+	key := &pb.TemporaryExposureKey{
+		KeyData:                    token,
+		TransmissionRiskLevel:      &transmissionRiskLevel,
+		RollingStartIntervalNumber: &rollingStartIntervalNumber,
+		RollingPeriod:              &rollingPeriod,
+	}
+	return key
 }
