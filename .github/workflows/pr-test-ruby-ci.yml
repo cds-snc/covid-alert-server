@@ -26,7 +26,7 @@ jobs:
         sudo apt-get -y install protobuf-compiler
     - name: Install protoc-gen-go
       run: |
-        GOBIN=/usr/local/bin go install google.golang.org/protobuf/cmd/protoc-gen-go
+        GOBIN=/usr/local/bin sudo go install google.golang.org/protobuf/cmd/protoc-gen-go
     - uses: actions/setup-ruby@v1
       with:
         ruby-version: '2.6'
