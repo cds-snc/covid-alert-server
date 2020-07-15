@@ -153,3 +153,11 @@ variable "rds_server_instance_class" {
 variable "route53_zone_name" {
   type = string
 }
+
+###
+# AWS WAF - IPs/CIDRs to allow to /new-key-claim
+###
+variable "new_key_claim_allow_list" {
+  type    = list
+  default = ["0.0.0.0/1", "128.0.0.0/1"]
+}

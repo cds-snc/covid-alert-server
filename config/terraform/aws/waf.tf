@@ -1,4 +1,15 @@
 ###
+# AWS IPSet - list of IPs/CIDRs to allow
+###
+resource "aws_wafv2_ip_set" "new_key_claim" {
+  name               = "new-key-claim"
+  description        = "New Key Claim Allow IPs/CIDRs"
+  scope              = "REGIONAL"
+  ip_address_version = "IPV4"
+  addresses          = toset(var.new_key_claim_allow_list)
+}
+
+###
 # AWS WAF - Managed Rules
 ###
 resource "aws_wafv2_web_acl" "key_submission" {
@@ -286,6 +297,11 @@ resource "aws_wafv2_web_acl" "key_submission" {
               priority = 1
               type     = "NONE"
             }
+          }
+        }
+        statement {
+          ip_set_reference_statement {
+            arn = aws_wafv2_ip_set.new_key_claim.arn
           }
         }
       }

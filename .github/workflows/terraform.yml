@@ -24,6 +24,7 @@ env:
   TF_VAR_ecs_task_key_submission_env_key_claim_token: ${{ secrets.TF_VAR_ecs_task_key_submission_env_key_claim_token }}
   TF_VAR_rds_server_db_password: ${{ secrets.TF_VAR_rds_server_db_password }}
   TF_VAR_route53_zone_name: ${{ secrets.TF_VAR_route53_zone_name }}
+  TF_VAR_new_key_claim_allow_list: ${{ secrets.TF_VAR_new_key_claim_allow_list }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
