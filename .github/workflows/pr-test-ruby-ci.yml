@@ -23,7 +23,7 @@ jobs:
         go-version: '^1.14'
     - name: Install protobuf-compiler
       run: |
-        apt-get -y install protobuf-compiler
+        sudo apt-get -y install protobuf-compiler
     - name: Install protoc-gen-go
       run: |
         GOBIN=/usr/local/bin go install google.golang.org/protobuf/cmd/protoc-gen-go
