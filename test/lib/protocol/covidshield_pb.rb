@@ -8,8 +8,8 @@ require 'google/protobuf/duration_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_file("covidshield.proto", :syntax => :proto2) do
     add_message "covidshield.KeyClaimRequest" do
-      required :one_time_code, :string, 1
-      required :app_public_key, :bytes, 2
+      optional :one_time_code, :string, 1
+      optional :app_public_key, :bytes, 2
     end
     add_message "covidshield.KeyClaimResponse" do
       optional :error, :enum, 1, "covidshield.KeyClaimResponse.ErrorCode"
@@ -26,13 +26,13 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       value :TEMPORARY_BAN, 5
     end
     add_message "covidshield.EncryptedUploadRequest" do
-      required :server_public_key, :bytes, 1
-      required :app_public_key, :bytes, 2
-      required :nonce, :bytes, 3
-      required :payload, :bytes, 4
+      optional :server_public_key, :bytes, 1
+      optional :app_public_key, :bytes, 2
+      optional :nonce, :bytes, 3
+      optional :payload, :bytes, 4
     end
     add_message "covidshield.EncryptedUploadResponse" do
-      required :error, :enum, 1, "covidshield.EncryptedUploadResponse.ErrorCode"
+      optional :error, :enum, 1, "covidshield.EncryptedUploadResponse.ErrorCode"
     end
     add_enum "covidshield.EncryptedUploadResponse.ErrorCode" do
       value :NONE, 0
@@ -51,7 +51,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       value :NO_KEYS_IN_PAYLOAD, 14
     end
     add_message "covidshield.Upload" do
-      required :timestamp, :message, 1, "google.protobuf.Timestamp"
+      optional :timestamp, :message, 1, "google.protobuf.Timestamp"
       repeated :keys, :message, 2, "covidshield.TemporaryExposureKey"
     end
     add_message "covidshield.TemporaryExposureKeyExport" do

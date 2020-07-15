@@ -47,7 +47,7 @@ build/release/%: $(GOFILES) $(PROTO_GO)
 pkg/proto/%/proto.pb.go: proto/%.proto
 	@mkdir -p "$(@D)"
 	@echo "          \x1b[1;34mprotoc \x1b[0;1m(go)\x1b[0m  $@"
-	@$(PROTOC) --go_out=plugins=grpc:. "--proto_path=$(*D)" "$<"
+	@$(PROTOC) --go_out=. "--proto_path=$(*D)" "$<"
 	@mv "$(@D)/$(patsubst %.proto,%,$(*F)).pb.go" "$(@D)/proto.pb.go"
 
 test/lib/protocol/%_pb.rb: proto/%.proto
