@@ -18,7 +18,7 @@ RUN export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 
 RUN apt-get update \
     && apt-get -y install --no-install-recommends apt-utils dialog 2>&1 \
-    && apt-get -y install git openssh-client less iproute2 procps lsb-release libsodium-dev mariadb-client \
+    && apt-get -y install protobuf-compiler git openssh-client less iproute2 procps lsb-release libsodium-dev mariadb-client \
     && gem install bundler \
     && gem install ruby-debug-ide \
     && gem install debase \
