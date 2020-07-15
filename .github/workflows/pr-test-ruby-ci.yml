@@ -32,7 +32,7 @@ jobs:
       run: |
         gem install bundler
         bundle install
-        sudo make test
+        make test
       env:
         DB_USER: test
         DB_PASS: password
