@@ -169,7 +169,11 @@ func persistEncryptionKeyWithHashID(db *sql.DB, region, originator, hashID strin
 
 	var code sql.NullString
 	row := db.QueryRow("SELECT one_time_code FROM encryption_keys WHERE hash_id = ?", hashID)
-	row.Scan(&code)
+	err = row.Scan(&code)
+
+	if err == sql.ErrNoRows { // Duplicate OTC issue, not HashID
+		return errors.New("Duplicate entry")
+	}
 
 	if code.Valid { // unused hashID found
 		_, err = db.Exec(`DELETE FROM encryption_keys WHERE hash_id = ? AND one_time_code IS NOT NULL`, hashID)
