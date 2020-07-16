@@ -172,8 +172,8 @@ func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 			return oneTimeCode, nil
 		} else if strings.Contains(err.Error(), "used hashID found") {
 			return "", ErrHashIDClaimed
-		} else if strings.Contains(err.Error(), "regenerate hashID") {
-			log(nil, err).Warn("regenerating hashID")
+		} else if strings.Contains(err.Error(), "regenerate OTC for hashID") {
+			log(nil, err).Warn("regenerating OTC for hashID")
 		} else if strings.Contains(err.Error(), "Duplicate entry") {
 			log(nil, err).Warn("duplicate one_time_code")
 		} else {

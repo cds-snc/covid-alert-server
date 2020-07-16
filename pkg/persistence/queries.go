@@ -173,7 +173,7 @@ func persistEncryptionKeyWithHashID(db *sql.DB, region, originator, hashID strin
 			if err != nil {
 				return err
 			}
-			return errors.New("regenerate hashID")
+			return errors.New("regenerate OTC for hashID")
 		}
 		return errors.New("used hashID found")
 	}
