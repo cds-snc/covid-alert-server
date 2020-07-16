@@ -42,11 +42,11 @@ class NewKeyClaimhashIDTest < MiniTest::Test
       app_public_key: "00001111222233334444555566667710"
     )
     resp = @sub_conn.post('/claim-key', kcq.to_proto)
-    assert_response(resp, 200, 'application/x-protobuf')
     kcr = Covidshield::KeyClaimResponse.decode(resp.body)
     assert_equal(:NONE, kcr.error)
     assert_equal(32, kcr.server_public_key.each_byte.size)
     assert_equal(8, kcr.tries_remaining)
+    assert_response(resp, 200, 'application/x-protobuf')
 
     resp = @sub_conn.post do |req|
       req.url("/new-key-claim/#{hash_id}")

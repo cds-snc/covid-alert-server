@@ -79,6 +79,12 @@ CREATE TABLE IF NOT EXISTS failed_key_claim_attempts (
 			`ALTER TABLE encryption_keys ADD COLUMN hash_id VARCHAR(128)`,
 			`ALTER TABLE encryption_keys ADD INDEX (hash_id)`,
 		},
+	}, {
+		id: "5",
+		statements: []string{
+			`UPDATE encryption_keys SET hash_id = NULL WHERE hash_id = ''`,
+			`ALTER TABLE encryption_keys ADD UNIQUE (hash_id)`,
+		},
 	},
 }
 
