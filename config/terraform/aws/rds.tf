@@ -35,7 +35,7 @@ resource "aws_rds_cluster" "covidshield_server" {
   final_snapshot_identifier = "server-${random_string.random.result}"
   master_username           = var.rds_server_db_user
   master_password           = var.rds_server_db_password
-  backup_retention_period   = 5
+  backup_retention_period   = 15
   preferred_backup_window   = "07:00-09:00"
   db_subnet_group_name      = aws_db_subnet_group.covidshield.name
   storage_encrypted         = true
