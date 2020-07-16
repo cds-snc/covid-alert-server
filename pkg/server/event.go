@@ -61,7 +61,7 @@ func (s *eventServlet) event(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	serverPriv, err := s.db.PrivForPub(serverPub)
+	_, err = s.db.PrivForPub(serverPub)
 	if err != nil {
 		requestError(
 			ctx, w, err, "failure to resolve client keypair",
@@ -70,12 +70,24 @@ func (s *eventServlet) event(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	appPubKey, err := pb.IntoKey(event.AppPublicKey)
+	_, err = pb.IntoKey(event.AppPublicKey)
 	if err != nil {
 		requestError(
 			ctx, w, err, "app public key key was not expected length",
 			http.StatusBadRequest, eventError(pb.EventResponse_INVALID_KEYS),
 		)
 		return
+	}
+
+	eventType := *event.Event
+	if len(eventType) > 0 {
+		log(ctx, nil).WithField("userEvent", eventType).Info("user event recorded")
+	}
+
+	resp := eventError(pb.EventResponse_NONE)
+	data, _ = proto.Marshal(resp)
+
+	if _, err := w.Write(data); err != nil {
+		log(ctx, err).Info("error writing response")
 	}
 }

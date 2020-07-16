@@ -45,6 +45,7 @@ func (a *AppBuilder) WithSubmission() *AppBuilder {
 
 	a.servlets = append(a.servlets, server.NewUploadServlet(a.database))
 	a.servlets = append(a.servlets, server.NewKeyClaimServlet(a.database, keyclaim.NewAuthenticator()))
+	a.servlets = append(a.servlets, server.NewEventServlet(a.database))
 	return a
 }
 
