@@ -6,14 +6,12 @@ import (
 	"crypto/x509"
 	"database/sql"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"math/big"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/CovidShield/server/pkg/config"
 	pb "github.com/CovidShield/server/pkg/proto/covidshield"
 
 	"github.com/Shopify/goose/logger"
@@ -149,7 +147,6 @@ const maxOneTimeCode = 1e8
 
 func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 	var err error
-	var n *big.Int
 
 	pub, priv, err := box.GenerateKey(rand.Reader)
 	if err != nil {
@@ -157,12 +154,12 @@ func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 	}
 
 	for tries := 5; tries > 0; tries-- {
-		n, err = rand.Int(rand.Reader, big.NewInt(config.AppConstants.MaxOneTimeCode)) // [0,max)
+
+		oneTimeCode, err := generateOneTimeCode()
+
 		if err != nil {
 			return "", err
 		}
-
-		oneTimeCode := fmt.Sprintf("%08d", n)
 
 		err = persistEncryptionKey(c.db, region, originator, hashID, pub, priv, oneTimeCode)
 		if err == nil {
@@ -176,6 +173,28 @@ func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 		}
 	}
 	return "", err
+}
+
+func generateOneTimeCode() (string, error) {
+	charsets := [2][]rune{[]rune("AEFHJKLQRSUWXYZ"), []rune("2456789")}
+
+	//seg1, err := rand.Int(rand.Reader, big.NewInt(int64(len(charsets))))
+	//seg2, err := rand.Int(rand.Reader, big.NewInt(int64(len(charsets))))
+	//seg3, err := rand.Int(rand.Reader, big.NewInt(int64(len(charsets))))
+
+	//oneTimeCode := genRandom(charsets[seg1.Int64()], 3) + genRandom(charsets[seg2.Int64()], 3) + genRandom(charsets[seg3.Int64()], 4)
+	oneTimeCode := genRandom(append(charsets[0], charsets[1]...), 10)
+
+	return oneTimeCode, nil
+}
+
+func genRandom(chars []rune, length int64) string {
+	var b strings.Builder
+	for i := int64(0); i < length; i++ {
+		nBig, _ := rand.Int(rand.Reader, big.NewInt(int64(len(chars))))
+		b.WriteRune(chars[nBig.Int64()])
+	}
+	return b.String()
 }
 
 func (c *conn) PrivForPub(pub []byte) ([]byte, error) {
