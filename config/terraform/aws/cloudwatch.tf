@@ -263,7 +263,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_detected_submission" {
   period              = "60"
   statistic           = "Sum"
   threshold           = "1"
-  alarm_description   = "This metric monitors for DDoS detected"
+  alarm_description   = "This metric monitors for DDoS detected on submission ALB"
 
   alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
 
@@ -281,7 +281,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_detected_retrieval" {
   period              = "60"
   statistic           = "Sum"
   threshold           = "1"
-  alarm_description   = "This metric monitors for DDoS detected"
+  alarm_description   = "This metric monitors for DDoS detected on retrieval ALB"
 
   alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
 
