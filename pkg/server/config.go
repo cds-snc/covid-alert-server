@@ -22,7 +22,6 @@ func (s *configServlet) RegisterRouting(r *mux.Router) {
 	r.HandleFunc("/exposure-configuration/{region:[\\w]+}.json", s.exposureConfig)
 }
 
-// TODO: serve this from somewhere else
 func (s *configServlet) exposureConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	fmt.Fprintf(w, response)
