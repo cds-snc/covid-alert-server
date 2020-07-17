@@ -41,6 +41,8 @@ resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
     compress               = true
   }
 
+  price_class = "PriceClass_100"
+
   restrictions {
     geo_restriction {
       restriction_type = "none"
