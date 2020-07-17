@@ -183,7 +183,7 @@ func generateOneTimeCode() (string, error) {
 	//seg3, err := rand.Int(rand.Reader, big.NewInt(int64(len(charsets))))
 
 	//oneTimeCode := genRandom(charsets[seg1.Int64()], 3) + genRandom(charsets[seg2.Int64()], 3) + genRandom(charsets[seg3.Int64()], 4)
-	oneTimeCode := genRandom(append(charsets[0], charsets[1]...), 10)
+	oneTimeCode := genRandom(append(charsets[0], charsets[1]...), 1)
 
 	return oneTimeCode, nil
 }
