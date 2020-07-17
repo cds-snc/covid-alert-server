@@ -395,8 +395,3 @@ resource "aws_wafv2_web_acl_logging_configuration" "firehose_waf_logs_retrieval"
   log_destination_configs = ["${aws_kinesis_firehose_delivery_stream.firehose_waf_logs.arn}"]
   resource_arn            = aws_wafv2_web_acl.key_retrieval.arn
 }
-
-resource "aws_wafv2_web_acl_logging_configuration" "firehose_waf_logs_retrieval_cdn" {
-  log_destination_configs = ["${aws_kinesis_firehose_delivery_stream.firehose_waf_logs.arn}"]
-  resource_arn            = aws_wafv2_web_acl.key_retrieval_cdn.arn
-}

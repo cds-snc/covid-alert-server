@@ -30,7 +30,7 @@ resource "aws_route53_health_check" "covidshield_key_retrieval_healthcheck" {
   fqdn              = "retrieval.${aws_route53_zone.covidshield.name}"
   port              = 443
   type              = "HTTPS"
-  resource_path     = "services/ping"
+  resource_path     = "/services/ping"
   failure_threshold = "3"
   request_interval  = "30"
 
@@ -59,7 +59,7 @@ resource "aws_route53_health_check" "covidshield_key_submission_healthcheck" {
   fqdn              = "submission.${aws_route53_zone.covidshield.name}"
   port              = 443
   type              = "HTTPS"
-  resource_path     = "services/ping"
+  resource_path     = "/services/ping"
   failure_threshold = "3"
   request_interval  = "30"
 
