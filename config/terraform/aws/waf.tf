@@ -332,6 +332,16 @@ resource "aws_wafv2_web_acl" "key_retrieval" {
   default_action {
     allow {}
   }
+
+  tags = {
+    (var.billing_tag_key) = var.billing_tag_value
+  }
+
+  visibility_config {
+    cloudwatch_metrics_enabled = true
+    metric_name                = "key_retrieval"
+    sampled_requests_enabled   = false
+  }
 }
 
 resource "aws_wafv2_web_acl" "key_retrieval_cdn" {
@@ -342,6 +352,16 @@ resource "aws_wafv2_web_acl" "key_retrieval_cdn" {
 
   default_action {
     allow {}
+  }
+
+  tags = {
+    (var.billing_tag_key) = var.billing_tag_value
+  }
+
+  visibility_config {
+    cloudwatch_metrics_enabled = true
+    metric_name                = "key_retrieval_cdn"
+    sampled_requests_enabled   = false
   }
 }
 
