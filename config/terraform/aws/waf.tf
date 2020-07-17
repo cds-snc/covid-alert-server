@@ -378,13 +378,6 @@ resource "aws_wafv2_web_acl_association" "key_retrieval_assocation" {
   web_acl_arn  = aws_wafv2_web_acl.key_retrieval.arn
 }
 
-resource "aws_wafv2_web_acl_association" "key_retrieval_cdn_assocation" {
-  provider = aws.us-east-1
-
-  resource_arn = aws_cloudfront_distribution.key_retrieval_distribution.arn
-  web_acl_arn  = aws_wafv2_web_acl.key_retrieval_cdn.arn
-}
-
 ###
 # AWS WAF - Logging
 ###

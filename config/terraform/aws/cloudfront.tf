@@ -17,6 +17,7 @@ resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
 
   enabled         = true
   is_ipv6_enabled = true
+  web_acl_id      = aws_wafv2_web_acl.key_retrieval_cdn.arn
 
   aliases = ["retrieval.${var.route53_zone_name}"]
 
