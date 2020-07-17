@@ -178,12 +178,11 @@ func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 func generateOneTimeCode() (string, error) {
 	charsets := [2][]rune{[]rune("AEFHJKLQRSUWXYZ"), []rune("2456789")}
 
-	//seg1, err := rand.Int(rand.Reader, big.NewInt(int64(len(charsets))))
-	//seg2, err := rand.Int(rand.Reader, big.NewInt(int64(len(charsets))))
-	//seg3, err := rand.Int(rand.Reader, big.NewInt(int64(len(charsets))))
+	seg1, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charsets))))
+	seg2, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charsets))))
+	seg3, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charsets))))
 
-	//oneTimeCode := genRandom(charsets[seg1.Int64()], 3) + genRandom(charsets[seg2.Int64()], 3) + genRandom(charsets[seg3.Int64()], 4)
-	oneTimeCode := genRandom(append(charsets[0], charsets[1]...), 1)
+	oneTimeCode := genRandom(charsets[seg1.Int64()], 3) + genRandom(charsets[seg2.Int64()], 3) + genRandom(charsets[seg3.Int64()], 4)
 
 	return oneTimeCode, nil
 }

@@ -24,7 +24,7 @@ class NewKeyClaimhashIDTest < MiniTest::Test
       req.url("/new-key-claim/#{hash_id}")
       req.headers['Authorization'] = 'Bearer second-very-long-token'
     end
-    assert_response(resp, 200, 'text/plain; charset=utf-8', body: /\A[0-9]{8}\n\z/m)
+    assert_response(resp, 200, 'text/plain; charset=utf-8', body: /\A[A-Z0-9]{10}\n\z/m)
     previous_code = resp.body
 
     # Returns another code if hashID not claimed
@@ -32,7 +32,7 @@ class NewKeyClaimhashIDTest < MiniTest::Test
       req.url("/new-key-claim/#{hash_id}")
       req.headers['Authorization'] = 'Bearer second-very-long-token'
     end
-    assert_response(resp, 200, 'text/plain; charset=utf-8', body: /\A[0-9]{8}\n\z/m)
+    assert_response(resp, 200, 'text/plain; charset=utf-8', body: /\A[A-Z0-9]{10}\n\z/m)
     refute_equal(previous_code, resp.body)
     valid_code = resp.body
 
