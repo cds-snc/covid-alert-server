@@ -143,8 +143,6 @@ func (c *conn) ClaimKey(oneTimeCode string, appPublicKey []byte) ([]byte, error)
 // HashID that has already used the code
 var ErrHashIDClaimed = errors.New("HashID claimed")
 
-const maxOneTimeCode = 1e8
-
 func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 	var err error
 
