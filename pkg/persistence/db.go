@@ -173,18 +173,34 @@ func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 	return "", err
 }
 
+// Generate a random one time code in the format AAABBBCCCC where
+// each group is made up of a character set. For each group it first
+// randomizes which charater set to use. Then passes that character
+// set and the desired length in another function to generate the
+// string for that group.
 func generateOneTimeCode() (string, error) {
-	charsets := [2][]rune{[]rune("AEFHJKLQRSUWXYZ"), []rune("2456789")}
+	characterSets := [2][]rune{
+		[]rune("AEFHJKLQRSUWXYZ"),
+		[]rune("2456789"),
+	}
 
-	seg1, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charsets))))
-	seg2, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charsets))))
-	seg3, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charsets))))
+	characterSetLength := int64(len(characterSets))
 
-	oneTimeCode := genRandom(charsets[seg1.Int64()], 3) + genRandom(charsets[seg2.Int64()], 3) + genRandom(charsets[seg3.Int64()], 4)
+	seg1, err := rand.Int(rand.Reader, big.NewInt(characterSetLength))
+	seg2, err := rand.Int(rand.Reader, big.NewInt(characterSetLength))
+	seg3, err := rand.Int(rand.Reader, big.NewInt(characterSetLength))
 
-	return oneTimeCode, nil
+	oneTimeCode := genRandom(characterSets[seg1.Int64()], 3) +
+		genRandom(characterSets[seg2.Int64()], 3) +
+		genRandom(characterSets[seg3.Int64()], 4)
+
+	return oneTimeCode, err
 }
 
+// Generates a string of random characters based on a
+// passed list of characters and a desired length. For each
+// position in the desired length, generates a random number
+// between 0 and the length of the character set.
 func genRandom(chars []rune, length int64) string {
 	var b strings.Builder
 	for i := int64(0); i < length; i++ {
