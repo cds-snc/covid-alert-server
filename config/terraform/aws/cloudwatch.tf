@@ -337,17 +337,17 @@ resource "aws_cloudwatch_metric_alarm" "ddos_detected_route53" {
 
 resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
 
-  alarm_name                = "Route53RetrievalHealthCheck"
-  alarm_description         = "Check that the Retrieval server is in alarm"
-  comparison_operator       = "GreaterThanOrEqualToThreshold"
-  metric_name               = "StatusCheckFailed"
-  namespace                 = "AWS/Route53"
-  period                    = "60"
-  evaluation_periods        = "2"
-  statistic                 = "Maximum"
-  threshold                 = "1"
-  treat_missing_data        = "breaching"
-  
+  alarm_name          = "Route53RetrievalHealthCheck"
+  alarm_description   = "Check that the Retrieval server is in alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  metric_name         = "StatusCheckFailed"
+  namespace           = "AWS/Route53"
+  period              = "60"
+  evaluation_periods  = "2"
+  statistic           = "Maximum"
+  threshold           = "1"
+  treat_missing_data  = "breaching"
+
   alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
 
   dimensions {
@@ -357,17 +357,17 @@ resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
 
 resource "aws_cloudwatch_metric_alarm" "route53_submission_health_check" {
 
-  alarm_name                = "Route53SubmissionHealthCheck"
-  alarm_description         = "Check that the Submission server is in alarm"
-  comparison_operator       = "GreaterThanOrEqualToThreshold"
-  metric_name               = "StatusCheckFailed"
-  namespace                 = "AWS/Route53"
-  period                    = "60"
-  evaluation_periods        = "2"
-  statistic                 = "Maximum"
-  threshold                 = "1"
-  treat_missing_data        = "breaching"
-  
+  alarm_name          = "Route53SubmissionHealthCheck"
+  alarm_description   = "Check that the Submission server is in alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  metric_name         = "StatusCheckFailed"
+  namespace           = "AWS/Route53"
+  period              = "60"
+  evaluation_periods  = "2"
+  statistic           = "Maximum"
+  threshold           = "1"
+  treat_missing_data  = "breaching"
+
   alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
 
   dimensions {
