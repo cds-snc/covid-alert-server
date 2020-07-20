@@ -5,9 +5,9 @@ module "covid-shield-retrieval" {
   termination_wait_time_in_minutes = var.termination_wait_time_in_minutes
   cluster_name                     = aws_ecs_cluster.covidshield.name
   ecs_service_name                 = aws_ecs_service.covidshield_key_retrieval.name
-  lb_listener_arns                 = [aws_lb_listener.covidshield_key_retrieval.arn]
-  aws_lb_target_group_blue_name    = aws_lb_target_group.covidshield_key_retrieval.name
-  aws_lb_target_group_green_name   = aws_lb_target_group.covidshield_key_retrieval_2.name
+  lb_listener_arns                 = [aws_lb_listener.covidshield_key_server.arn]
+  aws_lb_target_group_blue_name    = aws_lb_target_group.covidshield_key_retrieval_blue.name
+  aws_lb_target_group_green_name   = aws_lb_target_group.covidshield_key_retrieval_green.name
 }
 
 module "covid-shield-submission" {
@@ -17,7 +17,7 @@ module "covid-shield-submission" {
   termination_wait_time_in_minutes = var.termination_wait_time_in_minutes
   cluster_name                     = aws_ecs_cluster.covidshield.name
   ecs_service_name                 = aws_ecs_service.covidshield_key_submission.name
-  lb_listener_arns                 = [aws_lb_listener.covidshield_key_submission.arn]
-  aws_lb_target_group_blue_name    = aws_lb_target_group.covidshield_key_submission.name
-  aws_lb_target_group_green_name   = aws_lb_target_group.covidshield_key_submission_2.name
+  lb_listener_arns                 = [aws_lb_listener.covidshield_key_server.arn]
+  aws_lb_target_group_blue_name    = aws_lb_target_group.covidshield_key_submission_blue.name
+  aws_lb_target_group_green_name   = aws_lb_target_group.covidshield_key_submission_green.name
 }

@@ -1,7 +1,6 @@
 resource "aws_cloudwatch_log_group" "covidshield" {
-  name              = var.cloudwatch_log_group_name
-  kms_key_id        = aws_kms_key.cw.arn
-  retention_in_days = 365
+  name       = var.cloudwatch_log_group_name
+  kms_key_id = aws_kms_key.cw.arn
 
   tags = {
     (var.billing_tag_key) = var.billing_tag_value
@@ -264,29 +263,11 @@ resource "aws_cloudwatch_metric_alarm" "ddos_detected_submission" {
   period              = "60"
   statistic           = "Sum"
   threshold           = "1"
-  alarm_description   = "This metric monitors for DDoS detected on submission ALB"
+  alarm_description   = "This metric monitors for DDoS detected on server ALB"
 
   alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
 
   dimensions = {
-    ResourceArn = aws_lb.covidshield_key_submission.arn
-  }
-}
-
-resource "aws_cloudwatch_metric_alarm" "ddos_detected_retrieval" {
-  alarm_name          = "DDoSDetectedRetrievalALB"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "1"
-  metric_name         = "DDoSDetected"
-  namespace           = "AWS/DDoSProtection"
-  period              = "60"
-  statistic           = "Sum"
-  threshold           = "1"
-  alarm_description   = "This metric monitors for DDoS detected on retrieval ALB"
-
-  alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
-
-  dimensions = {
-    ResourceArn = aws_lb.covidshield_key_retrieval.arn
+    ResourceArn = aws_lb.covidshield_key_server.arn
   }
 }

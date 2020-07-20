@@ -29,7 +29,3 @@ output "security_group_load_balancer" {
 output "aws_db_subnet_group" {
   value = aws_db_subnet_group.covidshield
 }
-
-output "route53_submission_fqdn" {
-  value = aws_route53_record.covidshield_key_submission
-}

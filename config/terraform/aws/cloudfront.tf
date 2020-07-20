@@ -2,10 +2,10 @@
 # AWS Cloudfront (CDN) - Key Retrieval - retrieval.{$route53_zone_name}
 ###
 
-resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
+resource "aws_cloudfront_distribution" "key_server_distribution" {
   origin {
-    domain_name = aws_lb.covidshield_key_retrieval.dns_name
-    origin_id   = aws_lb.covidshield_key_retrieval.name
+    domain_name = aws_lb.covidshield_key_server.dns_name
+    origin_id   = aws_lb.covidshield_key_server.name
 
     custom_origin_config {
       http_port              = 80
@@ -19,16 +19,20 @@ resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
   is_ipv6_enabled = true
   web_acl_id      = aws_wafv2_web_acl.key_retrieval_cdn.arn
 
-  aliases = ["retrieval.${var.route53_zone_name}"]
+  aliases = [
+    "${var.route53_zone_name}",
+    "retrieval.${var.route53_zone_name}",
+    "submission.${var.route53_zone_name}"
+  ]
 
   default_cache_behavior {
-    allowed_methods  = ["GET", "HEAD"]
+    allowed_methods  = ["HEAD", "DELETE", "POST", "GET", "OPTIONS", "PUT", "PATCH"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = aws_lb.covidshield_key_retrieval.name
+    target_origin_id = aws_lb.covidshield_key_server.name
 
     forwarded_values {
       query_string = true
-      headers      = ["Host"]
+      headers      = ["Host", "authorization", "User-Agent"]
 
       cookies {
         forward = "all"
@@ -42,8 +46,6 @@ resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
     compress               = true
   }
 
-  price_class = "PriceClass_100"
-
   restrictions {
     geo_restriction {
       restriction_type = "none"
@@ -51,8 +53,12 @@ resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
   }
 
   viewer_certificate {
-    acm_certificate_arn      = aws_acm_certificate_validation.retrieval_covidshield.certificate_arn
-    minimum_protocol_version = "TLSv1.2_2018"
+    acm_certificate_arn      = aws_acm_certificate_validation.covidshield.certificate_arn
+    minimum_protocol_version = "TLSv1.2_2019"
     ssl_support_method       = "sni-only"
   }
+
+  depends_on = [
+    aws_acm_certificate_validation.covidshield
+  ]
 }

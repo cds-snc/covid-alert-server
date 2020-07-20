@@ -368,14 +368,9 @@ resource "aws_wafv2_web_acl" "key_retrieval_cdn" {
 ###
 # AWS WAF - Resource Assocation
 ###
-resource "aws_wafv2_web_acl_association" "key_submission_assocation" {
-  resource_arn = aws_lb.covidshield_key_submission.arn
+resource "aws_wafv2_web_acl_association" "key_server_assocation" {
+  resource_arn = aws_lb.covidshield_key_server.arn
   web_acl_arn  = aws_wafv2_web_acl.key_submission.arn
-}
-
-resource "aws_wafv2_web_acl_association" "key_retrieval_assocation" {
-  resource_arn = aws_lb.covidshield_key_retrieval.arn
-  web_acl_arn  = aws_wafv2_web_acl.key_retrieval.arn
 }
 
 ###

@@ -62,7 +62,7 @@ resource "aws_ecs_task_definition" "covidshield_key_retrieval" {
 
 resource "aws_ecs_service" "covidshield_key_retrieval" {
   depends_on = [
-    aws_lb_listener.covidshield_key_retrieval,
+    aws_lb_listener.covidshield_key_server,
   ]
 
   name             = var.ecs_key_retrieval_name
@@ -90,7 +90,7 @@ resource "aws_ecs_service" "covidshield_key_retrieval" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.covidshield_key_retrieval.arn
+    target_group_arn = aws_lb_target_group.covidshield_key_retrieval_blue.arn
     container_name   = "key-retrieval"
     container_port   = 8001
   }
@@ -194,7 +194,7 @@ resource "aws_ecs_task_definition" "covidshield_key_submission" {
 
 resource "aws_ecs_service" "covidshield_key_submission" {
   depends_on = [
-    aws_lb_listener.covidshield_key_submission,
+    aws_lb_listener.covidshield_key_server,
   ]
 
   name             = var.ecs_key_submission_name
@@ -222,7 +222,7 @@ resource "aws_ecs_service" "covidshield_key_submission" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.covidshield_key_submission.arn
+    target_group_arn = aws_lb_target_group.covidshield_key_submission_blue.arn
     container_name   = "key-submission"
     container_port   = 8000
   }
@@ -239,6 +239,7 @@ resource "aws_ecs_service" "covidshield_key_submission" {
     ]
   }
 }
+
 resource "aws_appautoscaling_target" "submission" {
   count              = var.submission_autoscale_enabled ? 1 : 0
   service_namespace  = "ecs"
@@ -247,6 +248,7 @@ resource "aws_appautoscaling_target" "submission" {
   min_capacity       = var.min_capacity
   max_capacity       = var.max_capacity
 }
+
 resource "aws_appautoscaling_policy" "submission_cpu" {
   count              = var.submission_autoscale_enabled ? 1 : 0
   name               = "submission_cpu"
