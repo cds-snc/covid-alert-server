@@ -350,7 +350,7 @@ resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
 
   alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
 
-  dimensions {
+   dimensions = {
     HealthCheckId = aws_route53_health_check.covidshield_key_retrieval_healthcheck.id
   }
 }
@@ -370,7 +370,7 @@ resource "aws_cloudwatch_metric_alarm" "route53_submission_health_check" {
 
   alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
 
-  dimensions {
+  dimensions = {
     HealthCheckId = aws_route53_health_check.covidshield_key_submission_healthcheck.id
   }
 }
