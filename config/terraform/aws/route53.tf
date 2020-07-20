@@ -27,7 +27,7 @@ resource "aws_route53_record" "covidshield_key_retrieval" {
 }
 
 resource "aws_route53_health_check" "covidshield_key_retrieval_healthcheck" {
-  fqdn              = "retrieval.${aws_route53_zone.covidshield.name}"
+  fqdn              = "retrieval.${var.route53_zone_name}"
   port              = 443
   type              = "HTTPS"
   resource_path     = "/services/ping"
@@ -56,7 +56,7 @@ resource "aws_route53_record" "covidshield_key_submission" {
 }
 
 resource "aws_route53_health_check" "covidshield_key_submission_healthcheck" {
-  fqdn              = "submission.${aws_route53_zone.covidshield.name}"
+  fqdn              = "submission.${var.route53_zone_name}"
   port              = 443
   type              = "HTTPS"
   resource_path     = "/services/ping"
