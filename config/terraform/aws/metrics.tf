@@ -53,7 +53,7 @@ resource "aws_cloudwatch_metric_alarm" "UnclaimedOneTimeCodeTotalWarn" {
   alarm_name          = "UnclaimedOneTimeCodeTotalWarn"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "1"
-  metric_name         = aws_cloudwatch_log_metric_filter.UnclaimedOneTimeCodeTotal.name
+  metric_name         = "UnclaimedOneTimeCodeTotal"
   namespace           = "CovidShield"
   period              = "60"
   statistic           = "Sum"
@@ -67,7 +67,7 @@ resource "aws_cloudwatch_metric_alarm" "UnclaimedOneTimeCodeTotalCritical" {
   alarm_name          = "UnclaimedOneTimeCodeTotalCritical"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "1"
-  metric_name         = aws_cloudwatch_log_metric_filter.UnclaimedOneTimeCodeTotal.name
+  metric_name         = "UnclaimedOneTimeCodeTotal"
   namespace           = "CovidShield"
   period              = "60"
   statistic           = "Sum"
@@ -95,7 +95,7 @@ resource "aws_cloudwatch_metric_alarm" "ClaimedOneTimeCodeTotalWarn" {
   alarm_name          = "ClaimedOneTimeCodeTotalWarn"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "1"
-  metric_name         = aws_cloudwatch_log_metric_filter.ClaimedOneTimeCodeTotal.name
+  metric_name         = "ClaimedOneTimeCodeTotal"
   namespace           = "CovidShield"
   period              = "60"
   statistic           = "Sum"
@@ -109,7 +109,7 @@ resource "aws_cloudwatch_metric_alarm" "ClaimedOneTimeCodeTotalCritical" {
   alarm_name          = "ClaimedOneTimeCodeTotalCritical"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "1"
-  metric_name         = aws_cloudwatch_log_metric_filter.ClaimedOneTimeCodeTotal.name
+  metric_name         = "ClaimedOneTimeCodeTotal"
   namespace           = "CovidShield"
   period              = "60"
   statistic           = "Sum"
@@ -137,7 +137,7 @@ resource "aws_cloudwatch_metric_alarm" "DiagnosisKeyTotalWarn" {
   alarm_name          = "DiagnosisKeyTotalWarn"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "1"
-  metric_name         = aws_cloudwatch_log_metric_filter.DiagnosisKeyTotal.name
+  metric_name         = "DiagnosisKeyTotal"
   namespace           = "CovidShield"
   period              = "60"
   statistic           = "Sum"
@@ -151,7 +151,7 @@ resource "aws_cloudwatch_metric_alarm" "DiagnosisKeyTotalCritical" {
   alarm_name          = "DiagnosisKeyTotalCritical"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "1"
-  metric_name         = aws_cloudwatch_log_metric_filter.DiagnosisKeyTotal.name
+  metric_name         = "DiagnosisKeyTotal"
   namespace           = "CovidShield"
   period              = "60"
   statistic           = "Sum"
