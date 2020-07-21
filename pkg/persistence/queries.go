@@ -141,60 +141,48 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, erro
 	return serverPub, nil
 }
 
-func persistEncryptionKey(db *sql.DB, region, originator, hashID string, pub *[32]byte, priv *[32]byte, oneTimeCode string) error {
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-
-	if len(hashID) > 0 {
-		var one_time_code sql.NullString
-		row := tx.QueryRow("SELECT one_time_code FROM encryption_keys WHERE hash_id = ? FOR UPDATE", hashID)
-
-		switch err := row.Scan(&one_time_code); {
-		case err == sql.ErrNoRows: // no hashID found
-		case err != nil:
-			log(nil, err).Error(err.Error())
-			if err := tx.Rollback(); err != nil {
-				return err
-			}
-			return err
-		case !one_time_code.Valid: // used hashID found
-			if err := tx.Rollback(); err != nil {
-				return err
-			}
-			return errors.New("used hashID found")
-		case one_time_code.Valid: // un-used hashID found
-			_, err = tx.Exec(`DELETE FROM encryption_keys WHERE hash_id = ? AND one_time_code IS NOT NULL`, hashID)
-			if err != nil {
-				if err := tx.Rollback(); err != nil {
-					return err
-				}
-				return err
-			}
-		default:
-		}
-	}
-	
-	_, err = tx.Exec(
+func persistEncryptionKey(db *sql.DB, region, originator string, pub *[32]byte, priv *[32]byte, oneTimeCode string) error {
+	_, err := db.Exec(
 		`INSERT INTO encryption_keys
+			(region, originator, server_private_key, server_public_key, one_time_code, remaining_keys)
+			VALUES (?, ?, ?, ?, ?, ?)`,
+		region, originator, priv[:], pub[:], oneTimeCode, config.AppConstants.InitialRemainingKeys,
+	)
+	return err
+}
+
+func persistEncryptionKeyWithHashID(db *sql.DB, region, originator, hashID string, pub *[32]byte, priv *[32]byte, oneTimeCode string) error {
+	result, err := db.Exec(
+		`INSERT IGNORE INTO encryption_keys
 			(region, originator, hash_id, server_private_key, server_public_key, one_time_code, remaining_keys)
 			VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		region, originator, hashID, priv[:], pub[:], oneTimeCode, config.AppConstants.InitialRemainingKeys,
 	)
-	
+	n, err := result.RowsAffected()
 	if err != nil {
-		if err := tx.Rollback(); err != nil {
-			return err
-		}
-		return err
-	}
-	
-	if err = tx.Commit(); err != nil {
 		return err
 	}
 
-	return err
+	if n == 1 {
+		return err
+	}
+
+	var code sql.NullString
+	row := db.QueryRow("SELECT one_time_code FROM encryption_keys WHERE hash_id = ?", hashID)
+	err = row.Scan(&code)
+
+	if err == sql.ErrNoRows { // Duplicate OTC issue, not HashID
+		return errors.New("Duplicate entry")
+	}
+
+	if code.Valid { // unused hashID found
+		_, err = db.Exec(`DELETE FROM encryption_keys WHERE hash_id = ? AND one_time_code IS NOT NULL`, hashID)
+		if err != nil {
+			return err
+		}
+		return errors.New("regenerate OTC for hashID")
+	}
+	return errors.New("used hashID found")
 }
 
 func privForPub(db *sql.DB, pub []byte) *sql.Row {
