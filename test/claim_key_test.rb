@@ -69,6 +69,32 @@ class ClaimKeyTest < MiniTest::Test
       assert_equal(8, kcr.tries_remaining)
     end
 
+    # Try code with spaces
+    code_with_spaces = new_valid_one_time_code.insert(3, " ").insert(6, " ")
+    kcq = Covidshield::KeyClaimRequest.new(
+      one_time_code: code_with_spaces,
+      app_public_key: "00001111222233334444555566667706"
+    )
+    resp = @sub_conn.post('/claim-key', kcq.to_proto)
+    assert_response(resp, 200, 'application/x-protobuf')
+    kcr = Covidshield::KeyClaimResponse.decode(resp.body)
+    assert_equal(:NONE, kcr.error)
+    assert_equal(32, kcr.server_public_key.each_byte.size)
+    assert_equal(8, kcr.tries_remaining)
+
+    # Try code with dashes
+    code_with_dashes = new_valid_one_time_code.insert(3, "-").insert(6, "-")
+    kcq = Covidshield::KeyClaimRequest.new(
+      one_time_code: code_with_dashes,
+      app_public_key: "00001111222233334444555566667707"
+    )
+    resp = @sub_conn.post('/claim-key', kcq.to_proto)
+    assert_response(resp, 200, 'application/x-protobuf')
+    kcr = Covidshield::KeyClaimResponse.decode(resp.body)
+    assert_equal(:NONE, kcr.error)
+    assert_equal(32, kcr.server_public_key.each_byte.size)
+    assert_equal(8, kcr.tries_remaining)
+
     # app_public_key already exists
     kcq = Covidshield::KeyClaimRequest.new(
       one_time_code: new_valid_one_time_code,
