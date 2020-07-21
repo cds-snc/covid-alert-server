@@ -247,13 +247,13 @@ func (_m *Conn) DeleteOldFailedClaimKeyAttempts() (int64, error) {
 	return r0, r1
 }
 
-// FetchKeysForDateNumber provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Conn) FetchKeysForDateNumber(_a0 string, _a1 uint32, _a2 int32) ([]*covidshield.TemporaryExposureKey, error) {
-	ret := _m.Called(_a0, _a1, _a2)
+// FetchKeysForHours provides a mock function with given fields: _a0, _a1, _a2, _a3
+func (_m *Conn) FetchKeysForHours(_a0 string, _a1 uint32, _a2 uint32, _a3 int32) ([]*covidshield.TemporaryExposureKey, error) {
+	ret := _m.Called(_a0, _a1, _a2, _a3)
 
 	var r0 []*covidshield.TemporaryExposureKey
-	if rf, ok := ret.Get(0).(func(string, uint32, int32) []*covidshield.TemporaryExposureKey); ok {
-		r0 = rf(_a0, _a1, _a2)
+	if rf, ok := ret.Get(0).(func(string, uint32, uint32, int32) []*covidshield.TemporaryExposureKey); ok {
+		r0 = rf(_a0, _a1, _a2, _a3)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*covidshield.TemporaryExposureKey)
@@ -261,8 +261,8 @@ func (_m *Conn) FetchKeysForDateNumber(_a0 string, _a1 uint32, _a2 int32) ([]*co
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, uint32, int32) error); ok {
-		r1 = rf(_a0, _a1, _a2)
+	if rf, ok := ret.Get(1).(func(string, uint32, uint32, int32) error); ok {
+		r1 = rf(_a0, _a1, _a2, _a3)
 	} else {
 		r1 = ret.Error(1)
 	}

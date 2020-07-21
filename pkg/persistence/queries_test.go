@@ -560,7 +560,7 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	assert.Equal(t, expectedErr, receivedErr, "Expected error if prepare to insert fails")
 
 	// Rolls back if it fails to execute insertion of keys
-	key := randomKey()
+	key := randomTestKey()
 	keys = []*pb.TemporaryExposureKey{key}
 
 	hourOfSubmission := timemath.HourNumber(time.Now())
@@ -593,8 +593,8 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	assert.Equal(t, expectedErr, receivedErr, "Expected error if execute insert fails")
 
 	// Rolls back if more keys are inserted that are allowed
-	keyOne := randomKey()
-	keyTwo := randomKey()
+	keyOne := randomTestKey()
+	keyTwo := randomTestKey()
 	keys = []*pb.TemporaryExposureKey{keyOne, keyTwo}
 
 	hourOfSubmission = timemath.HourNumber(time.Now())
@@ -634,8 +634,8 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	assert.Equal(t, expectedErr, receivedErr, "Expected error more keys than allowed are inserted")
 
 	// Rolls back if final update fails
-	keyOne = randomKey()
-	keyTwo = randomKey()
+	keyOne = randomTestKey()
+	keyTwo = randomTestKey()
 	keys = []*pb.TemporaryExposureKey{keyOne, keyTwo}
 
 	hourOfSubmission = timemath.HourNumber(time.Now())
@@ -686,8 +686,8 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	assert.Equal(t, expectedErr, receivedErr, "Expected error more keys than allowed are inserted")
 
 	// Commits and logs how many keys were inserted
-	keyOne = randomKey()
-	keyTwo = randomKey()
+	keyOne = randomTestKey()
+	keyTwo = randomTestKey()
 	keys = []*pb.TemporaryExposureKey{keyOne, keyTwo}
 
 	hourOfSubmission = timemath.HourNumber(time.Now())
@@ -1017,7 +1017,7 @@ func TestCountUnclaimedOneTimeCodes(t *testing.T) {
 	assert.Nil(t, receivedErr, "Expected nil if query ran")
 }
 
-func randomKey() *pb.TemporaryExposureKey {
+func randomTestKey() *pb.TemporaryExposureKey {
 	token := make([]byte, 16)
 	rand.Read(token)
 	transmissionRiskLevel := int32(2)
