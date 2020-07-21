@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/CovidShield/server/pkg/config"
@@ -152,37 +153,31 @@ func persistEncryptionKey(db *sql.DB, region, originator string, pub *[32]byte, 
 }
 
 func persistEncryptionKeyWithHashID(db *sql.DB, region, originator, hashID string, pub *[32]byte, priv *[32]byte, oneTimeCode string) error {
-	result, err := db.Exec(
-		`INSERT IGNORE INTO encryption_keys
+	_, err := db.Exec(
+		`INSERT INTO encryption_keys
 			(region, originator, hash_id, server_private_key, server_public_key, one_time_code, remaining_keys)
 			VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		region, originator, hashID, priv[:], pub[:], oneTimeCode, config.AppConstants.InitialRemainingKeys,
 	)
-	n, err := result.RowsAffected()
-	if err != nil {
+	if err == nil {
 		return err
-	}
-
-	if n == 1 {
+	} else if strings.Contains(err.Error(), "for key 'one_time_code") { // OTC duplicate, re-run
 		return err
-	}
+	} else if strings.Contains(err.Error(), "for key 'hash_id") { // HashID duplicate
+		var oneTimeCode sql.NullString
+		row := db.QueryRow("SELECT one_time_code FROM encryption_keys WHERE hash_id = ?", hashID)
+		row.Scan(&oneTimeCode)
 
-	var code sql.NullString
-	row := db.QueryRow("SELECT one_time_code FROM encryption_keys WHERE hash_id = ?", hashID)
-	err = row.Scan(&code)
-
-	if err == sql.ErrNoRows { // Duplicate OTC issue, not HashID
-		return errors.New("Duplicate entry")
-	}
-
-	if code.Valid { // unused hashID found
-		_, err = db.Exec(`DELETE FROM encryption_keys WHERE hash_id = ? AND one_time_code IS NOT NULL`, hashID)
-		if err != nil {
-			return err
+		if oneTimeCode.Valid { // unused hashID found
+			_, err = db.Exec(`DELETE FROM encryption_keys WHERE hash_id = ? AND one_time_code IS NOT NULL`, hashID)
+			if err != nil {
+				return err
+			}
+			return errors.New("regenerate OTC for hashID")
 		}
-		return errors.New("regenerate OTC for hashID")
+		return errors.New("used hashID found")
 	}
-	return errors.New("used hashID found")
+	return err
 }
 
 func privForPub(db *sql.DB, pub []byte) *sql.Row {
