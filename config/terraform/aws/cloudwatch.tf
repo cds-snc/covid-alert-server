@@ -117,6 +117,20 @@ resource "aws_cloudwatch_metric_alarm" "unauthorized_new_one_time_code_requests_
   alarm_actions = [aws_sns_topic.alert_warning.arn]
 }
 
+resource "aws_cloudwatch_metric_alarm" "unauthorized_new_one_time_code_requests_critical" {
+  alarm_name          = "UnauthorizedNewOneTimeCodeRequestsCritical"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = aws_cloudwatch_log_metric_filter.unauthorized_new_one_time_code_requests.name
+  namespace           = "CovidShield"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "100"
+  alarm_description   = "This metric monitors the 401 response rate for /new-key-claim"
+
+  alarm_actions = [aws_sns_topic.alert_critical.arn]
+}
+
 resource "aws_cloudwatch_log_metric_filter" "unauthorized_one_time_code_claim_requests" {
   name           = "UnauthorizedOneTimeCodeClaimRequests"
   pattern        = "statusCode=401 msg=\"http response\" \"path=/claim-key\""
@@ -143,6 +157,20 @@ resource "aws_cloudwatch_metric_alarm" "unauthorized_one_time_code_claim_request
   alarm_actions = [aws_sns_topic.alert_warning.arn]
 }
 
+resource "aws_cloudwatch_metric_alarm" "unauthorized_one_time_code_claim_requests_critical" {
+  alarm_name          = "UnauthorizedOneTimeCodeClaimRequestsCritical"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = aws_cloudwatch_log_metric_filter.unauthorized_one_time_code_claim_requests.name
+  namespace           = "CovidShield"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "100"
+  alarm_description   = "This metric monitors the 401 response rate for /claim-key"
+
+  alarm_actions = [aws_sns_topic.alert_critical.arn]
+}
+
 resource "aws_cloudwatch_log_metric_filter" "unauthorized_upload_requests" {
   name           = "UnauthorizedUploadRequests"
   pattern        = "statusClass=4xx msg=\"http response\" \"path=/upload\""
@@ -167,6 +195,20 @@ resource "aws_cloudwatch_metric_alarm" "unauthorized_upload_requests_warn" {
   alarm_description   = "This metric monitors the 4xx response rate for /upload"
 
   alarm_actions = [aws_sns_topic.alert_warning.arn]
+}
+
+resource "aws_cloudwatch_metric_alarm" "unauthorized_upload_requests_critical" {
+  alarm_name          = "UnauthorizedUploadRequestsCritical"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = aws_cloudwatch_log_metric_filter.unauthorized_upload_requests.name
+  namespace           = "CovidShield"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "100"
+  alarm_description   = "This metric monitors the 4xx response rate for /upload"
+
+  alarm_actions = [aws_sns_topic.alert_critical.arn]
 }
 
 ###
@@ -199,6 +241,20 @@ resource "aws_cloudwatch_metric_alarm" "five_hundred_response_warn" {
   alarm_actions = [aws_sns_topic.alert_warning.arn]
 }
 
+resource "aws_cloudwatch_metric_alarm" "five_hundred_response_critical" {
+  alarm_name          = "500ResponseCritical"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = aws_cloudwatch_log_metric_filter.five_hundred_response.name
+  namespace           = "CovidShield"
+  period              = "60"
+  statistic           = "Sum"
+  threshold           = "10"
+  alarm_description   = "This metric monitors for an 5xx level response"
+
+  alarm_actions = [aws_sns_topic.alert_critical.arn]
+}
+
 resource "aws_cloudwatch_log_metric_filter" "error_logged" {
   name           = "ErrorLogged"
   pattern        = "level=error"
@@ -223,6 +279,20 @@ resource "aws_cloudwatch_metric_alarm" "error_logged_warn" {
   alarm_description   = "This metric monitors for an error level logs"
 
   alarm_actions = [aws_sns_topic.alert_warning.arn]
+}
+
+resource "aws_cloudwatch_metric_alarm" "error_logged_critical" {
+  alarm_name          = "ErrorLoggedCritical"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = aws_cloudwatch_log_metric_filter.error_logged.name
+  namespace           = "CovidShield"
+  period              = "60"
+  statistic           = "Sum"
+  threshold           = "10"
+  alarm_description   = "This metric monitors for an error level logs"
+
+  alarm_actions = [aws_sns_topic.alert_critical.arn]
 }
 
 resource "aws_cloudwatch_log_metric_filter" "fatal_logged" {
