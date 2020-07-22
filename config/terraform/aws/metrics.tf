@@ -56,7 +56,7 @@ resource "aws_cloudwatch_metric_alarm" "UnclaimedOneTimeCodeTotalWarn" {
   metric_name         = "UnclaimedOneTimeCodeTotal"
   namespace           = "CovidShield"
   period              = "60"
-  statistic           = "Sum"
+  statistic           = "Maximum"
   threshold           = "250"
   alarm_description   = "This metric monitors for total unclaimed codes"
 
@@ -70,7 +70,7 @@ resource "aws_cloudwatch_metric_alarm" "UnclaimedOneTimeCodeTotalCritical" {
   metric_name         = "UnclaimedOneTimeCodeTotal"
   namespace           = "CovidShield"
   period              = "60"
-  statistic           = "Sum"
+  statistic           = "Maximum"
   threshold           = "400"
   alarm_description   = "This metric monitors for total unclaimed codes"
 
@@ -98,7 +98,7 @@ resource "aws_cloudwatch_metric_alarm" "ClaimedOneTimeCodeTotalWarn" {
   metric_name         = "ClaimedOneTimeCodeTotal"
   namespace           = "CovidShield"
   period              = "60"
-  statistic           = "Sum"
+  statistic           = "Maximum"
   threshold           = "3000"
   alarm_description   = "This metric monitors for total claimed codes"
 
@@ -112,7 +112,7 @@ resource "aws_cloudwatch_metric_alarm" "ClaimedOneTimeCodeTotalCritical" {
   metric_name         = "ClaimedOneTimeCodeTotal"
   namespace           = "CovidShield"
   period              = "60"
-  statistic           = "Sum"
+  statistic           = "Maximum"
   threshold           = "4500"
   alarm_description   = "This metric monitors for total claimed codes"
 
@@ -140,7 +140,7 @@ resource "aws_cloudwatch_metric_alarm" "DiagnosisKeyTotalWarn" {
   metric_name         = "DiagnosisKeyTotal"
   namespace           = "CovidShield"
   period              = "60"
-  statistic           = "Sum"
+  statistic           = "Maximum"
   threshold           = "9000"
   alarm_description   = "This metric monitors for total diagnosis keys"
 
@@ -154,7 +154,7 @@ resource "aws_cloudwatch_metric_alarm" "DiagnosisKeyTotalCritical" {
   metric_name         = "DiagnosisKeyTotal"
   namespace           = "CovidShield"
   period              = "60"
-  statistic           = "Sum"
+  statistic           = "Maximum"
   threshold           = "13500"
   alarm_description   = "This metric monitors for total diagnosis keys"
 
