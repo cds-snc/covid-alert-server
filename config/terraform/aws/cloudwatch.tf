@@ -290,3 +290,87 @@ resource "aws_cloudwatch_metric_alarm" "ddos_detected_retrieval" {
     ResourceArn = aws_lb.covidshield_key_retrieval.arn
   }
 }
+
+resource "aws_cloudwatch_metric_alarm" "ddos_detected_cdn" {
+  provider = aws.us-east-1
+
+  alarm_name          = "DDoSDetectedCDN"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "DDoSDetected"
+  namespace           = "AWS/DDoSProtection"
+  period              = "60"
+  statistic           = "Sum"
+  threshold           = "1"
+  alarm_description   = "This metric monitors for DDoS detected on retrieval CDN"
+
+  alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
+
+  dimensions = {
+    ResourceArn = aws_cloudfront_distribution.key_retrieval_distribution.arn
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "ddos_detected_route53" {
+  provider = aws.us-east-1
+
+  alarm_name          = "DDoSDetectedRoute53"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "DDoSDetected"
+  namespace           = "AWS/DDoSProtection"
+  period              = "60"
+  statistic           = "Sum"
+  threshold           = "1"
+  alarm_description   = "This metric monitors for DDoS detected on route 53"
+
+  alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
+
+  dimensions = {
+    ResourceArn = "arn:aws:route53:::hostedzone/${aws_route53_zone.covidshield.zone_id}"
+  }
+}
+
+###
+# AWS Route53 Metrics - Health check
+###
+
+resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
+
+  alarm_name          = "Route53RetrievalHealthCheck"
+  alarm_description   = "Check that the Retrieval server is in alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  metric_name         = "StatusCheckFailed"
+  namespace           = "AWS/Route53"
+  period              = "60"
+  evaluation_periods  = "2"
+  statistic           = "Maximum"
+  threshold           = "1"
+  treat_missing_data  = "breaching"
+
+  alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
+
+  dimensions = {
+    HealthCheckId = aws_route53_health_check.covidshield_key_retrieval_healthcheck.id
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "route53_submission_health_check" {
+
+  alarm_name          = "Route53SubmissionHealthCheck"
+  alarm_description   = "Check that the Submission server is in alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  metric_name         = "StatusCheckFailed"
+  namespace           = "AWS/Route53"
+  period              = "60"
+  evaluation_periods  = "2"
+  statistic           = "Maximum"
+  threshold           = "1"
+  treat_missing_data  = "breaching"
+
+  alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
+
+  dimensions = {
+    HealthCheckId = aws_route53_health_check.covidshield_key_submission_healthcheck.id
+  }
+}
