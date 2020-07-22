@@ -158,11 +158,17 @@ func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 			return "", err
 		}
 
-		err = persistEncryptionKey(c.db, region, originator, hashID, pub, priv, oneTimeCode)
+		if len(hashID) == 128 {
+			err = persistEncryptionKeyWithHashID(c.db, region, originator, hashID, pub, priv, oneTimeCode)
+		} else {
+			err = persistEncryptionKey(c.db, region, originator, pub, priv, oneTimeCode)
+		}
 		if err == nil {
 			return oneTimeCode, nil
 		} else if strings.Contains(err.Error(), "used hashID found") {
 			return "", ErrHashIDClaimed
+		} else if strings.Contains(err.Error(), "regenerate OTC for hashID") {
+			log(nil, err).Warn("regenerating OTC for hashID")
 		} else if strings.Contains(err.Error(), "Duplicate entry") {
 			log(nil, err).Warn("duplicate one_time_code")
 		} else {
