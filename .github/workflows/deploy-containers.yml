@@ -96,6 +96,14 @@ jobs:
           checkName: build-n-push
           ref: ${{ github.sha }}
 
+      - name: Wait for terraform apply
+        uses: fountainhead/action-wait-for-check@v1.0.0
+        id: wait-for-build
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: terraform-apply
+          ref: ${{ github.sha }}
+
       - name: Checkout
         if: steps.wait-for-build.outputs.conclusion == 'success'
         uses: actions/checkout@v2
