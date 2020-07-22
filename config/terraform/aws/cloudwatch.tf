@@ -410,12 +410,12 @@ resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
 
   alarm_name          = "Route53RetrievalHealthCheck"
   alarm_description   = "Check that the Retrieval server is in alarm"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  metric_name         = "StatusCheckFailed"
+  comparison_operator = "LessThanThreshold"
+  metric_name         = "HealthCheckStatus"
   namespace           = "AWS/Route53"
   period              = "60"
   evaluation_periods  = "2"
-  statistic           = "Maximum"
+  statistic           = "Average"
   threshold           = "1"
   treat_missing_data  = "breaching"
 
@@ -431,12 +431,12 @@ resource "aws_cloudwatch_metric_alarm" "route53_submission_health_check" {
 
   alarm_name          = "Route53SubmissionHealthCheck"
   alarm_description   = "Check that the Submission server is in alarm"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  metric_name         = "StatusCheckFailed"
+  comparison_operator = "LessThanThreshold"
+  metric_name         = "HealthCheckStatus"
   namespace           = "AWS/Route53"
   period              = "60"
   evaluation_periods  = "2"
-  statistic           = "Maximum"
+  statistic           = "Average"
   threshold           = "1"
   treat_missing_data  = "breaching"
 
