@@ -60,7 +60,6 @@ type conn struct {
 var log = logger.New("db")
 
 const (
-	// TODO: adjust these to deployment and source them from env
 	maxConnLifetime = 5 * time.Minute
 	maxOpenConns    = 100
 	maxIdleConns    = 10
