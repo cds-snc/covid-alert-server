@@ -7,6 +7,12 @@ resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
     domain_name = aws_lb.covidshield_key_retrieval.dns_name
     origin_id   = aws_lb.covidshield_key_retrieval.name
 
+
+    custom_header {
+      name  = "covidshield"
+      value = var.cloudfront_custom_header
+    }
+
     custom_origin_config {
       http_port              = 80
       https_port             = 443
@@ -14,6 +20,7 @@ resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
       origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
+
 
   enabled         = true
   is_ipv6_enabled = true

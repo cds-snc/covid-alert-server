@@ -51,7 +51,7 @@ func setDefaults() {
 	viper.SetDefault("defaultRetrievalServerPort", 8001)
 	viper.SetDefault("defaultServerPort", 8010)
 	viper.SetDefault("workerExpirationInterval", 30)
-	viper.SetDefault("maxConsecutiveClaimKeyFailures", 8)
+	viper.SetDefault("maxConsecutiveClaimKeyFailures", 50)
 	viper.SetDefault("claimKeyBanDuration", 1)
 	viper.SetDefault("maxDiagnosisKeyRetentionDays", 15)
 	viper.SetDefault("initialRemainingKeys", 28)

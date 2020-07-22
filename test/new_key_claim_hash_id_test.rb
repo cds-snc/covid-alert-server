@@ -6,6 +6,8 @@ class NewKeyClaimhashIDTest < MiniTest::Test
   include(Helper::Include)
 
   def test_new_key_claim
+    config = get_app_config()
+    maxConsecutiveClaimKeyFailures = config["maxConsecutiveClaimKeyFailures"]
     
     resp = @sub_conn.post do |req|
       req.url('/new-key-claim/abcd')
@@ -46,7 +48,7 @@ class NewKeyClaimhashIDTest < MiniTest::Test
     kcr = Covidshield::KeyClaimResponse.decode(resp.body)
     assert_equal(:NONE, kcr.error)
     assert_equal(32, kcr.server_public_key.each_byte.size)
-    assert_equal(8, kcr.tries_remaining)
+    assert_equal(maxConsecutiveClaimKeyFailures, kcr.tries_remaining)
 
     resp = @sub_conn.post do |req|
       req.url("/new-key-claim/#{hash_id}")
