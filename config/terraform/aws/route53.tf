@@ -26,6 +26,19 @@ resource "aws_route53_record" "covidshield_key_retrieval" {
   }
 }
 
+resource "aws_route53_health_check" "covidshield_key_retrieval_healthcheck" {
+  fqdn              = "retrieval.${var.route53_zone_name}"
+  port              = 443
+  type              = "HTTPS"
+  resource_path     = "/services/ping"
+  failure_threshold = "3"
+  request_interval  = "30"
+
+  tags = {
+    (var.billing_tag_key) = var.billing_tag_value
+  }
+}
+
 ###
 # Route53 Record - Key Submission
 ###
@@ -39,5 +52,18 @@ resource "aws_route53_record" "covidshield_key_submission" {
     name                   = aws_lb.covidshield_key_submission.dns_name
     zone_id                = aws_lb.covidshield_key_submission.zone_id
     evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_health_check" "covidshield_key_submission_healthcheck" {
+  fqdn              = "submission.${var.route53_zone_name}"
+  port              = 443
+  type              = "HTTPS"
+  resource_path     = "/services/ping"
+  failure_threshold = "3"
+  request_interval  = "30"
+
+  tags = {
+    (var.billing_tag_key) = var.billing_tag_value
   }
 }

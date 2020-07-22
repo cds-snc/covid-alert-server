@@ -49,6 +49,34 @@ resource "aws_cloudwatch_log_metric_filter" "UnclaimedOneTimeCodeTotal" {
   }
 }
 
+resource "aws_cloudwatch_metric_alarm" "UnclaimedOneTimeCodeTotalWarn" {
+  alarm_name          = "UnclaimedOneTimeCodeTotalWarn"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "UnclaimedOneTimeCodeTotal"
+  namespace           = "CovidShield"
+  period              = "60"
+  statistic           = "Maximum"
+  threshold           = "250"
+  alarm_description   = "This metric monitors for total unclaimed codes"
+
+  alarm_actions = [aws_sns_topic.alert_warning.arn]
+}
+
+resource "aws_cloudwatch_metric_alarm" "UnclaimedOneTimeCodeTotalCritical" {
+  alarm_name          = "UnclaimedOneTimeCodeTotalCritical"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "UnclaimedOneTimeCodeTotal"
+  namespace           = "CovidShield"
+  period              = "60"
+  statistic           = "Maximum"
+  threshold           = "400"
+  alarm_description   = "This metric monitors for total unclaimed codes"
+
+  alarm_actions = [aws_sns_topic.alert_critical.arn]
+}
+
 resource "aws_cloudwatch_log_metric_filter" "ClaimedOneTimeCodeTotal" {
   count = 8
 
@@ -63,6 +91,34 @@ resource "aws_cloudwatch_log_metric_filter" "ClaimedOneTimeCodeTotal" {
   }
 }
 
+resource "aws_cloudwatch_metric_alarm" "ClaimedOneTimeCodeTotalWarn" {
+  alarm_name          = "ClaimedOneTimeCodeTotalWarn"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "ClaimedOneTimeCodeTotal"
+  namespace           = "CovidShield"
+  period              = "60"
+  statistic           = "Maximum"
+  threshold           = "3000"
+  alarm_description   = "This metric monitors for total claimed codes"
+
+  alarm_actions = [aws_sns_topic.alert_warning.arn]
+}
+
+resource "aws_cloudwatch_metric_alarm" "ClaimedOneTimeCodeTotalCritical" {
+  alarm_name          = "ClaimedOneTimeCodeTotalCritical"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "ClaimedOneTimeCodeTotal"
+  namespace           = "CovidShield"
+  period              = "60"
+  statistic           = "Maximum"
+  threshold           = "4500"
+  alarm_description   = "This metric monitors for total claimed codes"
+
+  alarm_actions = [aws_sns_topic.alert_critical.arn]
+}
+
 resource "aws_cloudwatch_log_metric_filter" "DiagnosisKeyTotal" {
   count = 8
 
@@ -75,4 +131,32 @@ resource "aws_cloudwatch_log_metric_filter" "DiagnosisKeyTotal" {
     namespace = "CovidShield"
     value     = "$.updates[${count.index}].sum"
   }
+}
+
+resource "aws_cloudwatch_metric_alarm" "DiagnosisKeyTotalWarn" {
+  alarm_name          = "DiagnosisKeyTotalWarn"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "DiagnosisKeyTotal"
+  namespace           = "CovidShield"
+  period              = "60"
+  statistic           = "Maximum"
+  threshold           = "9000"
+  alarm_description   = "This metric monitors for total diagnosis keys"
+
+  alarm_actions = [aws_sns_topic.alert_warning.arn]
+}
+
+resource "aws_cloudwatch_metric_alarm" "DiagnosisKeyTotalCritical" {
+  alarm_name          = "DiagnosisKeyTotalCritical"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "DiagnosisKeyTotal"
+  namespace           = "CovidShield"
+  period              = "60"
+  statistic           = "Maximum"
+  threshold           = "13500"
+  alarm_description   = "This metric monitors for total diagnosis keys"
+
+  alarm_actions = [aws_sns_topic.alert_critical.arn]
 }
