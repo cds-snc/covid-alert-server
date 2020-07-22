@@ -394,7 +394,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_detected_route53" {
   threshold           = "1"
   alarm_description   = "This metric monitors for DDoS detected on route 53"
 
-  alarm_actions = [aws_sns_topic.alert_warning.arn_us_east, aws_sns_topic.alert_critical_us_east.arn]
+  alarm_actions = [aws_sns_topic.alert_warning_us_east.arn, aws_sns_topic.alert_critical_us_east.arn]
 
   dimensions = {
     ResourceArn = "arn:aws:route53:::hostedzone/${aws_route53_zone.covidshield.zone_id}"
