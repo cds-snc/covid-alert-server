@@ -83,7 +83,7 @@ class ClaimKeyTest < MiniTest::Test
     kcr = Covidshield::KeyClaimResponse.decode(resp.body)
     assert_equal(:NONE, kcr.error)
     assert_equal(32, kcr.server_public_key.each_byte.size)
-    assert_equal(8, kcr.tries_remaining)
+    assert_equal(maxConsecutiveClaimKeyFailures, kcr.tries_remaining)
 
     # Try code with dashes
     code_with_dashes = new_valid_one_time_code.insert(3, "-").insert(6, "-")
@@ -96,7 +96,7 @@ class ClaimKeyTest < MiniTest::Test
     kcr = Covidshield::KeyClaimResponse.decode(resp.body)
     assert_equal(:NONE, kcr.error)
     assert_equal(32, kcr.server_public_key.each_byte.size)
-    assert_equal(8, kcr.tries_remaining)
+    assert_equal(maxConsecutiveClaimKeyFailures, kcr.tries_remaining)
 
     # app_public_key already exists
     kcq = Covidshield::KeyClaimRequest.new(
