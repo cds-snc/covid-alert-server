@@ -7,6 +7,12 @@ resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
     domain_name = aws_lb.covidshield_key_retrieval.dns_name
     origin_id   = aws_lb.covidshield_key_retrieval.name
 
+
+    custom_header {
+      name  = "covidshield"
+      value = var.cloudfront_custom_header
+    }
+
     custom_origin_config {
       http_port              = 80
       https_port             = 443
@@ -15,8 +21,10 @@ resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
     }
   }
 
+
   enabled         = true
   is_ipv6_enabled = true
+  web_acl_id      = aws_wafv2_web_acl.key_retrieval_cdn.arn
 
   aliases = ["retrieval.${var.route53_zone_name}"]
 
@@ -40,6 +48,8 @@ resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
     max_ttl                = 7200
     compress               = true
   }
+
+  price_class = "PriceClass_100"
 
   restrictions {
     geo_restriction {

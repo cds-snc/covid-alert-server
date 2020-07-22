@@ -51,12 +51,15 @@ aws ecs put-account-setting-default --name taskLongArnFormat --value enabled
 aws ecs put-account-setting-default --name containerInstanceLongArnFormat --value enabled
 ```
 
-All Terraform variables are defined in `config/terraform/aws/variables.tf` & their values are set in `config/terraform/aws/variables.auto.tfvars`. There are **four** secret variables that should be set through the following environment variables as to not commit plain text secrets to version control.
+All Terraform variables are defined in `config/terraform/aws/variables.tf` & their values are set in `config/terraform/aws/variables.auto.tfvars`. There are **seven** secret variables that should be set through the following environment variables as to not commit plain text secrets to version control.
 
 - `TF_VAR_ecs_task_key_retrieval_env_ecdsa_key`
 - `TF_VAR_ecs_task_key_retrieval_env_hmac_key`
 - `TF_VAR_ecs_task_key_submission_env_key_claim_token`
 - `TF_VAR_rds_backend_db_password`
+- `TF_VAR_cloudfront_custom_header`
+- `TF_VAR_environment`
+- `TF_VAR_new_key_claim_allow_list` (use ["0.0.0.0/1", "128.0.0.0/1"] for any)
 
 If you are using Terraform in Github actions the above can be set as Github secrets, and set as environment variables in your YAML file (see `.github/workflows/terraform.yml`).
 

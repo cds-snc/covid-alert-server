@@ -6,6 +6,8 @@ class NewKeyClaimhashIDTest < MiniTest::Test
   include(Helper::Include)
 
   def test_new_key_claim
+    config = get_app_config()
+    maxConsecutiveClaimKeyFailures = config["maxConsecutiveClaimKeyFailures"]
     
     resp = @sub_conn.post do |req|
       req.url('/new-key-claim/abcd')
@@ -24,7 +26,7 @@ class NewKeyClaimhashIDTest < MiniTest::Test
       req.url("/new-key-claim/#{hash_id}")
       req.headers['Authorization'] = 'Bearer second-very-long-token'
     end
-    assert_response(resp, 200, 'text/plain; charset=utf-8', body: /\A[0-9]{8}\n\z/m)
+    assert_response(resp, 200, 'text/plain; charset=utf-8', body: /\A[A-Z0-9]{10}\n\z/m)
     previous_code = resp.body
 
     # Returns another code if hashID not claimed
@@ -32,7 +34,7 @@ class NewKeyClaimhashIDTest < MiniTest::Test
       req.url("/new-key-claim/#{hash_id}")
       req.headers['Authorization'] = 'Bearer second-very-long-token'
     end
-    assert_response(resp, 200, 'text/plain; charset=utf-8', body: /\A[0-9]{8}\n\z/m)
+    assert_response(resp, 200, 'text/plain; charset=utf-8', body: /\A[A-Z0-9]{10}\n\z/m)
     refute_equal(previous_code, resp.body)
     valid_code = resp.body
 
@@ -45,8 +47,9 @@ class NewKeyClaimhashIDTest < MiniTest::Test
     kcr = Covidshield::KeyClaimResponse.decode(resp.body)
     assert_equal(:NONE, kcr.error)
     assert_equal(32, kcr.server_public_key.each_byte.size)
-    assert_equal(8, kcr.tries_remaining)
+    assert_equal(maxConsecutiveClaimKeyFailures, kcr.tries_remaining)
     assert_response(resp, 200, 'application/x-protobuf')
+
 
     resp = @sub_conn.post do |req|
       req.url("/new-key-claim/#{hash_id}")

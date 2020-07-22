@@ -19,14 +19,14 @@ class NewKeyClaimTest < MiniTest::Test
       req.url('/new-key-claim')
       req.headers['Authorization'] = 'Bearer first-very-long-token'
     end
-    assert_response(resp, 200, 'text/plain; charset=utf-8', body: /\A[0-9]{8}\n\z/m)
+    assert_response(resp, 200, 'text/plain; charset=utf-8', body: /\A[A-Z0-9]{10}\n\z/m)
     assert_equal(['first-very-long-token'], encryption_originators)
 
     resp = @sub_conn.post do |req|
       req.url('/new-key-claim')
       req.headers['Authorization'] = 'Bearer second-very-long-token'
     end
-    assert_response(resp, 200, 'text/plain; charset=utf-8', body: /\A[0-9]{8}\n\z/m)
+    assert_response(resp, 200, 'text/plain; charset=utf-8', body: /\A[A-Z0-9]{10}\n\z/m)
     assert_equal(['first-very-long-token', 'second-very-long-token'], encryption_originators)
 
     %w[get patch delete put].each do |meth|
