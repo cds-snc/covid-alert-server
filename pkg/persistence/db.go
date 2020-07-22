@@ -158,7 +158,6 @@ func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 			return "", err
 		}
 
-		oneTimeCode := fmt.Sprintf("%08d", n)
 		if len(hashID) == 128 {
 			err = persistEncryptionKeyWithHashID(c.db, region, originator, hashID, pub, priv, oneTimeCode)
 		} else {
