@@ -93,6 +93,11 @@ variable "termination_wait_time_in_minutes" {
   default     = 1
 }
 
+variable "cloudfront_custom_header" {
+  type        = string
+  description = "header to authenticate cloudfront to retrieval ALB"
+}
+
 # Task Key Submission
 variable "ecs_key_submission_name" {
   type = string
