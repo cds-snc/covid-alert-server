@@ -374,7 +374,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_detected_cdn" {
   threshold           = "1"
   alarm_description   = "This metric monitors for DDoS detected on retrieval CDN"
 
-  alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
+  alarm_actions = [aws_sns_topic.alert_warning_us_east.arn, aws_sns_topic.alert_critical_us_east.arn]
 
   dimensions = {
     ResourceArn = aws_cloudfront_distribution.key_retrieval_distribution.arn
@@ -394,7 +394,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_detected_route53" {
   threshold           = "1"
   alarm_description   = "This metric monitors for DDoS detected on route 53"
 
-  alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
+  alarm_actions = [aws_sns_topic.alert_warning.arn_us_east, aws_sns_topic.alert_critical_us_east.arn]
 
   dimensions = {
     ResourceArn = "arn:aws:route53:::hostedzone/${aws_route53_zone.covidshield.zone_id}"
@@ -406,6 +406,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_detected_route53" {
 ###
 
 resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
+  provider = aws.us-east-1
 
   alarm_name          = "Route53RetrievalHealthCheck"
   alarm_description   = "Check that the Retrieval server is in alarm"
@@ -418,7 +419,7 @@ resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
   threshold           = "1"
   treat_missing_data  = "breaching"
 
-  alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
+  alarm_actions = [aws_sns_topic.alert_warning_us_east.arn, aws_sns_topic.alert_critical_us_east.arn]
 
   dimensions = {
     HealthCheckId = aws_route53_health_check.covidshield_key_retrieval_healthcheck.id
@@ -426,6 +427,7 @@ resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "route53_submission_health_check" {
+  provider = aws.us-east-1
 
   alarm_name          = "Route53SubmissionHealthCheck"
   alarm_description   = "Check that the Submission server is in alarm"
@@ -438,7 +440,7 @@ resource "aws_cloudwatch_metric_alarm" "route53_submission_health_check" {
   threshold           = "1"
   treat_missing_data  = "breaching"
 
-  alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
+  alarm_actions = [aws_sns_topic.alert_warning_us_east.arn, aws_sns_topic.alert_critical_us_east.arn]
 
   dimensions = {
     HealthCheckId = aws_route53_health_check.covidshield_key_submission_healthcheck.id
