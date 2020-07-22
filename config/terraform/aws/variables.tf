@@ -44,18 +44,22 @@ variable "scale_out_cooldown" {
   type    = number
   default = 60
 }
+
 variable "cpu_scale_metric" {
   type    = number
   default = 60
 }
+
 variable "memory_scale_metric" {
   type    = number
   default = 60
 }
+
 variable "min_capacity" {
   type    = number
   default = 2
 }
+
 variable "max_capacity" {
   type    = number
   default = 10
@@ -87,6 +91,11 @@ variable "termination_wait_time_in_minutes" {
   type        = number
   description = "minutes to wait to terminate old deploy"
   default     = 1
+}
+
+variable "cloudfront_custom_header" {
+  type        = string
+  description = "header to authenticate cloudfront to retrieval ALB"
 }
 
 # Task Key Submission

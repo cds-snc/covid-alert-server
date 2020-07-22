@@ -25,6 +25,7 @@ env:
   TF_VAR_rds_server_db_password: ${{ secrets.TF_VAR_rds_server_db_password }}
   TF_VAR_route53_zone_name: ${{ secrets.TF_VAR_route53_zone_name }}
   TF_VAR_new_key_claim_allow_list: ${{ secrets.TF_VAR_new_key_claim_allow_list }}
+  TF_VAR_cloudfront_custom_header: ${{ secrets.TF_VAR_cloudfront_custom_header }}
   TF_VAR_environment: ${{ secrets.TF_VAR_environment }}
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -52,9 +53,6 @@ jobs:
         run: terraform fmt -check
 
       - name: Terraform Plan
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TF_VAR_github_sha: ${{ github.sha }}
         run: terraform plan
 
   terraform-security-scan:
@@ -93,15 +91,9 @@ jobs:
           -backend-config="region=ca-central-1"
 
     - name: Terraform Plan
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        TF_VAR_github_sha: ${{ github.sha }}
       run: terraform plan -out terraform.tfplan
 
     - name: Terraform Apply
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        TF_VAR_github_sha: ${{ github.sha }}
       run: terraform apply -auto-approve terraform.tfplan
 
     - name: Check For New Deployments

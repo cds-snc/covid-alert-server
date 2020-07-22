@@ -30,7 +30,7 @@ data "template_file" "covidshield_key_retrieval_task" {
   template = file("task-definitions/covidshield_key_retrieval.json")
 
   vars = {
-    image                 = "${local.retrieval_repo}:${var.github_sha}"
+    image                 = "${local.retrieval_repo}"
     awslogs-group         = aws_cloudwatch_log_group.covidshield.name
     awslogs-region        = var.region
     awslogs-stream-prefix = "ecs-${var.ecs_key_retrieval_name}"
@@ -163,7 +163,7 @@ data "template_file" "covidshield_key_submission_task" {
   template = file("task-definitions/covidshield_key_submission.json")
 
   vars = {
-    image                 = "${local.submission_repo}:${var.github_sha}"
+    image                 = "${local.submission_repo}"
     awslogs-group         = aws_cloudwatch_log_group.covidshield.name
     awslogs-region        = var.region
     awslogs-stream-prefix = "ecs-${var.ecs_key_submission_name}"

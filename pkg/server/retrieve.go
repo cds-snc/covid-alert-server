@@ -114,8 +114,6 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) resul
 		return s.fail(log(ctx, nil), w, "request for too-old data", "requested data no longer valid", http.StatusGone)
 	}
 
-	// TODO: Maybe implement multi-pack linked-list scheme depending on what we hear back from G/A
-
 	keys, err := s.db.FetchKeysForHours(region, startHour, endHour, currentRSIN)
 	if err != nil {
 		return s.fail(log(ctx, err), w, "database error", "", http.StatusInternalServerError)

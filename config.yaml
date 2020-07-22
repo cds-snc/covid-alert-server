@@ -2,7 +2,7 @@ defaultSubmissionServerPort: 8000
 defaultRetrievalServerPort: 8001
 defaultServerPort: 8010
 workerExpirationInterval: 30
-maxConsecutiveClaimKeyFailures: 8
+maxConsecutiveClaimKeyFailures: 50
 claimKeyBanDuration: 1
 
 # (Legal requirement: <21). We serve up the last 14. This number 15 includes the current day,
