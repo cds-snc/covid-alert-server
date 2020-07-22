@@ -90,9 +90,19 @@ CREATE TABLE IF NOT EXISTS failed_key_claim_attempts (
 			`UPDATE encryption_keys SET hash_id = NULL WHERE hash_id = ''`,
 			`ALTER TABLE encryption_keys ADD UNIQUE (hash_id)`,
 		},
-	},
-}
+	}, {
+		id: "7",
+		statements: []string{`
+CREATE TABLE IF NOT EXISTS metrics (
+	identifier 	VARCHAR(32) NOT NULL,
+	date 				DATE NOT NULL,
+	count 			SMALLINT UNSIGNED NOT NULL,
 
+	INDEX (identifier),
+	INDEX (date)
+)
+	`}},
+}
 
 // MigrateDatabase creates the database and migrates it into the correct state.
 func MigrateDatabase(url string) error {

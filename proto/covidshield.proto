@@ -96,19 +96,8 @@ message EncryptedUploadResponse {
 }
 
 message EventRequest {
-  // server_public_key is provided by the Diagnosis Server to the App.
-  // This key should be stored locally for 14
-  // days, and used to submit the follow-up events.
-  // app_public_key is generated locally and saved upon successful request
-  // completion.
-  optional bytes server_public_key = 1; // 32 bytes
-  // app_public_key is the public side of a keypair generated once by the
-  // application and linked to the server_public_key. These are linked in the
-  // Diagnosis Server, so that only one app_public_key is authorized to upload
-  // for a given server_public_key. If a new server_public_key is issued to an App
-  // (e.g. months later), a new app_public_key should be generated.
-  optional bytes app_public_key = 2; // 32 bytes
-  // key name for the event
+  optional string safety_net_jwt = 1;
+  optional string device_check_token = 2;
   optional string event = 3;
 }
 
@@ -117,7 +106,7 @@ message EventRequest {
 message EventResponse {
   enum ErrorCode {
     NONE = 0;
-    INVALID_KEYS = 1;
+    INVALID_DATA = 1;
   }
   optional ErrorCode error = 1;
 }
