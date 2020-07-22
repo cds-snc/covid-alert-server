@@ -137,6 +137,11 @@ func (s *keyClaimServlet) claimKey(w http.ResponseWriter, r *http.Request) resul
 	}
 
 	oneTimeCode := req.GetOneTimeCode()
+	
+	// Handle odd app inputs
+	oneTimeCode = strings.ReplaceAll(oneTimeCode, " ", "")
+	oneTimeCode = strings.ReplaceAll(oneTimeCode, "-", "")
+
 	appPublicKey := req.GetAppPublicKey()
 
 	serverPub, err := s.db.ClaimKey(oneTimeCode, appPublicKey)

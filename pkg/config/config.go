@@ -14,7 +14,6 @@ type Constants struct {
 	DefaultRetrievalServerPort         uint32
 	DefaultServerPort                  uint32
 	WorkerExpirationInterval           uint32
-	MaxOneTimeCode                     int64
 	MaxConsecutiveClaimKeyFailures     int
 	ClaimKeyBanDuration                uint32
 	MaxDiagnosisKeyRetentionDays       uint32
@@ -52,7 +51,6 @@ func setDefaults() {
 	viper.SetDefault("defaultRetrievalServerPort", 8001)
 	viper.SetDefault("defaultServerPort", 8010)
 	viper.SetDefault("workerExpirationInterval", 30)
-	viper.SetDefault("maxOneTimeCode", 1e8)
 	viper.SetDefault("maxConsecutiveClaimKeyFailures", 50)
 	viper.SetDefault("claimKeyBanDuration", 1)
 	viper.SetDefault("maxDiagnosisKeyRetentionDays", 15)

@@ -2,7 +2,6 @@ defaultSubmissionServerPort: 8000
 defaultRetrievalServerPort: 8001
 defaultServerPort: 8010
 workerExpirationInterval: 30
-maxOneTimeCode: 1e8
 maxConsecutiveClaimKeyFailures: 50
 claimKeyBanDuration: 1
 

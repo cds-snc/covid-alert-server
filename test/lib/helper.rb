@@ -156,7 +156,7 @@ module Helper
       when String
         assert_equal(body, resp.body)
       when Regexp
-        assert_match(/\A[0-9]{8}\n\z/m, resp.body)
+        assert_match(/\A[A-Z0-9]{10}\n\z/m, resp.body)
       end
     end
 
