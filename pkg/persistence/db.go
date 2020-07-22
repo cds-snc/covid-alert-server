@@ -45,10 +45,13 @@ type Conn interface {
 	DeleteOldDiagnosisKeys() (int64, error)
 	DeleteOldEncryptionKeys() (int64, error)
 	DeleteOldFailedClaimKeyAttempts() (int64, error)
+	DeleteOldNonces() (int64, error)
 
 	CountClaimedOneTimeCodes() (int64, error)
 	CountDiagnosisKeys() (int64, error)
 	CountUnclaimedOneTimeCodes() (int64, error)
+
+	GenerateNonce() ([]byte, error)
 
 	Close() error
 }
@@ -116,6 +119,10 @@ func (c *conn) DeleteOldDiagnosisKeys() (int64, error) {
 
 func (c *conn) DeleteOldEncryptionKeys() (int64, error) {
 	return deleteOldEncryptionKeys(c.db)
+}
+
+func (c *conn) DeleteOldNonces() (int64, error) {
+	return deleteOldNonces(c.db)
 }
 
 // ErrNoRecordWritten indicates that, though we should have been able to write
@@ -291,6 +298,28 @@ func (c *conn) CountDiagnosisKeys() (int64, error) {
 
 func (c *conn) CountUnclaimedOneTimeCodes() (int64, error) {
 	return countUnclaimedOneTimeCodes(c.db)
+}
+
+func (c *conn) GenerateNonce() ([]byte, error) {
+	nonce := make([]byte, 24)
+	for tries := 5; tries > 0; tries-- {
+
+		_, err := rand.Read(nonce)
+
+		if err != nil {
+			return nonce, err
+		}
+
+		err = persistNonce(c.db, nonce)
+		if err == nil {
+			return nonce, nil
+		} else if strings.Contains(err.Error(), "Duplicate entry") {
+			log(nil, err).Warn("duplicate nonce")
+		} else {
+			return nonce, err
+		}
+	}
+	return nonce, errors.New("Nonce could not be generated in five attempts")
 }
 
 func (c *conn) Close() error {

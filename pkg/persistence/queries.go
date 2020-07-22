@@ -39,6 +39,20 @@ func deleteOldEncryptionKeys(db *sql.DB) (int64, error) {
 	return res.RowsAffected()
 }
 
+// Delete nonces older than 5 minutes.
+func deleteOldNonces(db *sql.DB) (int64, error) {
+	res, err := db.Exec(
+		fmt.Sprintf(`
+			DELETE FROM nonces
+			WHERE  (created < (NOW() - INTERVAL %d MINUTE))
+		`, 5),
+	)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
+}
+
 func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, error) {
 	tx, err := db.Begin()
 	if err != nil {
@@ -417,4 +431,14 @@ func countUnclaimedOneTimeCodes(db *sql.DB) (int64, error) {
 	}
 
 	return count, err
+}
+
+func persistNonce(db *sql.DB, nonce []byte) error {
+	_, err := db.Exec(
+		`INSERT INTO nonces
+			(nonce)
+			VALUES (?)`,
+		nonce[:],
+	)
+	return err
 }

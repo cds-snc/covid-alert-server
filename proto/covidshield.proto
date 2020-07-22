@@ -99,6 +99,7 @@ message EventRequest {
   optional string safety_net_jwt = 1;
   optional string device_check_token = 2;
   optional string event = 3;
+  optional string device_type = 4;
 }
 
 // EventResponse is received from the server in response to a

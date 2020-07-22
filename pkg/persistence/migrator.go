@@ -95,13 +95,20 @@ CREATE TABLE IF NOT EXISTS failed_key_claim_attempts (
 		statements: []string{`
 CREATE TABLE IF NOT EXISTS metrics (
 	identifier 	VARCHAR(32) NOT NULL,
+	device_type	VARCHAR(32) NOT NULL,
 	date 				DATE NOT NULL,
 	count 			SMALLINT UNSIGNED NOT NULL,
 
 	INDEX (identifier),
+	INDEX (device_type),
 	INDEX (date)
-)
-	`}},
+)`, `
+CREATE TABLE IF NOT EXISTS nonces (
+	nonce			BINARY(24) NOT NULL UNIQUE,
+	created		TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+	UNIQUE INDEX (nonce)
+)`}},
 }
 
 // MigrateDatabase creates the database and migrates it into the correct state.

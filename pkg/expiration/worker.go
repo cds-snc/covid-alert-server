@@ -64,6 +64,13 @@ func (w *worker) run(ctx context.Context) error {
 		log(ctx, nil).WithField("count", nDeleted).Info("deleted old claim-key attempts")
 	}
 
+	if nDeleted, err := w.db.DeleteOldNonces(); err != nil {
+		log(ctx, err).Info("failed to delete old nonces")
+		lastErr = err
+	} else {
+		log(ctx, nil).WithField("count", nDeleted).Info("deleted old nonces")
+	}
+
 	return lastErr
 }
 
