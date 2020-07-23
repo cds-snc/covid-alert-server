@@ -97,11 +97,12 @@ CREATE TABLE IF NOT EXISTS metrics (
 	identifier 	VARCHAR(32) NOT NULL,
 	device_type	VARCHAR(32) NOT NULL,
 	date 				DATE NOT NULL,
-	count 			SMALLINT UNSIGNED NOT NULL,
+	count 			SMALLINT UNSIGNED NOT NULL DEFAULT 0,
 
 	INDEX (identifier),
 	INDEX (device_type),
 	INDEX (date)
+	UNIQUE KEY identifier_date (identifier,date)
 )`, `
 CREATE TABLE IF NOT EXISTS nonces (
 	nonce			BINARY(24) NOT NULL UNIQUE,

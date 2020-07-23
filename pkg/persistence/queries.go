@@ -442,3 +442,14 @@ func persistNonce(db *sql.DB, nonce []byte) error {
 	)
 	return err
 }
+
+func storeEventMetric(db *sql.DB, identifier string, deviceType string) error {
+	date := time.Now().Format("2006-01-02")
+	_, err := db.Exec(
+		`INSERT INTO metrics
+			(identifier, device_type, date, count)
+			VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE count = count + 1`,
+		identifier, deviceType, date, 1,
+	)
+	return err
+}

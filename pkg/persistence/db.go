@@ -52,6 +52,7 @@ type Conn interface {
 	CountUnclaimedOneTimeCodes() (int64, error)
 
 	GenerateNonce() ([]byte, error)
+	StoreEventMetric(string, string) error
 
 	Close() error
 }
@@ -320,6 +321,10 @@ func (c *conn) GenerateNonce() ([]byte, error) {
 		}
 	}
 	return nonce, errors.New("Nonce could not be generated in five attempts")
+}
+
+func (c *conn) StoreEventMetric(identifier string, deviceType string) error {
+	return storeEventMetric(c.db, identifier, deviceType)
 }
 
 func (c *conn) Close() error {

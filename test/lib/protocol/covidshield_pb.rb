@@ -51,16 +51,17 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       value :NO_KEYS_IN_PAYLOAD, 14
     end
     add_message "covidshield.EventRequest" do
-      optional :server_public_key, :bytes, 1
-      optional :app_public_key, :bytes, 2
+      optional :safety_net_jwt, :string, 1
+      optional :device_check_token, :string, 2
       optional :event, :string, 3
+      optional :device_type, :string, 4
     end
     add_message "covidshield.EventResponse" do
       optional :error, :enum, 1, "covidshield.EventResponse.ErrorCode"
     end
     add_enum "covidshield.EventResponse.ErrorCode" do
       value :NONE, 0
-      value :INVALID_KEYS, 1
+      value :INVALID_DATA, 1
     end
     add_message "covidshield.Upload" do
       optional :timestamp, :message, 1, "google.protobuf.Timestamp"
