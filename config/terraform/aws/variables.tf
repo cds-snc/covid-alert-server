@@ -13,6 +13,10 @@ variable "billing_tag_value" {
   type = string
 }
 
+variable "environment" {
+  type = string
+}
+
 ###
 # AWS Cloud Watch - cloudwatch.tf
 ###
@@ -40,18 +44,22 @@ variable "scale_out_cooldown" {
   type    = number
   default = 60
 }
+
 variable "cpu_scale_metric" {
   type    = number
   default = 60
 }
+
 variable "memory_scale_metric" {
   type    = number
   default = 60
 }
+
 variable "min_capacity" {
   type    = number
   default = 2
 }
+
 variable "max_capacity" {
   type    = number
   default = 10
@@ -83,6 +91,11 @@ variable "termination_wait_time_in_minutes" {
   type        = number
   description = "minutes to wait to terminate old deploy"
   default     = 1
+}
+
+variable "cloudfront_custom_header" {
+  type        = string
+  description = "header to authenticate cloudfront to retrieval ALB"
 }
 
 # Task Key Submission
@@ -152,4 +165,12 @@ variable "rds_server_instance_class" {
 ###
 variable "route53_zone_name" {
   type = string
+}
+
+###
+# AWS WAF - IPs/CIDRs to allow to /new-key-claim
+###
+variable "new_key_claim_allow_list" {
+  type    = list
+  default = ["0.0.0.0/1", "128.0.0.0/1"]
 }

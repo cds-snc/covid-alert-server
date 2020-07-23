@@ -6,14 +6,12 @@ import (
 	"crypto/x509"
 	"database/sql"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"math/big"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/CovidShield/server/pkg/config"
 	pb "github.com/CovidShield/server/pkg/proto/covidshield"
 
 	"github.com/Shopify/goose/logger"
@@ -62,7 +60,6 @@ type conn struct {
 var log = logger.New("db")
 
 const (
-	// TODO: adjust these to deployment and source them from env
 	maxConnLifetime = 5 * time.Minute
 	maxOpenConns    = 100
 	maxIdleConns    = 10
@@ -145,11 +142,8 @@ func (c *conn) ClaimKey(oneTimeCode string, appPublicKey []byte) ([]byte, error)
 // HashID that has already used the code
 var ErrHashIDClaimed = errors.New("HashID claimed")
 
-const maxOneTimeCode = 1e8
-
 func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 	var err error
-	var n *big.Int
 
 	pub, priv, err := box.GenerateKey(rand.Reader)
 	if err != nil {
@@ -157,18 +151,24 @@ func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 	}
 
 	for tries := 5; tries > 0; tries-- {
-		n, err = rand.Int(rand.Reader, big.NewInt(config.AppConstants.MaxOneTimeCode)) // [0,max)
+
+		oneTimeCode, err := generateOneTimeCode()
+
 		if err != nil {
 			return "", err
 		}
 
-		oneTimeCode := fmt.Sprintf("%08d", n)
-
-		err = persistEncryptionKey(c.db, region, originator, hashID, pub, priv, oneTimeCode)
+		if len(hashID) == 128 {
+			err = persistEncryptionKeyWithHashID(c.db, region, originator, hashID, pub, priv, oneTimeCode)
+		} else {
+			err = persistEncryptionKey(c.db, region, originator, pub, priv, oneTimeCode)
+		}
 		if err == nil {
 			return oneTimeCode, nil
 		} else if strings.Contains(err.Error(), "used hashID found") {
 			return "", ErrHashIDClaimed
+		} else if strings.Contains(err.Error(), "regenerate OTC for hashID") {
+			log(nil, err).Warn("regenerating OTC for hashID")
 		} else if strings.Contains(err.Error(), "Duplicate entry") {
 			log(nil, err).Warn("duplicate one_time_code")
 		} else {
@@ -176,6 +176,43 @@ func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 		}
 	}
 	return "", err
+}
+
+// Generate a random one time code in the format AAABBBCCCC where
+// each group is made up of a character set. For each group it first
+// randomizes which charater set to use. Then passes that character
+// set and the desired length in another function to generate the
+// string for that group.
+func generateOneTimeCode() (string, error) {
+	characterSets := [2][]rune{
+		[]rune("AEFHJKLQRSUWXYZ"),
+		[]rune("2456789"),
+	}
+
+	characterSetLength := int64(len(characterSets))
+
+	seg1, err := rand.Int(rand.Reader, big.NewInt(characterSetLength))
+	seg2, err := rand.Int(rand.Reader, big.NewInt(characterSetLength))
+	seg3, err := rand.Int(rand.Reader, big.NewInt(characterSetLength))
+
+	oneTimeCode := genRandom(characterSets[seg1.Int64()], 3) +
+		genRandom(characterSets[seg2.Int64()], 3) +
+		genRandom(characterSets[seg3.Int64()], 4)
+
+	return oneTimeCode, err
+}
+
+// Generates a string of random characters based on a
+// passed list of characters and a desired length. For each
+// position in the desired length, generates a random number
+// between 0 and the length of the character set.
+func genRandom(chars []rune, length int64) string {
+	var b strings.Builder
+	for i := int64(0); i < length; i++ {
+		nBig, _ := rand.Int(rand.Reader, big.NewInt(int64(len(chars))))
+		b.WriteRune(chars[nBig.Int64()])
+	}
+	return b.String()
 }
 
 func (c *conn) PrivForPub(pub []byte) ([]byte, error) {
