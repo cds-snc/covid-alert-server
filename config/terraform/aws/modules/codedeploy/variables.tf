@@ -28,6 +28,11 @@ variable "lb_listener_arns" {
   description = "List of Amazon Resource Names (ARNs) of the load balancer listeners."
 }
 
+variable "test_lb_listener_arns" {
+  type        = list
+  description = "List of Amazon Resource Names (ARNs) of the test load balancer listeners."
+}
+
 variable "aws_lb_target_group_blue_name" {
   type        = string
   description = "Name of the blue target group."
