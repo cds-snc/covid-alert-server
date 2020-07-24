@@ -46,12 +46,6 @@ func TestRegisterRoutingRetrieve(t *testing.T) {
 
 }
 
-func TestFail(t *testing.T) {
-}
-
-func TestRetrieveWrapper(t *testing.T) {
-}
-
 func TestRetrieve(t *testing.T) {
 
 	// Init config
@@ -139,8 +133,6 @@ func TestRetrieve(t *testing.T) {
 	assert.Equal(t, 1, len(hook.Entries))
 	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
 	assert.Equal(t, "method not allowed", hook.LastEntry().Message)
-	hook.Reset()
-
 	hook.Reset()
 
 	// Get all keys for past 14 days
