@@ -25,7 +25,7 @@ resource "aws_wafv2_web_acl" "key_submission" {
     priority = 1
 
     override_action {
-      count {}
+      block {}
     }
 
     statement {
@@ -47,7 +47,7 @@ resource "aws_wafv2_web_acl" "key_submission" {
     priority = 2
 
     override_action {
-      count {}
+      block {}
     }
 
     statement {
@@ -69,7 +69,7 @@ resource "aws_wafv2_web_acl" "key_submission" {
     priority = 3
 
     override_action {
-      count {}
+      block {}
     }
 
     statement {
@@ -91,7 +91,7 @@ resource "aws_wafv2_web_acl" "key_submission" {
     priority = 4
 
     override_action {
-      count {}
+      block {}
     }
 
     statement {
@@ -113,7 +113,7 @@ resource "aws_wafv2_web_acl" "key_submission" {
     priority = 5
 
     override_action {
-      count {}
+      block {}
     }
 
     statement {
