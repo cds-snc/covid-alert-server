@@ -24,10 +24,6 @@ resource "aws_wafv2_web_acl" "key_submission" {
     name     = "AWSManagedRulesAmazonIpReputationList"
     priority = 1
 
-    override_action {
-      block {}
-    }
-
     statement {
       managed_rule_group_statement {
         name        = "AWSManagedRulesAmazonIpReputationList"
@@ -45,10 +41,6 @@ resource "aws_wafv2_web_acl" "key_submission" {
   rule {
     name     = "AWSManagedRulesCommonRuleSet"
     priority = 2
-
-    override_action {
-      block {}
-    }
 
     statement {
       managed_rule_group_statement {
@@ -68,10 +60,6 @@ resource "aws_wafv2_web_acl" "key_submission" {
     name     = "AWSManagedRulesKnownBadInputsRuleSet"
     priority = 3
 
-    override_action {
-      block {}
-    }
-
     statement {
       managed_rule_group_statement {
         name        = "AWSManagedRulesKnownBadInputsRuleSet"
@@ -90,10 +78,6 @@ resource "aws_wafv2_web_acl" "key_submission" {
     name     = "AWSManagedRulesLinuxRuleSet"
     priority = 4
 
-    override_action {
-      block {}
-    }
-
     statement {
       managed_rule_group_statement {
         name        = "AWSManagedRulesLinuxRuleSet"
@@ -111,10 +95,6 @@ resource "aws_wafv2_web_acl" "key_submission" {
   rule {
     name     = "AWSManagedRulesSQLiRuleSet"
     priority = 5
-
-    override_action {
-      block {}
-    }
 
     statement {
       managed_rule_group_statement {
