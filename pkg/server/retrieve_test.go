@@ -120,8 +120,6 @@ func TestRetrieve(t *testing.T) {
 	assert.Equal(t, "invalid auth parameter", hook.LastEntry().Message)
 	hook.Reset()
 
-	hook.Reset()
-
 	// Bad Method
 	req, _ = http.NewRequest("POST", fmt.Sprintf("/retrieve/%s/%s/%s", region, currentDateNumber, goodAuth), nil)
 	resp = httptest.NewRecorder()
