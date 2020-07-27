@@ -296,6 +296,13 @@ resource "aws_security_group" "covidshield_load_balancer" {
     cidr_blocks = ["0.0.0.0/0"] #tfsec:ignore:AWS008
   }
 
+  ingress {
+    protocol    = "tcp"
+    from_port   = 8443
+    to_port     = 8443
+    cidr_blocks = ["0.0.0.0/0"] #tfsec:ignore:AWS008
+  }
+
   egress {
     protocol    = "tcp"
     from_port   = 8001
