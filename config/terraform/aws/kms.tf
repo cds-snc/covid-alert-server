@@ -48,7 +48,7 @@ EOF
 }
 
 resource "aws_kms_key" "cw_us_east" {
-  provider          = aws.us-east-1
+  provider = aws.us-east-1
 
   description         = "CloudWatch Log Group Key"
   enable_key_rotation = true
