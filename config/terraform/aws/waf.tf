@@ -355,23 +355,6 @@ resource "aws_wafv2_web_acl" "key_submission" {
         }
         statement {
           byte_match_statement {
-            positional_constraint = "STARTS_WITH"
-            field_to_match {
-              uri_path {}
-            }
-            search_string = "/exposure-configuration/"
-            text_transformation {
-              priority = 1
-              type     = "COMPRESS_WHITE_SPACE"
-            }
-            text_transformation {
-              priority = 2
-              type     = "LOWERCASE"
-            }
-          }
-        }
-        statement {
-          byte_match_statement {
             positional_constraint = "EXACTLY"
             field_to_match {
               uri_path {}
