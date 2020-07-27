@@ -14,5 +14,10 @@
                 }
             }
         }
-    ]
+    ],
+	"Hooks": [
+		{
+			"BeforeAllowTraffic": "placeholder"
+		}
+	]    
 }
