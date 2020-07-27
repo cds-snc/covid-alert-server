@@ -89,6 +89,32 @@ resource "aws_lb_listener" "covidshield_key_retrieval" {
 
 }
 
+resource "aws_lb_listener" "covidshield_key_retrieval_test" {
+  depends_on = [
+    aws_acm_certificate.covidshield,
+    aws_route53_record.covidshield_certificate_validation,
+    aws_acm_certificate_validation.covidshield,
+  ]
+
+  load_balancer_arn = aws_lb.covidshield_key_retrieval.arn
+  port              = "8443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-FS-1-2-Res-2019-08"
+  certificate_arn   = aws_acm_certificate.covidshield.arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.covidshield_key_retrieval.arn
+  }
+
+  lifecycle {
+    ignore_changes = [
+      default_action # updated by codedeploy
+    ]
+  }
+
+}
+
 ###
 # AWS LB - Key Submission
 ###
@@ -164,6 +190,32 @@ resource "aws_lb_listener" "covidshield_key_submission" {
 
   load_balancer_arn = aws_lb.covidshield_key_submission.arn
   port              = "443"
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-FS-1-2-Res-2019-08"
+  certificate_arn   = aws_acm_certificate.covidshield.arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.covidshield_key_submission.arn
+  }
+
+  lifecycle {
+    ignore_changes = [
+      default_action # updated by codedeploy
+    ]
+  }
+
+}
+
+resource "aws_lb_listener" "covidshield_key_submission_test" {
+  depends_on = [
+    aws_acm_certificate.covidshield,
+    aws_route53_record.covidshield_certificate_validation,
+    aws_acm_certificate_validation.covidshield,
+  ]
+
+  load_balancer_arn = aws_lb.covidshield_key_submission.arn
+  port              = "8443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-FS-1-2-Res-2019-08"
   certificate_arn   = aws_acm_certificate.covidshield.arn

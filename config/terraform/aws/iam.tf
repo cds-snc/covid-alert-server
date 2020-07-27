@@ -126,3 +126,51 @@ resource "aws_iam_role_policy_attachment" "codedeploy" {
   role       = aws_iam_role.codedeploy.name
   policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS"
 }
+
+###
+# AWS IAM - Validate Deployment Lambda
+###
+resource "aws_iam_role" "lambda_validate_deploy" {
+  name = "lambda-validate-deploy"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "lambda_validate_codedeploy" {
+  name = "LambdaValidateCodeDeploy"
+  role = aws_iam_role.lambda_validate_deploy.id
+
+  policy = <<-EOF
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Action": [
+          "codedeploy:PutLifecycleEventHookExecutionStatus"
+        ],
+        "Effect": "Allow",
+        "Resource": "*"
+      }
+    ]
+  }
+  EOF
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_validate_deploy" {
+  role       = aws_iam_role.lambda_validate_deploy.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}

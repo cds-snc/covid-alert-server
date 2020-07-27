@@ -48,6 +48,10 @@ resource "aws_codedeploy_deployment_group" "app" {
       target_group {
         name = var.aws_lb_target_group_green_name
       }
+
+      test_traffic_route {
+        listener_arns = var.test_lb_listener_arns
+      }
     }
   }
 }
