@@ -9,7 +9,6 @@ import (
 
 	persistence "github.com/CovidShield/server/mocks/pkg/persistence"
 	retrieval "github.com/CovidShield/server/mocks/pkg/retrieval"
-	"github.com/CovidShield/server/pkg/config"
 	pb "github.com/CovidShield/server/pkg/proto/covidshield"
 	"github.com/CovidShield/server/pkg/timemath"
 	"github.com/Shopify/goose/logger"
@@ -47,9 +46,6 @@ func TestRegisterRoutingRetrieve(t *testing.T) {
 }
 
 func TestRetrieve(t *testing.T) {
-
-	// Init config
-	config.InitConfig()
 
 	// Capture logs
 	oldLog := log

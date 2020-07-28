@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/CovidShield/server/pkg/config"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
@@ -28,6 +29,8 @@ func GetPaths(router *mux.Router) []string {
 }
 
 func TestNewConfigServlet(t *testing.T) {
+	// Init config
+	config.InitConfig()
 
 	expected := &configServlet{}
 	assert.Equal(t, expected, NewConfigServlet(), "should return a new configServlet struct")
