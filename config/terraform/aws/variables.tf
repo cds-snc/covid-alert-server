@@ -57,7 +57,7 @@ variable "memory_scale_metric" {
 
 variable "min_capacity" {
   type    = number
-  default = 2
+  default = 3
 }
 
 variable "max_capacity" {
