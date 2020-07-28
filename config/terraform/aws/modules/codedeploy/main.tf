@@ -14,6 +14,11 @@ resource "aws_codedeploy_deployment_group" "app" {
     events  = ["DEPLOYMENT_FAILURE"]
   }
 
+  deployment_style {
+    deployment_option = "WITH_TRAFFIC_CONTROL"
+    deployment_type   = "BLUE_GREEN"
+  }
+
   blue_green_deployment_config {
     deployment_ready_option {
       action_on_timeout = var.action_on_timeout
@@ -25,10 +30,7 @@ resource "aws_codedeploy_deployment_group" "app" {
     }
   }
 
-  deployment_style {
-    deployment_option = "WITH_TRAFFIC_CONTROL"
-    deployment_type   = "BLUE_GREEN"
-  }
+
 
   ecs_service {
     cluster_name = var.cluster_name
