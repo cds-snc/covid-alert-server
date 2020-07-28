@@ -226,6 +226,7 @@ module Helper
         end
         break if body == "OK"
       end
+      sleep(0.1) # Allows the server to run the worker
       block.call(conn)
     ensure
       Process.kill('TERM', pid)
@@ -233,6 +234,7 @@ module Helper
         Timeout.timeout(1) { Process.waitpid(pid) }
       rescue Timeout::ERROR
         Process.kill('KILL', pid)
+        sleep(2)
       end
     end
 

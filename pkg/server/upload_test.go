@@ -67,17 +67,19 @@ func TestUpload(t *testing.T) {
 	badServerPub, _, _ := box.GenerateKey(rand.Reader)
 	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
 	goodServerPubBadPriv, _, _ := box.GenerateKey(rand.Reader)
-	goodAppPub, _, _ := box.GenerateKey(rand.Reader)
-	goodAppPubKeyUsed, _, _ := box.GenerateKey(rand.Reader)
-	goodAppPubNoKeysRemmaining, _, _ := box.GenerateKey(rand.Reader)
-	goodAppPubDBError, _, _ := box.GenerateKey(rand.Reader)
+	goodAppPub, goodAppPriv, _ := box.GenerateKey(rand.Reader)
+	goodAppPubKeyUsed, goodAppPrivKeyUsed, _ := box.GenerateKey(rand.Reader)
+	goodAppPubNoKeysRemaining, goodAppPrivNoKeysRemaining, _ := box.GenerateKey(rand.Reader)
+	goodServerPubNoKeysRemaining, goodServerPrivNoKeysRemaining, _ := box.GenerateKey(rand.Reader)
+	goodAppPubDBError, goodAppPrivDBError, _ := box.GenerateKey(rand.Reader)
 
 	db.On("PrivForPub", badServerPub[:]).Return(nil, fmt.Errorf("No priv cert"))
 	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
+	db.On("PrivForPub", goodServerPubNoKeysRemaining[:]).Return(goodServerPrivNoKeysRemaining[:], nil)
 	db.On("PrivForPub", goodServerPubBadPriv[:]).Return(make([]byte, 16), nil)
 
 	db.On("StoreKeys", goodAppPubKeyUsed, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey")).Return(persistenceErrors.ErrKeyConsumed)
-	db.On("StoreKeys", goodAppPubNoKeysRemmaining, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey")).Return(persistenceErrors.ErrTooManyKeys)
+	db.On("StoreKeys", goodAppPubNoKeysRemaining, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey")).Return(persistenceErrors.ErrTooManyKeys)
 	db.On("StoreKeys", goodAppPubDBError, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey")).Return(fmt.Errorf("generic DB error"))
 	db.On("StoreKeys", goodAppPub, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey")).Return(nil)
 
@@ -212,7 +214,7 @@ func TestUpload(t *testing.T) {
 	}
 	upload := buildUpload(0, pbts)
 	marshalledUpload, _ := proto.Marshal(upload)
-	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodAppPub, goodServerPriv)
+	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPriv)
 
 	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPub[:], encrypted))
 	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
@@ -235,7 +237,7 @@ func TestUpload(t *testing.T) {
 	}
 	upload = buildUpload(pb.MaxKeysInUpload+1, pbts)
 	marshalledUpload, _ = proto.Marshal(upload)
-	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodAppPub, goodServerPriv)
+	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPriv)
 
 	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPub[:], encrypted))
 	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
@@ -258,7 +260,7 @@ func TestUpload(t *testing.T) {
 	}
 	upload = buildUpload(pb.MaxKeysInUpload, pbts)
 	marshalledUpload, _ = proto.Marshal(upload)
-	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodAppPub, goodServerPriv)
+	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPriv)
 
 	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPub[:], encrypted))
 	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
@@ -281,7 +283,7 @@ func TestUpload(t *testing.T) {
 	}
 	upload = buildUpload(1, pbts)
 	marshalledUpload, _ = proto.Marshal(upload)
-	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodAppPubKeyUsed, goodServerPriv)
+	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPrivKeyUsed)
 
 	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPubKeyUsed[:], encrypted))
 	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
@@ -304,9 +306,9 @@ func TestUpload(t *testing.T) {
 	}
 	upload = buildUpload(1, pbts)
 	marshalledUpload, _ = proto.Marshal(upload)
-	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodAppPubNoKeysRemmaining, goodServerPriv)
+	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodServerPubNoKeysRemaining, goodAppPrivNoKeysRemaining)
 
-	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPubNoKeysRemmaining[:], encrypted))
+	payload, _ = proto.Marshal(buildUploadRequest(goodServerPubNoKeysRemaining[:], nonce[:], goodAppPubNoKeysRemaining[:], encrypted))
 	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
 	resp = httptest.NewRecorder()
 	router.ServeHTTP(resp, req)
@@ -327,7 +329,7 @@ func TestUpload(t *testing.T) {
 	}
 	upload = buildUpload(1, pbts)
 	marshalledUpload, _ = proto.Marshal(upload)
-	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodAppPubDBError, goodServerPriv)
+	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPrivDBError)
 
 	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPubDBError[:], encrypted))
 	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
@@ -350,7 +352,7 @@ func TestUpload(t *testing.T) {
 	}
 	upload = buildUpload(1, pbts)
 	marshalledUpload, _ = proto.Marshal(upload)
-	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodAppPub, goodServerPriv)
+	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPriv)
 
 	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPub[:], encrypted))
 	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
