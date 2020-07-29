@@ -11,21 +11,25 @@ class RoundtripTest < MiniTest::Test
     current_rsin - 144 * n
   end
 
+  def days_ago_at_noon(n)
+    current_rsin(ts: Date.today.to_time + (12 * 60 * 60)) - 144 * n
+  end
+
   def test_key_roundtrip
     keys = [
-      tek(data: '111111111111111a', rolling_start_interval_number: days_ago(1)),
-      tek(data: '111111111111111b', rolling_start_interval_number: days_ago(2)),
-      tek(data: '111111111111111c', rolling_start_interval_number: days_ago(3)),
-      tek(data: '111111111111111d', rolling_start_interval_number: days_ago(4)),
-      tek(data: '111111111111111e', rolling_start_interval_number: days_ago(5)),
-      tek(data: '111111111111111f', rolling_start_interval_number: days_ago(6)),
-      tek(data: '111111111111111g', rolling_start_interval_number: days_ago(7)),
-      tek(data: '111111111111111h', rolling_start_interval_number: days_ago(8)),
-      tek(data: '111111111111111i', rolling_start_interval_number: days_ago(9)),
-      tek(data: '111111111111111j', rolling_start_interval_number: days_ago(10)),
-      tek(data: '111111111111111k', rolling_start_interval_number: days_ago(11)),
-      tek(data: '111111111111111l', rolling_start_interval_number: days_ago(12)),
-      tek(data: '111111111111111m', rolling_start_interval_number: days_ago(13)),
+      tek(data: '111111111111111a', rolling_start_interval_number: days_ago_at_noon(1)),
+      tek(data: '111111111111111b', rolling_start_interval_number: days_ago_at_noon(2)),
+      tek(data: '111111111111111c', rolling_start_interval_number: days_ago_at_noon(3)),
+      tek(data: '111111111111111d', rolling_start_interval_number: days_ago_at_noon(4)),
+      tek(data: '111111111111111e', rolling_start_interval_number: days_ago_at_noon(5)),
+      tek(data: '111111111111111f', rolling_start_interval_number: days_ago_at_noon(6)),
+      tek(data: '111111111111111g', rolling_start_interval_number: days_ago_at_noon(7)),
+      tek(data: '111111111111111h', rolling_start_interval_number: days_ago_at_noon(8)),
+      tek(data: '111111111111111i', rolling_start_interval_number: days_ago_at_noon(9)),
+      tek(data: '111111111111111j', rolling_start_interval_number: days_ago_at_noon(10)),
+      tek(data: '111111111111111k', rolling_start_interval_number: days_ago_at_noon(11)),
+      tek(data: '111111111111111l', rolling_start_interval_number: days_ago_at_noon(12)),
+      tek(data: '111111111111111m', rolling_start_interval_number: days_ago_at_noon(13)),
     ]
     first_keys = keys.dup
 
@@ -42,7 +46,7 @@ class RoundtripTest < MiniTest::Test
     # Replace one of the 14 keys with a "new" one
     keys.pop
     keys.each { |k| k.rolling_start_interval_number -= 144 }
-    keys.unshift(tek(data: '111111111111111z', rolling_start_interval_number: days_ago(1)))
+    keys.unshift(tek(data: '111111111111111z', rolling_start_interval_number: days_ago_at_noon(1)))
     payload = Covidshield::Upload.new(timestamp: Time.now, keys: keys).to_proto
 
     resp = @sub_conn.post('/upload', encrypted_request(payload, credentials).to_proto)
