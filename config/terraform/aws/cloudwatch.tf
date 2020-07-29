@@ -112,6 +112,7 @@ resource "aws_cloudwatch_metric_alarm" "unauthorized_new_one_time_code_requests_
   period              = "300"
   statistic           = "Sum"
   threshold           = "60"
+  treat_missing_data  = "notBreaching"
   alarm_description   = "This metric monitors the 401 response rate for /new-key-claim"
 
   alarm_actions = [aws_sns_topic.alert_warning.arn]
@@ -126,6 +127,7 @@ resource "aws_cloudwatch_metric_alarm" "unauthorized_new_one_time_code_requests_
   period              = "300"
   statistic           = "Sum"
   threshold           = "100"
+  treat_missing_data  = "notBreaching"
   alarm_description   = "This metric monitors the 401 response rate for /new-key-claim"
 
   alarm_actions = [aws_sns_topic.alert_critical.arn]
@@ -152,6 +154,7 @@ resource "aws_cloudwatch_metric_alarm" "unauthorized_one_time_code_claim_request
   period              = "300"
   statistic           = "Sum"
   threshold           = "60"
+  treat_missing_data  = "notBreaching"
   alarm_description   = "This metric monitors the 401 response rate for /claim-key"
 
   alarm_actions = [aws_sns_topic.alert_warning.arn]
@@ -192,6 +195,7 @@ resource "aws_cloudwatch_metric_alarm" "unauthorized_upload_requests_warn" {
   period              = "300"
   statistic           = "Sum"
   threshold           = "60"
+  treat_missing_data  = "notBreaching"
   alarm_description   = "This metric monitors the 4xx response rate for /upload"
 
   alarm_actions = [aws_sns_topic.alert_warning.arn]
@@ -206,6 +210,7 @@ resource "aws_cloudwatch_metric_alarm" "unauthorized_upload_requests_critical" {
   period              = "300"
   statistic           = "Sum"
   threshold           = "100"
+  treat_missing_data  = "notBreaching"
   alarm_description   = "This metric monitors the 4xx response rate for /upload"
 
   alarm_actions = [aws_sns_topic.alert_critical.arn]
@@ -276,6 +281,7 @@ resource "aws_cloudwatch_metric_alarm" "error_logged_warn" {
   period              = "60"
   statistic           = "Sum"
   threshold           = "1"
+  treat_missing_data  = "notBreaching"
   alarm_description   = "This metric monitors for an error level logs"
 
   alarm_actions = [aws_sns_topic.alert_warning.arn]
@@ -290,6 +296,7 @@ resource "aws_cloudwatch_metric_alarm" "error_logged_critical" {
   period              = "60"
   statistic           = "Sum"
   threshold           = "10"
+  treat_missing_data  = "notBreaching"
   alarm_description   = "This metric monitors for an error level logs"
 
   alarm_actions = [aws_sns_topic.alert_critical.arn]
@@ -316,6 +323,7 @@ resource "aws_cloudwatch_metric_alarm" "fatal_logged_warn" {
   period              = "60"
   statistic           = "Sum"
   threshold           = "1"
+  treat_missing_data  = "notBreaching"
   alarm_description   = "This metric monitors for a fatal level logs"
 
   alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
@@ -334,6 +342,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_detected_submission" {
   period              = "60"
   statistic           = "Sum"
   threshold           = "0"
+  treat_missing_data  = "notBreaching"
   alarm_description   = "This metric monitors for DDoS detected on submission ALB"
 
   alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
@@ -352,6 +361,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_detected_retrieval" {
   period              = "60"
   statistic           = "Sum"
   threshold           = "0"
+  treat_missing_data  = "notBreaching"
   alarm_description   = "This metric monitors for DDoS detected on retrieval ALB"
 
   alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
@@ -372,6 +382,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_detected_cdn" {
   period              = "60"
   statistic           = "Sum"
   threshold           = "0"
+  treat_missing_data  = "notBreaching"
   alarm_description   = "This metric monitors for DDoS detected on retrieval CDN"
 
   alarm_actions = [aws_sns_topic.alert_warning_us_east.arn, aws_sns_topic.alert_critical_us_east.arn]
@@ -392,6 +403,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_detected_route53" {
   period              = "60"
   statistic           = "Sum"
   threshold           = "0"
+  treat_missing_data  = "notBreaching"
   alarm_description   = "This metric monitors for DDoS detected on route 53"
 
   alarm_actions = [aws_sns_topic.alert_warning_us_east.arn, aws_sns_topic.alert_critical_us_east.arn]
