@@ -15,7 +15,7 @@ resource "aws_db_subnet_group" "covidshield" {
 }
 
 resource "aws_rds_cluster_instance" "covidshield_server_instances" {
-  count                        = 2
+  count                        = 3
   identifier                   = "${var.rds_server_db_name}-instance-${count.index}"
   cluster_identifier           = aws_rds_cluster.covidshield_server.id
   instance_class               = var.rds_server_instance_class

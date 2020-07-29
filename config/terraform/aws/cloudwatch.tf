@@ -1,7 +1,7 @@
 resource "aws_cloudwatch_log_group" "covidshield" {
   name              = var.cloudwatch_log_group_name
   kms_key_id        = aws_kms_key.cw.arn
-  retention_in_days = 365
+  retention_in_days = 90
 
   tags = {
     (var.billing_tag_key) = var.billing_tag_value
@@ -333,7 +333,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_detected_submission" {
   namespace           = "AWS/DDoSProtection"
   period              = "60"
   statistic           = "Sum"
-  threshold           = "1"
+  threshold           = "0"
   alarm_description   = "This metric monitors for DDoS detected on submission ALB"
 
   alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
@@ -351,7 +351,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_detected_retrieval" {
   namespace           = "AWS/DDoSProtection"
   period              = "60"
   statistic           = "Sum"
-  threshold           = "1"
+  threshold           = "0"
   alarm_description   = "This metric monitors for DDoS detected on retrieval ALB"
 
   alarm_actions = [aws_sns_topic.alert_warning.arn, aws_sns_topic.alert_critical.arn]
@@ -371,7 +371,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_detected_cdn" {
   namespace           = "AWS/DDoSProtection"
   period              = "60"
   statistic           = "Sum"
-  threshold           = "1"
+  threshold           = "0"
   alarm_description   = "This metric monitors for DDoS detected on retrieval CDN"
 
   alarm_actions = [aws_sns_topic.alert_warning_us_east.arn, aws_sns_topic.alert_critical_us_east.arn]
@@ -391,7 +391,7 @@ resource "aws_cloudwatch_metric_alarm" "ddos_detected_route53" {
   namespace           = "AWS/DDoSProtection"
   period              = "60"
   statistic           = "Sum"
-  threshold           = "1"
+  threshold           = "0"
   alarm_description   = "This metric monitors for DDoS detected on route 53"
 
   alarm_actions = [aws_sns_topic.alert_warning_us_east.arn, aws_sns_topic.alert_critical_us_east.arn]
