@@ -12,10 +12,12 @@ class RoundtripTest < MiniTest::Test
   end
 
   def days_ago_at_noon(n)
-    current_rsin(ts: Date.today.to_time + (12 * 60 * 60)) - 144 * n
+    ((Date.today.to_time.to_i + (12 * 60 * 60)) - (n * 86400)) / (60 * 10)
   end
 
   def test_key_roundtrip
+    puts days_ago_at_noon(1)
+    puts days_ago(1)
     keys = [
       tek(data: '111111111111111a', rolling_start_interval_number: days_ago_at_noon(1)),
       tek(data: '111111111111111b', rolling_start_interval_number: days_ago_at_noon(2)),
@@ -53,13 +55,13 @@ class RoundtripTest < MiniTest::Test
     assert_result(resp, 200, :NONE, 14)
     # expected ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"]
     # actual   [     "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"]
-    expect_keys(first_keys[0..-2]) ###############################################################################################################################
+    expect_keys(first_keys[0..-1]) ###############################################################################################################################
 
-    move_forward_hours(1) # total: +1 day & 1 hour
-    expect_keys(first_keys[0..-2])
+    move_forward_hours(3) # total: +1 day & 1 hour
+    expect_keys(first_keys[0..-1])
 
     move_forward_hours(1) # total: +1 day & 2 hours
-    expect_keys(first_keys[0..-2])
+    expect_keys(first_keys[0..-1])
 
     move_forward_hours(11 * 24 + 21) # total: +12 days & 23 hours
     expect_keys(first_keys[0..0] + [keys.first])
@@ -69,7 +71,7 @@ class RoundtripTest < MiniTest::Test
     expect_keys(first_keys[0..0] + [keys.first])
 
     move_forward_hours(1) # total: +13 days
-    expect_keys([keys.first])
+    expect_keys(first_keys[0..0] + [keys.first])
 
     # In this range, the credentials could be valid or invalid, depending on
     # how far we were into the UTC date when we created the keypair.
@@ -80,7 +82,7 @@ class RoundtripTest < MiniTest::Test
 
     move_forward_days(1) # total: +14 days
     assert_result(resp, 200, :NONE, 14)
-    expect_keys([])
+    expect_keys([keys.first])
 
     move_forward_days(1) # total: +15 days
 
@@ -118,7 +120,7 @@ class RoundtripTest < MiniTest::Test
   end
 
   def current_rsin(ts: Time.now)
-    (ts.to_i / 86400) * 144
+    (ts.to_i / 86400) / (60 * 10)
   end
 
   def dummy_payload(nkeys=1)
