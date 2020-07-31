@@ -62,4 +62,12 @@ resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
     minimum_protocol_version = "TLSv1.2_2018"
     ssl_support_method       = "sni-only"
   }
+
+  logging_config {
+    include_cookies = false
+    bucket          = aws_s3_bucket.cloudfront_logs.bucket_domain_name
+    prefix          = "cloudfront"
+  }
+
+  depends_on = [aws_s3_bucket.cloudfront_logs]
 }
