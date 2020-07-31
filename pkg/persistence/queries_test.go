@@ -18,9 +18,6 @@ import (
 )
 
 func TestDeleteOldDiagnosisKeys(t *testing.T) {
-	// Init config
-	config.InitConfig()
-
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	defer db.Close()
 
@@ -365,7 +362,7 @@ func testPersistEncryptionKeyWithHashID(t *testing.T) {
 		pub[:],
 		oneTimeCode,
 		config.AppConstants.InitialRemainingKeys,
-	).WillReturnError(fmt.Errorf("for key 'for key 'hash_id"))
+	).WillReturnError(fmt.Errorf("for key 'hash_id"))
 
 	rows := sqlmock.NewRows([]string{"one_time_code"}).AddRow(nil)
 	mock.ExpectQuery(
