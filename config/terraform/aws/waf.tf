@@ -541,7 +541,7 @@ resource "aws_wafv2_web_acl" "key_retrieval_cdn" {
 
     statement {
       rate_based_statement {
-        limit              = 1000
+        limit              = 10000
         aggregate_key_type = "IP"
       }
     }
