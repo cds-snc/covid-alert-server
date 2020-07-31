@@ -234,7 +234,6 @@ module Helper
         Timeout.timeout(1) { Process.waitpid(pid) }
       rescue Timeout::ERROR
         Process.kill('KILL', pid)
-        sleep(2)
       end
     end
 
