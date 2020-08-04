@@ -66,10 +66,7 @@ func TestRequestError(t *testing.T) {
 	receivedResponse := requestError(ctx, resp, err, logMessage, code, msg)
 	assert.Equal(t, expectedResponse, receivedResponse, "should return a result{} struct")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.ErrorLevel, hook.LastEntry().Level)
-	assert.Equal(t, "This is a message", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.ErrorLevel, "This is a message")
 
 	// Test Warn
 	code = 400
@@ -78,10 +75,7 @@ func TestRequestError(t *testing.T) {
 	receivedResponse = requestError(ctx, resp, err, logMessage, code, msg)
 	assert.Equal(t, expectedResponse, receivedResponse, "should return a result{} struct")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "This is a message", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "This is a message")
 
 	// Test Headers
 	code = 500
@@ -94,8 +88,5 @@ func TestRequestError(t *testing.T) {
 	assert.Contains(t, resp.Header()["X-Content-Type-Options"], "nosniff", "Content-Type should be set to nosniff")
 	assert.Equal(t, resp.Code, code, "status code should be set correctly")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.ErrorLevel, hook.LastEntry().Level)
-	assert.Equal(t, "This is a message", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.ErrorLevel, "This is a message")
 }

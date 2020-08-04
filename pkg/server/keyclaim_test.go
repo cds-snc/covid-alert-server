@@ -101,10 +101,7 @@ func TestNewKeyClaim(t *testing.T) {
 	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
 	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
-	assert.Equal(t, "disallowed method", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.InfoLevel, "disallowed method")
 
 	// No auth header
 	req, _ = http.NewRequest("POST", "/new-key-claim", nil)
@@ -114,10 +111,7 @@ func TestNewKeyClaim(t *testing.T) {
 	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
 	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
-	assert.Equal(t, "bad auth header", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
 
 	// Malformed auth header - Bear
 	req, _ = http.NewRequest("POST", "/new-key-claim", nil)
@@ -128,10 +122,7 @@ func TestNewKeyClaim(t *testing.T) {
 	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
 	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
-	assert.Equal(t, "bad auth header", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
 
 	// Malformed auth header - No space
 	req, _ = http.NewRequest("POST", "/new-key-claim", nil)
@@ -142,10 +133,7 @@ func TestNewKeyClaim(t *testing.T) {
 	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
 	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
-	assert.Equal(t, "bad auth header", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
 
 	// Bad auth token
 	req, _ = http.NewRequest("POST", "/new-key-claim", nil)
@@ -156,10 +144,7 @@ func TestNewKeyClaim(t *testing.T) {
 	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
 	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
-	assert.Equal(t, "bad auth header", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
 
 	// Good auth token - no HashID
 	req, _ = http.NewRequest("POST", "/new-key-claim", nil)
@@ -188,10 +173,7 @@ func TestNewKeyClaim(t *testing.T) {
 	assert.Equal(t, 500, resp.Code, "Server error response is expected")
 	assert.Equal(t, "server error\n", string(resp.Body.Bytes()), "server error response is expected")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.ErrorLevel, hook.LastEntry().Level)
-	assert.Equal(t, "error constructing new key claim", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.ErrorLevel, "error constructing new key claim")
 
 	// Error saving - duplicate HashID
 	req, _ = http.NewRequest("POST", "/new-key-claim/"+hashID, nil)
@@ -202,10 +184,7 @@ func TestNewKeyClaim(t *testing.T) {
 	assert.Equal(t, 403, resp.Code, "forbidden response is expected")
 	assert.Equal(t, "forbidden\n", string(resp.Body.Bytes()), "forbidden response is expected")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
-	assert.Equal(t, "hashID used", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.InfoLevel, "hashID used")
 }
 
 func TestClaimKey(t *testing.T) {
@@ -266,10 +245,7 @@ func TestClaimKey(t *testing.T) {
 	assert.Equal(t, 500, resp.Code, "Server error response is expected")
 	assert.True(t, checkClaimKeyResponseError(resp.Body.Bytes(), pb.KeyClaimResponse_SERVER_ERROR))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.ErrorLevel, hook.LastEntry().Level)
-	assert.Equal(t, "database error checking claim-key ban", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.ErrorLevel, "database error checking claim-key ban")
 
 	// IP is banned
 	req, _ = http.NewRequest("POST", "/claim-key", nil)
@@ -280,10 +256,7 @@ func TestClaimKey(t *testing.T) {
 	assert.Equal(t, 429, resp.Code, "Too many requests response is expected")
 	assert.True(t, checkClaimKeyResponseDuration(resp.Body.Bytes(), ptypes.DurationProto(banDuration)))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "error reading request", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "error reading request")
 
 	// IP is banned - RemoteAddr
 	req, _ = http.NewRequest("POST", "/claim-key", nil)
@@ -294,10 +267,7 @@ func TestClaimKey(t *testing.T) {
 	assert.Equal(t, 429, resp.Code, "Too many requests response is expected")
 	assert.True(t, checkClaimKeyResponseDuration(resp.Body.Bytes(), ptypes.DurationProto(banDuration)))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "error reading request", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "error reading request")
 
 	// IP is banned - RemoteAddr with port
 	req, _ = http.NewRequest("POST", "/claim-key", nil)
@@ -308,10 +278,7 @@ func TestClaimKey(t *testing.T) {
 	assert.Equal(t, 429, resp.Code, "Too many requests response is expected")
 	assert.True(t, checkClaimKeyResponseDuration(resp.Body.Bytes(), ptypes.DurationProto(banDuration)))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "error reading request", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "error reading request")
 
 	// Bad, non-protobuff payload
 	req, _ = http.NewRequest("POST", "/claim-key", strings.NewReader("sd"))
@@ -323,10 +290,7 @@ func TestClaimKey(t *testing.T) {
 	assert.True(t, checkClaimKeyResponseError(resp.Body.Bytes(), pb.KeyClaimResponse_UNKNOWN))
 	assert.True(t, checkClaimKeyResponseTriesRemaining(resp.Body.Bytes(), uint32(triesRemaining)))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "error unmarshalling request", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "error unmarshalling request")
 
 	// Invalid app key format
 	code := "BBBBBBBBBB"
@@ -342,10 +306,7 @@ func TestClaimKey(t *testing.T) {
 	assert.True(t, checkClaimKeyResponseError(resp.Body.Bytes(), pb.KeyClaimResponse_INVALID_KEY))
 	assert.True(t, checkClaimKeyResponseTriesRemaining(resp.Body.Bytes(), uint32(triesRemaining)))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "invalid key format", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "invalid key format")
 
 	// Duplicate app key
 	code = "CCCCCCCCCC"
@@ -361,10 +322,7 @@ func TestClaimKey(t *testing.T) {
 	assert.True(t, checkClaimKeyResponseError(resp.Body.Bytes(), pb.KeyClaimResponse_INVALID_KEY))
 	assert.True(t, checkClaimKeyResponseTriesRemaining(resp.Body.Bytes(), uint32(triesRemaining)))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "duplicate key", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "duplicate key")
 
 	// Invalid one time code
 	code = "DDDDDDDDDD"
@@ -381,10 +339,7 @@ func TestClaimKey(t *testing.T) {
 	assert.True(t, checkClaimKeyResponseTriesRemaining(resp.Body.Bytes(), uint32(triesRemaining)-1))
 	assert.True(t, checkClaimKeyResponseDuration(resp.Body.Bytes(), ptypes.DurationProto(banDuration)))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "invalid one time code", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "invalid one time code")
 
 	// Invalid one time code - DB failure on IP ban check
 	code = "DDDDDDDDDD"
@@ -400,10 +355,7 @@ func TestClaimKey(t *testing.T) {
 	assert.True(t, checkClaimKeyResponseError(resp.Body.Bytes(), pb.KeyClaimResponse_SERVER_ERROR))
 	assert.True(t, checkClaimKeyResponseTriesRemaining(resp.Body.Bytes(), uint32(triesRemaining)))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.ErrorLevel, hook.LastEntry().Level)
-	assert.Equal(t, "database error recording claim-key failure", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.ErrorLevel, "database error recording claim-key failure")
 
 	// Generic error
 	code = "EEEEEEEEEE"
@@ -419,10 +371,7 @@ func TestClaimKey(t *testing.T) {
 	assert.True(t, checkClaimKeyResponseError(resp.Body.Bytes(), pb.KeyClaimResponse_SERVER_ERROR))
 	assert.True(t, checkClaimKeyResponseTriesRemaining(resp.Body.Bytes(), uint32(triesRemaining)))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.ErrorLevel, hook.LastEntry().Level)
-	assert.Equal(t, "failure to claim key using OneTimeCode", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.ErrorLevel, "failure to claim key using OneTimeCode")
 
 	// Success with normal code
 	code = "AAAAAAAAAA"
@@ -480,10 +429,7 @@ func TestClaimKey(t *testing.T) {
 	assert.True(t, checkClaimKeyResponseError(resp.Body.Bytes(), pb.KeyClaimResponse_NONE))
 	assert.True(t, checkClaimKeyResponseTriesRemaining(resp.Body.Bytes(), uint32(triesRemaining)))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "error recording claim-key success", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "error recording claim-key success")
 }
 
 func checkClaimKeyResponseDuration(data []byte, duration *durationpb.Duration) bool {
@@ -509,6 +455,13 @@ func buildKeyClaimRequest(oneTimeCode *string, appPublicKey []byte) *pb.KeyClaim
 		OneTimeCode:  oneTimeCode,
 		AppPublicKey: appPublicKey,
 	}
+}
+
+func assertLog(t *testing.T, hook *test.Hook, length int, level logrus.Level, msg string) {
+	assert.Equal(t, length, len(hook.Entries))
+	assert.Equal(t, level, hook.LastEntry().Level)
+	assert.Equal(t, msg, hook.LastEntry().Message)
+	hook.Reset()
 }
 
 func SHA512(message []byte) []byte {

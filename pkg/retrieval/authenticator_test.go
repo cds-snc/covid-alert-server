@@ -37,28 +37,19 @@ func TestNewAuthenticator(t *testing.T) {
 	os.Setenv("RETRIEVE_HMAC_KEY", "")
 	NewAuthenticator()
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.FatalLevel, hook.LastEntry().Level)
-	assert.Equal(t, "RETRIEVE_HMAC_KEY missing or too short", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.FatalLevel, "RETRIEVE_HMAC_KEY missing or too short")
 
 	// Short HMAC
 	os.Setenv("RETRIEVE_HMAC_KEY", strings.Repeat("a", (config.AppConstants.HmacKeyLength*2)-2))
 	NewAuthenticator()
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.FatalLevel, hook.LastEntry().Level)
-	assert.Equal(t, "RETRIEVE_HMAC_KEY missing or too short", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.FatalLevel, "RETRIEVE_HMAC_KEY missing or too short")
 
 	// Invalid HEX HMAC
 	os.Setenv("RETRIEVE_HMAC_KEY", strings.Repeat("z", config.AppConstants.HmacKeyLength*2))
 	NewAuthenticator()
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.FatalLevel, hook.LastEntry().Level)
-	assert.Equal(t, "RETRIEVE_HMAC_KEY hex decode failed", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.FatalLevel, "RETRIEVE_HMAC_KEY hex decode failed")
 
 	hmac := strings.Repeat("a", config.AppConstants.HmacKeyLength*2)
 	os.Setenv("RETRIEVE_HMAC_KEY", hmac)
@@ -138,4 +129,11 @@ func TestValidMAC(t *testing.T) {
 	invalidMessage := []byte("Lavender's green")
 
 	assert.False(t, validMAC(invalidMessage, validMac, validKey), "should return false on no match")
+}
+
+func assertLog(t *testing.T, hook *test.Hook, length int, level logrus.Level, msg string) {
+	assert.Equal(t, length, len(hook.Entries))
+	assert.Equal(t, level, hook.LastEntry().Level)
+	assert.Equal(t, msg, hook.LastEntry().Message)
+	hook.Reset()
 }

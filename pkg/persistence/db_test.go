@@ -220,10 +220,7 @@ func TestDBNewKeyClaim(t *testing.T) {
 	assert.Less(t, 0, len(receivedResult))
 	assert.Nil(t, receivedError, "Expected nil if it could execute insert")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "duplicate one_time_code", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "duplicate one_time_code")
 
 	// Error - never succeeds with duplicate codes
 
@@ -250,10 +247,7 @@ func TestDBNewKeyClaim(t *testing.T) {
 	assert.Equal(t, "", receivedResult, "Expected result if could not execute insert")
 	assert.Nil(t, receivedError) // This is a bug and should be fixed, however, it is high unlikely to trigger
 
-	assert.Equal(t, 5, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "duplicate one_time_code", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 5, logrus.WarnLevel, "duplicate one_time_code")
 
 	// Error - unclaimed HashID, eventual success
 	hashID := hex.EncodeToString(SHA512([]byte("abcd")))
@@ -298,10 +292,7 @@ func TestDBNewKeyClaim(t *testing.T) {
 	assert.Less(t, 0, len(receivedResult))
 	assert.Nil(t, receivedError, "Expected nil if it could execute insert")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "regenerating OTC for hashID", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "regenerating OTC for hashID")
 
 	// Error - claimed HashID
 	mock.ExpectExec(
@@ -446,10 +437,7 @@ func TestDBStoreKeys(t *testing.T) {
 
 	assert.Nil(t, receivedResult, "Expected nil when keys are commited")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
-	assert.Equal(t, "Inserted keys", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.InfoLevel, "Inserted keys")
 }
 
 func TestDBFetchKeysForHours(t *testing.T) {
@@ -646,6 +634,13 @@ func TestDBCountUnclaimedOneTimeCodes(t *testing.T) {
 
 	assert.Equal(t, expectedResult, receivedResult)
 	assert.Nil(t, receivedError)
+}
+
+func assertLog(t *testing.T, hook *test.Hook, length int, level logrus.Level, msg string) {
+	assert.Equal(t, length, len(hook.Entries))
+	assert.Equal(t, level, hook.LastEntry().Level)
+	assert.Equal(t, msg, hook.LastEntry().Message)
+	hook.Reset()
 }
 
 func SHA512(message []byte) []byte {

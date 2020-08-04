@@ -95,10 +95,7 @@ func TestUpload(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_UNKNOWN))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "error unmarshalling request", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "error unmarshalling request")
 
 	// Server Public cert too short
 	payload, _ := proto.Marshal(buildUploadRequest(make([]byte, 16), nil, nil, nil))
@@ -109,10 +106,7 @@ func TestUpload(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_CRYPTO_PARAMETERS))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "server public key was not expected length", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "server public key was not expected length")
 
 	// Public cert not found
 	payload, _ = proto.Marshal(buildUploadRequest(badServerPub[:], nil, nil, nil))
@@ -123,10 +117,7 @@ func TestUpload(t *testing.T) {
 	assert.Equal(t, 401, resp.Code, "401 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_KEYPAIR))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "failure to resolve client keypair", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "failure to resolve client keypair")
 
 	// Nonce incorrect length
 	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], make([]byte, 16), nil, nil))
@@ -137,10 +128,7 @@ func TestUpload(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_CRYPTO_PARAMETERS))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "nonce was not expected length", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "nonce was not expected length")
 
 	// App Public cert too short
 	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], make([]byte, 24), make([]byte, 16), nil))
@@ -151,10 +139,7 @@ func TestUpload(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_CRYPTO_PARAMETERS))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "app public key key was not expected length", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "app public key key was not expected length")
 
 	// Server private cert too short
 	payload, _ = proto.Marshal(buildUploadRequest(goodServerPubBadPriv[:], make([]byte, 24), make([]byte, 32), nil))
@@ -165,10 +150,7 @@ func TestUpload(t *testing.T) {
 	assert.Equal(t, 500, resp.Code, "500 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_SERVER_ERROR))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.ErrorLevel, hook.LastEntry().Level)
-	assert.Equal(t, "server private key was not expected length", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.ErrorLevel, "server private key was not expected length")
 
 	// Fails to decrypt payload
 	var nonce [24]byte
@@ -184,10 +166,7 @@ func TestUpload(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_DECRYPTION_FAILED))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "failure to decrypt payload", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "failure to decrypt payload")
 
 	// Fails unmarshall into Upload
 	io.ReadFull(rand.Reader, nonce[:])
@@ -201,10 +180,7 @@ func TestUpload(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_PAYLOAD))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "error unmarshalling request payload", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "error unmarshalling request payload")
 
 	// No keys in payload
 	io.ReadFull(rand.Reader, nonce[:])
@@ -224,10 +200,7 @@ func TestUpload(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_NO_KEYS_IN_PAYLOAD))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "no keys provided", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "no keys provided")
 
 	// Too many keys in payload
 	io.ReadFull(rand.Reader, nonce[:])
@@ -247,10 +220,7 @@ func TestUpload(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_TOO_MANY_KEYS))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "too many keys provided", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "too many keys provided")
 
 	// Invalid timestamp
 	io.ReadFull(rand.Reader, nonce[:])
@@ -270,10 +240,7 @@ func TestUpload(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_TIMESTAMP))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "invalid timestamp", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "invalid timestamp")
 
 	// Expired Key
 	io.ReadFull(rand.Reader, nonce[:])
@@ -293,10 +260,7 @@ func TestUpload(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_KEYPAIR))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "key is used up", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "key is used up")
 
 	// Not enough keys remaining
 	io.ReadFull(rand.Reader, nonce[:])
@@ -316,10 +280,7 @@ func TestUpload(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_TOO_MANY_KEYS))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "not enough keys remaining", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "not enough keys remaining")
 
 	// Generic DB Error
 	io.ReadFull(rand.Reader, nonce[:])
@@ -339,10 +300,7 @@ func TestUpload(t *testing.T) {
 	assert.Equal(t, 500, resp.Code, "500 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_SERVER_ERROR))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.ErrorLevel, hook.LastEntry().Level)
-	assert.Equal(t, "failed to store diagnosis keys", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.ErrorLevel, "failed to store diagnosis keys")
 
 	// Good reponse
 	io.ReadFull(rand.Reader, nonce[:])
@@ -395,10 +353,7 @@ func TestValidateKey(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_ROLLING_PERIOD))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "missing or invalid rollingPeriod", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "missing or invalid rollingPeriod")
 
 	// Test RollingPeriod > 144
 	token = make([]byte, 16)
@@ -412,10 +367,7 @@ func TestValidateKey(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_ROLLING_PERIOD))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "missing or invalid rollingPeriod", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "missing or invalid rollingPeriod")
 
 	// Key data not 16 bytes
 	token = make([]byte, 8)
@@ -429,10 +381,7 @@ func TestValidateKey(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_KEY_DATA))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "invalid key data", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "invalid key data")
 
 	// Invalid RSIN
 	token = make([]byte, 16)
@@ -446,10 +395,7 @@ func TestValidateKey(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_ROLLING_START_INTERVAL_NUMBER))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "invalid rolling start number", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "invalid rolling start number")
 
 	//  TransmissionRiskLevel < 0
 	token = make([]byte, 16)
@@ -463,10 +409,7 @@ func TestValidateKey(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_TRANSMISSION_RISK_LEVEL))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "invalid transmission risk level", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "invalid transmission risk level")
 
 	// Invalid TransmissionRiskLevel > 8
 	token = make([]byte, 16)
@@ -480,10 +423,7 @@ func TestValidateKey(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_TRANSMISSION_RISK_LEVEL))
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "invalid transmission risk level", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "invalid transmission risk level")
 
 	// Valid key
 	token = make([]byte, 16)
@@ -533,10 +473,7 @@ func TestValidateKeys(t *testing.T) {
 	assert.Equal(t, 400, resp.Code, "400 response is expected")
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_ROLLING_START_INTERVAL_NUMBER))
 
-	assert.Equal(t, 2, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "sequence of rollingStartIntervalNumbers exceeds 15 days", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 2, logrus.WarnLevel, "sequence of rollingStartIntervalNumbers exceeds 15 days")
 
 	// Retuns true on good key
 	key = buildKey(token, int32(2), int32(2651450), int32(144))

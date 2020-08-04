@@ -111,10 +111,7 @@ func TestRetrieve(t *testing.T) {
 	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
 	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "invalid auth parameter", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "invalid auth parameter")
 
 	// Bad Method
 	req, _ = http.NewRequest("POST", fmt.Sprintf("/retrieve/%s/%s/%s", region, currentDateNumber, goodAuth), nil)
@@ -124,10 +121,7 @@ func TestRetrieve(t *testing.T) {
 	assert.Equal(t, 405, resp.Code, "Method not allowed response is expected")
 	assert.Equal(t, "method not allowed\n", string(resp.Body.Bytes()), "Correct response is expected")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "method not allowed", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "method not allowed")
 
 	// Get all keys for past 14 days
 	req, _ = http.NewRequest("GET", fmt.Sprintf("/retrieve/%s/%s/%s", region, "00000", goodAuth), nil)
@@ -138,10 +132,7 @@ func TestRetrieve(t *testing.T) {
 	assert.Contains(t, resp.Header()["Content-Type"], "application/zip", "Cache-Control should be set to application/zip")
 	assert.Contains(t, resp.Header()["Cache-Control"], "public, max-age=3600, max-stale=600", "Cache-Control should be set to public, max-age=3600, max-stale=600")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
-	assert.Equal(t, "Wrote retrieval", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.InfoLevel, "Wrote retrieval")
 
 	// Get future keys
 	req, _ = http.NewRequest("GET", fmt.Sprintf("/retrieve/%s/%s/%s", region, futureDate, goodAuth), nil)
@@ -150,10 +141,7 @@ func TestRetrieve(t *testing.T) {
 
 	assert.Equal(t, 404, resp.Code, "404 response is expected")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "request for future data", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "request for future data")
 
 	// Get too old keys
 	req, _ = http.NewRequest("GET", fmt.Sprintf("/retrieve/%s/%s/%s", region, tooOldDate, goodAuth), nil)
@@ -162,10 +150,7 @@ func TestRetrieve(t *testing.T) {
 
 	assert.Equal(t, 410, resp.Code, "410 response is expected")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Equal(t, "request for too-old data", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.WarnLevel, "request for too-old data")
 
 	// Failing DB message
 	req, _ = http.NewRequest("GET", fmt.Sprintf("/retrieve/%s/%s/%s", region, yesterdaysDate, goodAuth), nil)
@@ -174,10 +159,7 @@ func TestRetrieve(t *testing.T) {
 
 	assert.Equal(t, 500, resp.Code, "500 response is expected")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.ErrorLevel, hook.LastEntry().Level)
-	assert.Equal(t, "database error", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.ErrorLevel, "database error")
 
 }
 

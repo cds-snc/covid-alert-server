@@ -768,10 +768,7 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 
 	assert.Nil(t, receivedResult, "Expected nil when keys are commited")
 
-	assert.Equal(t, 1, len(hook.Entries))
-	assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
-	assert.Equal(t, "Inserted keys", hook.LastEntry().Message)
-	hook.Reset()
+	assertLog(t, hook, 1, logrus.InfoLevel, "Inserted keys")
 }
 
 func TestCheckClaimKeyBan(t *testing.T) {
