@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	response = `{"minimumRiskScore":1,"attenuationLevelValues":[0,0,2,2,2,2,2,2],"attenuationWeight":50,"daysSinceLastExposureLevelValues":[0,1,1,1,1,1,1,1],"daysSinceLastExposureWeight":50,"durationLevelValues":[0,0,0,0,5,5,5,5],"durationWeight":50,"transmissionRiskLevelValues":[1,1,1,1,1,1,1,1],"transmissionRiskWeight":50}`
+	response = `{"minimumRiskScore":25,"attenuationLevelValues":[1,1,8,8,8,8,8,8],"attenuationWeight":1,"daysSinceLastExposureLevelValues":[0,1,1,1,1,1,1,1],"daysSinceLastExposureWeight":1,"durationLevelValues":[0,0,0,0,4,4,5,8],"durationWeight":1,"transmissionRiskLevelValues":[1,1,1,1,1,1,1,1],"transmissionRiskWeight":1}`
 )
 
 func NewConfigServlet() srvutil.Servlet {
