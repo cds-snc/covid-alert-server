@@ -119,6 +119,7 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, erro
 	s, err = tx.Prepare(
 		`SELECT server_public_key FROM encryption_keys WHERE app_public_key = ?`,
 	)
+
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
 			return nil, err

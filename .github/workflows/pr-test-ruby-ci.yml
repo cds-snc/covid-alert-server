@@ -1,4 +1,4 @@
-name: Testing CI
+name: Testing Ruby CI
 on: [pull_request]
 jobs:
   testing:
@@ -14,13 +14,31 @@ jobs:
           
         ports:
         - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '^1.14'
+    - name: Install Protoc
+      uses: arduino/setup-protoc@7ad700d3b20e2a32b35d2c17fbdc463891608381
+      with:
+        version: '3.x'
+    - name: Install protoc-gen-go
+      run: |
+        go install google.golang.org/protobuf/cmd/protoc-gen-go
     - uses: actions/setup-ruby@v1
       with:
         ruby-version: '2.6'
-    - name: Run tests
+    - name: Verify DB connection
+      env:
+        PORT: ${{ job.services.mysql.ports[3306] }}
+      run: |
+        while ! mysqladmin ping -h"127.0.0.1" -P"$PORT" --silent; do
+          sleep 1
+        done
+    - name: Run Ruby tests
       run: |
         gem install bundler
         bundle install

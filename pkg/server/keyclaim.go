@@ -137,7 +137,7 @@ func (s *keyClaimServlet) claimKey(w http.ResponseWriter, r *http.Request) resul
 	}
 
 	oneTimeCode := req.GetOneTimeCode()
-	
+
 	// Handle odd app inputs
 	oneTimeCode = strings.ReplaceAll(oneTimeCode, " ", "")
 	oneTimeCode = strings.ReplaceAll(oneTimeCode, "-", "")
