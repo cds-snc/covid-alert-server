@@ -38,11 +38,11 @@ func InitConfig() {
 	viper.SetConfigType("yaml")
 	setDefaults()
 	if err := viper.ReadInConfig(); err != nil {
-		log(nil, err).Error("Error reading application configuration file")
+		log(nil, err).Fatal("Error reading application configuration file")
 	}
 	err := viper.Unmarshal(&AppConstants)
 	if err != nil {
-		log(nil, err).Error("Unable to unmarshal the application configuration file")
+		log(nil, err).Fatal("Unable to unmarshal the application configuration file")
 	}
 }
 
