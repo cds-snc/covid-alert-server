@@ -95,13 +95,3 @@ jobs:
 
     - name: Terraform Apply
       run: terraform apply -auto-approve terraform.tfplan
-
-    - name: Check For New Deployments
-      env:
-        GITHUB_SHA: ${{ github.sha }}
-        submission: submission.${{ secrets.TF_VAR_route53_zone_name }}
-        retrieval: retrieval.${{ secrets.TF_VAR_route53_zone_name }}
-        
-      run: |
-        source ../../../bin/verify-deployment.sh
-        verify_deployments -c $GITHUB_SHA -e $submission -e $retrieval 
