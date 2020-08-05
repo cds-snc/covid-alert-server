@@ -39,7 +39,6 @@ data "template_file" "covidshield_key_retrieval_task" {
     database_url          = aws_secretsmanager_secret_version.server_database_url.arn
     metric_provider       = var.metric_provider
     tracer_provider       = var.tracer_provider
-    env                   = var.environment
   }
 }
 
@@ -172,7 +171,6 @@ data "template_file" "covidshield_key_submission_task" {
     database_url          = aws_secretsmanager_secret_version.server_database_url.arn
     metric_provider       = var.metric_provider
     tracer_provider       = var.tracer_provider
-    env                   = var.environment
   }
 }
 

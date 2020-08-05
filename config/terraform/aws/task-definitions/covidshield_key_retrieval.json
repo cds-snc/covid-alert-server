@@ -42,10 +42,6 @@
         {
           "name": "DATABASE_URL",
           "valueFrom": "${database_url}"
-        },
-        {
-          "name": "ENV",
-          "valueFrom": "${env}"
         }
       ]
     }
