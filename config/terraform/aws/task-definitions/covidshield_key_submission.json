@@ -35,6 +35,10 @@
         {
           "name": "TRACER_PROVIDER",
           "value": "${tracer_provider}"
+        },
+        {
+          "name": "ENV",
+          "valueFrom": "${env}"
         }
       ],
       "secrets": [
