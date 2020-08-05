@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"math/big"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -29,13 +30,14 @@ type version struct {
 func (s *servicesServlet) RegisterRouting(r *mux.Router) {
 	r.HandleFunc("/ping", s.ping)
 	r.HandleFunc("/version.json", s.version)
-	r.HandleFunc("/urandom.bin", s.urandom)
-	r.HandleFunc("/sample", s.sample)
+	if os.Getenv("ENV") == "staging" {
+		r.HandleFunc("/urandom.bin", s.urandom)
+		r.HandleFunc("/sample", s.sample)
+	}
 }
 
 func (s *servicesServlet) ping(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-
 	w.Header().Add("Cache-Control", "no-store")
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	if _, err := w.Write([]byte("OK\n")); err != nil {
