@@ -19,7 +19,12 @@ func NewConfigServlet() srvutil.Servlet {
 type configServlet struct{}
 
 func (s *configServlet) RegisterRouting(r *mux.Router) {
+	r.HandleFunc("/exposure-configuration/present", s.exposurePresence)
 	r.HandleFunc("/exposure-configuration/{region:[\\w]+}.json", s.exposureConfig)
+}
+
+func (s *configServlet) exposurePresence(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *configServlet) exposureConfig(w http.ResponseWriter, r *http.Request) {
