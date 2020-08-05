@@ -22,12 +22,16 @@
       },
       "environment": [
         {
-            "name": "METRIC_PROVIDER",
-            "value": "${metric_provider}"
+          "name": "METRIC_PROVIDER",
+          "value": "${metric_provider}"
         },
         {
           "name": "TRACER_PROVIDER",
           "value": "${tracer_provider}"
+        },
+        {
+          "name": "ENV",
+          "valueFrom": "${env}"
         }
       ],
       "secrets": [
@@ -42,10 +46,6 @@
         {
           "name": "DATABASE_URL",
           "valueFrom": "${database_url}"
-        },
-        {
-          "name": "ENV",
-          "valueFrom": "${env}"
         }
       ]
     }
