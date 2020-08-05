@@ -38,7 +38,7 @@
         },
         {
           "name": "ENV",
-          "valueFrom": "${env}"
+          "value": "${env}"
         }
       ],
       "secrets": [
