@@ -24,7 +24,13 @@ type version struct {
 
 func (s *servicesServlet) RegisterRouting(r *mux.Router) {
 	r.HandleFunc("/ping", s.ping)
+	r.HandleFunc("/present", s.exposurePresence)
 	r.HandleFunc("/version.json", s.version)
+}
+
+func (s *servicesServlet) exposurePresence(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *servicesServlet) ping(w http.ResponseWriter, r *http.Request) {

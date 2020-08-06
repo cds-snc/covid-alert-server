@@ -30,6 +30,7 @@ func TestRegisterRoutingServices(t *testing.T) {
 	expectedPaths := GetPaths(router)
 	assert.Contains(t, expectedPaths, "/services/ping", "should include a ping path")
 	assert.Contains(t, expectedPaths, "/services/version.json", "should include a version.json path")
+	assert.Contains(t, expectedPaths, "/services/present", "should include a present path")
 
 }
 
@@ -48,6 +49,19 @@ func TestPing(t *testing.T) {
 	assert.Equal(t, expected, string(resp.Body.Bytes()), "OK response is expected")
 	assert.Contains(t, resp.Header()["Cache-Control"], "no-store", "Cache-Control should be set to no-store")
 	assert.Contains(t, resp.Header()["Content-Type"], "text/plain; charset=utf-8", "Cache-Type should be set to text/plain; charset=utf-8")
+}
+
+func TestPresent(t *testing.T) {
+	servlet := NewServicesServlet()
+	router := Router()
+	servlet.RegisterRouting(router)
+
+	req, _ := http.NewRequest("GET", "/services/present", nil)
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 204, resp.Code, "No content response is expected")
+	assert.Contains(t, resp.Header()["Cache-Control"], "no-store", "Cache-Control should be set to no-store")
 }
 
 func TestVersion(t *testing.T) {
