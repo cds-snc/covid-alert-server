@@ -1,0 +1,54 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - pkg/server/config.go
+    
+
+env:
+  GITHUB_SHA: ${{ github.sha }}
+  BRANCH: ${{ github.ref }}
+
+jobs:
+  deploy-retrieval-service:
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for container to be built and pushed
+        uses: fountainhead/action-wait-for-check@v1.0.0
+        id: wait-for-build
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: build-n-push
+          ref: ${{ github.sha }}
+
+      - name: Wait for terraform apply
+        uses: fountainhead/action-wait-for-check@v1.0.0
+        id: wait-for-terraform
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: terraform-apply
+          ref: ${{ github.sha }}
+
+      - name: Checkout
+        if: steps.wait-for-build.outputs.conclusion == 'success'
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ca-central-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Create Invalidation
+        run: | 
+          aws create-invalidation \
+            --distribution-id ${{ secrets.AWS_CLOUDFRONT_ID}} \
+            --paths "/exposure-configuration/*"
