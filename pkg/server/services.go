@@ -1,13 +1,8 @@
 package server
 
 import (
-	"crypto/rand"
 	"encoding/json"
-	"math/big"
 	"net/http"
-	"os"
-	"os/exec"
-	"strings"
 
 	"github.com/Shopify/goose/srvutil"
 	"github.com/gorilla/mux"
