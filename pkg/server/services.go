@@ -27,7 +27,9 @@ func (s *servicesServlet) RegisterRouting(r *mux.Router) {
 	r.HandleFunc("/ping", s.ping)
 	r.HandleFunc("/present", s.exposurePresence)
 	r.HandleFunc("/version.json", s.version)
-	r.HandleFunc("/urandom.bin", s.urandom)
+	if os.Getenv("ENV") == "staging" {
+		r.HandleFunc("/urandom.bin", s.urandom)
+	}
 }
 
 func (s *servicesServlet) exposurePresence(w http.ResponseWriter, r *http.Request) {
