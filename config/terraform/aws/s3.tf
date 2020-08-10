@@ -4,6 +4,13 @@
 
 resource "aws_s3_bucket" "exposure_config" {
   bucket = "covid-shield-exposure-config-${var.environment}"
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
 
   logging {
     target_bucket = "${aws_s3_bucket.exposure_config_logs.bucket}"
@@ -56,6 +63,13 @@ resource "aws_s3_bucket" "cloudfront_logs" {
 resource "aws_s3_bucket" "exposure_config_logs" {
   bucket = "covid-shield-exposure-config-${var.environment}-logs"
   acl    = "log-delivery-write"
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
 
   lifecycle_rule {
     enabled = true
