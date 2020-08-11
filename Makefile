@@ -16,6 +16,7 @@ RELEASE_BUILDS := $(patsubst %,build/release/%,$(CMDS))
 DEBUG_BUILDS   := $(patsubst %,build/debug/%,$(CMDS))
 
 GO              := go
+GOFMT           := gofmt
 PROTOC          := protoc
 GCFLAGS         :=
 GCFLAGS_RELEASE := $(GCFLAGS)
@@ -77,4 +78,7 @@ clean-proto:
 	@echo "                   \x1b[1;31mrm\x1b[0m  $(RPC_RB)"
 	@rm -f $(RPC_RB)
 
-.PHONY: all default release generate clean test proto clean-proto
+format:
+	@$(GOFMT) -w .
+
+.PHONY: all default release generate clean test proto clean-proto format
