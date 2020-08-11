@@ -19,15 +19,25 @@ resource "aws_s3_bucket" "exposure_config" {
 
 resource "aws_s3_bucket_policy" "exposure_config" {
   bucket = aws_s3_bucket.exposure_config.id
-  policy = data.template_file.bucket_policy.rendered
-}
 
-data "template_file" "bucket_policy" {
-  template = "${file("templates/bucket_policy.json")}"
-  vars = {
-    origin_access_identity_arn = aws_cloudfront_origin_access_identity.origin_access_identity.iam_arn
-    bucket                     = aws_s3_bucket.exposure_config.arn
-  }
+  policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "OnlyCloudfrontReadAccess",
+      "Principal": {
+        "AWS": "${aws_cloudfront_origin_access_identity.origin_access_identity.iam_arn}"
+      },
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject"
+      ],
+      "Resource": "${aws_s3_bucket.exposure_config.arn}/*"
+    }
+  ]
+}
+POLICY
 }
 
 resource "aws_s3_bucket" "firehose_waf_logs" {
@@ -120,6 +130,3 @@ resource "aws_s3_bucket_public_access_block" "exposure_config_logs" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
-
-
-
