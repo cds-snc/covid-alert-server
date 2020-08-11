@@ -13,7 +13,7 @@ resource "aws_s3_bucket" "exposure_config" {
   }
 
   logging {
-    target_bucket = "${aws_s3_bucket.exposure_config_logs.bucket}"
+    target_bucket = aws_s3_bucket.exposure_config_logs.bucket
   }
 }
 
