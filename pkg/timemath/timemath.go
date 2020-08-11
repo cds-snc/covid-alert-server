@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	SecondsInHour  = 3600
-	SecondsInDay   = 86400
-	HoursInDay     = 24
+	SecondsInHour = 3600
+	SecondsInDay  = 86400
+	HoursInDay    = 24
 )
 
 func HourNumber(t time.Time) uint32 {
