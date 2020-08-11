@@ -33,7 +33,7 @@ resource "aws_s3_bucket_policy" "exposure_config" {
       "Action": [
         "s3:GetObject"
       ],
-      "Resource": "${aws_s3_bucket.exposure_config.id}/*"
+      "Resource": "${aws_s3_bucket.exposure_config.arn}/*"
     }
   ]
 }
@@ -130,6 +130,3 @@ resource "aws_s3_bucket_public_access_block" "exposure_config_logs" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
-
-
-
