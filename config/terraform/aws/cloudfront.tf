@@ -63,25 +63,25 @@ resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
   }
 
   ordered_cache_behavior {
-   path_pattern     = "/exposure-configuration/*"
-   allowed_methods  = ["GET", "HEAD"]
-   cached_methods   = ["GET", "HEAD"]
-   target_origin_id = "covid-shield-exposure-config-${var.environment}"
+    path_pattern     = "/exposure-configuration/*"
+    allowed_methods  = ["GET", "HEAD"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "covid-shield-exposure-config-${var.environment}"
 
-   forwarded_values {
-     query_string = false
-     headers      = ["Origin"]
+    forwarded_values {
+      query_string = false
+      headers      = ["Origin"]
 
-     cookies {
-       forward = "none"
-     }
-   }
+      cookies {
+        forward = "none"
+      }
+    }
 
-   viewer_protocol_policy = "https-only"
-   min_ttl                = 0
-   default_ttl            = 86400
-   max_ttl                = 31536000
-   compress               = true
+    viewer_protocol_policy = "https-only"
+    min_ttl                = 0
+    default_ttl            = 86400
+    max_ttl                = 31536000
+    compress               = true
   }
 
 
