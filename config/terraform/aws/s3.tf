@@ -34,7 +34,7 @@ resource "aws_s3_bucket" "firehose_waf_logs" {
       days = 90
     }
   }
-  #tfsec:ignore:AWS002
+  #tfsec:ignore:AWS002 - Ignore log of logs
 }
 
 ###
@@ -57,7 +57,7 @@ resource "aws_s3_bucket" "cloudfront_logs" {
       days = 90
     }
   }
-  #tfsec:ignore:AWS002
+  #tfsec:ignore:AWS002 - Ignore log of logs
 }
 
 resource "aws_s3_bucket" "exposure_config_logs" {
@@ -78,7 +78,7 @@ resource "aws_s3_bucket" "exposure_config_logs" {
       days = 90
     }
   }
-  #tfsec:ignore:AWS002
+  #tfsec:ignore:AWS002 - Ignore log of logs
 }
 
 resource "aws_s3_bucket_public_access_block" "firehose_waf_logs" {
