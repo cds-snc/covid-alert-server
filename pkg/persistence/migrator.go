@@ -93,7 +93,6 @@ CREATE TABLE IF NOT EXISTS failed_key_claim_attempts (
 	},
 }
 
-
 // MigrateDatabase creates the database and migrates it into the correct state.
 func MigrateDatabase(url string) error {
 	parts := strings.Split(url, "/")
