@@ -17,6 +17,29 @@ resource "aws_s3_bucket" "exposure_config" {
   }
 }
 
+resource "aws_s3_bucket_policy" "exposure_config" {
+  bucket = aws_s3_bucket.exposure_config.id
+
+  policy = <<POLICY
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "OnlyCloudfrontReadAccess",
+      "Principal": {
+        "AWS": "${aws_cloudfront_origin_access_identity.origin_access_identity.iam_arn}"
+      },
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject"
+      ],
+      "Resource": "${aws_s3_bucket.exposure_config.id}/*"
+    }
+  ]
+}
+POLICY
+}
+
 resource "aws_s3_bucket" "firehose_waf_logs" {
   bucket = "covid-shield-${var.environment}-waf-logs"
   acl    = "private"
