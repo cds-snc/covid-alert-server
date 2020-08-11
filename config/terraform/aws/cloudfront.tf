@@ -2,6 +2,10 @@
 # AWS Cloudfront (CDN) - Key Retrieval - retrieval.{$route53_zone_name}
 ###
 
+resource "aws_cloudfront_origin_access_identity" "origin_access_identity" {
+  comment = "cloudfront origin access identity"
+}
+
 resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
   origin {
     domain_name = aws_lb.covidshield_key_retrieval.dns_name
@@ -18,6 +22,15 @@ resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
       https_port             = 443
       origin_protocol_policy = "https-only"
       origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  origin {
+    domain_name = aws_s3_bucket.exposure_config.bucket_regional_domain_name
+    origin_id   = "covid-shield-exposure-config-${var.environment}"
+
+    s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.origin_access_identity.cloudfront_access_identity_path
     }
   }
 
@@ -48,6 +61,29 @@ resource "aws_cloudfront_distribution" "key_retrieval_distribution" {
     max_ttl                = 7200
     compress               = true
   }
+
+  # ordered_cache_behavior {
+  #  path_pattern     = "/exposure-configuration/*"
+  #  allowed_methods  = ["GET", "HEAD"]
+  #  cached_methods   = ["GET", "HEAD"]
+  #  target_origin_id = "covid-shield-exposure-config-${var.environment}"
+
+  #  forwarded_values {
+  #    query_string = false
+  #    headers      = ["Origin"]
+
+  #    cookies {
+  #      forward = "none"
+  #    }
+  #  }
+
+  #  viewer_protocol_policy = "https-only"
+  #  min_ttl                = 0
+  #  default_ttl            = 86400
+  #  max_ttl                = 31536000
+  #  compress               = true
+  # }
+
 
   price_class = "PriceClass_100"
 
