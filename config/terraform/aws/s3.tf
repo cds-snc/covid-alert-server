@@ -26,7 +26,7 @@ data "template_file" "bucket_policy" {
   template = "${file("templates/bucket_policy.json")}"
   vars = {
     origin_access_identity_arn = aws_cloudfront_origin_access_identity.origin_access_identity.iam_arn
-    bucket = aws_s3_bucket.exposure_config.arn
+    bucket                     = aws_s3_bucket.exposure_config.arn
   }
 }
 
