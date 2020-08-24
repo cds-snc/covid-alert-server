@@ -4,7 +4,7 @@
 
 ![Container Build](https://github.com/CovidShield/server/workflows/Container%20Builds/badge.svg)
 
-Adapted from <https://github.com/CovidShield/server> ([see changes](https://github.com/cds-snc/covid-shield-server/blob/master/FORK.md))
+Adapted from <https://github.com/CovidShield/server>
 
 This repository implements a diagnosis server to use as a server for Apple/Google's [Exposure
 Notification](https://www.apple.com/covid19/contacttracing) framework, informed by the [guidance
