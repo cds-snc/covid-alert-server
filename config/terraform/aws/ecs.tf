@@ -39,6 +39,7 @@ data "template_file" "covidshield_key_retrieval_task" {
     database_url          = aws_secretsmanager_secret_version.server_database_url.arn
     metric_provider       = var.metric_provider
     tracer_provider       = var.tracer_provider
+    env                   = var.environment
   }
 }
 
@@ -73,7 +74,7 @@ resource "aws_ecs_service" "covidshield_key_retrieval" {
   # Enable the new ARN format to propagate tags to containers (see config/terraform/aws/README.md)
   propagate_tags = "SERVICE"
 
-  desired_count                      = 2
+  desired_count                      = 3
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200
   health_check_grace_period_seconds  = 60
@@ -171,6 +172,7 @@ data "template_file" "covidshield_key_submission_task" {
     database_url          = aws_secretsmanager_secret_version.server_database_url.arn
     metric_provider       = var.metric_provider
     tracer_provider       = var.tracer_provider
+    env                   = var.environment
   }
 }
 
@@ -205,7 +207,7 @@ resource "aws_ecs_service" "covidshield_key_submission" {
   # Enable the new ARN format to propagate tags to containers (see config/terraform/aws/README.md)
   propagate_tags = "SERVICE"
 
-  desired_count                      = 2
+  desired_count                      = 3
   deployment_minimum_healthy_percent = 50
   deployment_maximum_percent         = 200
   health_check_grace_period_seconds  = 60

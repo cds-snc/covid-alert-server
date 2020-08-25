@@ -66,7 +66,7 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 
 	keyClaim, err := s.db.NewKeyClaim(region, originator, hashID)
 	if err == persistence.ErrHashIDClaimed {
-		log(ctx, err).WithField("header", hdr).Info("hashID used")
+		log(ctx, err).Info("hashID used")
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	} else if err != nil {
@@ -137,7 +137,7 @@ func (s *keyClaimServlet) claimKey(w http.ResponseWriter, r *http.Request) resul
 	}
 
 	oneTimeCode := req.GetOneTimeCode()
-	
+
 	// Handle odd app inputs
 	oneTimeCode = strings.ReplaceAll(oneTimeCode, " ", "")
 	oneTimeCode = strings.ReplaceAll(oneTimeCode, "-", "")

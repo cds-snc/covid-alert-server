@@ -2,7 +2,7 @@
 
 # Contributing Guidelines
 
-Welcome, and thank you for considering contributing to COVID Shield!
+Welcome, and thank you for considering contributing to COVID Alert!
 
 - [Code of Conduct](#code-of-conduct)
 - [Reporting Security Issues](#reporting-security-issues)
@@ -18,7 +18,7 @@ First, please review this document and the [Code of Conduct](CODE_OF_CONDUCT.md)
 
 ## Reporting Security Issues
 
-COVID Shield takes security very seriously. In the interest of coordinated disclosure,
+COVID Alert takes security very seriously. In the interest of coordinated disclosure,
 we request that you report any potential vulnerabilities privately in accordance with
 our [_Security Policy_](SECURITY.md).
 
@@ -32,8 +32,8 @@ If you'd like to contribute a documentation or static file change, feel free to 
 
 #### Development environment via docker-compose
 
-1. Fork https://github.com/cds-snc/covid-shield-server to your account.
-2. Clone your fork of the **CovidShield/server** repo locally by running `git clone https://github.com/<username>/server.git`.
+1. Fork https://github.com/cds-snc/covid-alert-server to your account.
+2. Clone your fork of the **cds-snc/covid-alert-server** repo locally by running `git clone https://github.com/<username>/covid-alert-server.git`.
 3. Enter the repo directory `cd server`.
 4. Run `docker-compose up`.
 
@@ -101,7 +101,7 @@ ____
 
 # Directives de contribution au serveur
 
-Bienvenue, et merci d’avoir pensé à contribuer à COVID Shield!
+Bienvenue, et merci d’avoir pensé à contribuer à COVID Alert!
 
 - [Code de conduite](#code-de-conduite)
 - [Signalement des problèmes de sécurité](#signalement-des-problèmes-de-sécurité)
@@ -117,7 +117,7 @@ Tout d’abord, veuillez consulter ce document et le [Code de conduite](CODE_OF_
 
 ## Signalement des problèmes de sécurité
 
-COVID Shield prend la sécurité très au sérieux. Dans l’intérêt d’une divulgation coordonnée,
+COVID Alert prend la sécurité très au sérieux. Dans l’intérêt d’une divulgation coordonnée,
 nous vous demandons de signaler toute vulnérabilité potentielle en privé, conformément à
 notre [_Politique de sécurité_](SECURITY.md).
 
@@ -131,8 +131,8 @@ Si vous souhaitez contribuer à une modification de la documentation ou de fichi
 
 #### Environnement de développement par l’intermédiaire de docker-compose
 
-1. Fourchez https://github.com/cds-snc/covid-shield-server à votre compte.
-2. Clonez localement votre fourche du dépôt **CovidShield/server** en exécutant localement un `git clone https://github.com/<username>/server.git`.
+1. Fourchez https://github.com/cds-snc/covid-alert-server à votre compte.
+2. Clonez localement votre fourche du dépôt **cds-snc/covid-alert-server** en exécutant localement un `git clone https://github.com/<username>/covid-alert-server.git`.
 3. Entrez le répertoire `cd server` du dépôt.
 4. Exécutez `docker-compose up`.
 

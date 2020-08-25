@@ -1,10 +1,10 @@
 [La version française suit.](#serveur-de-diagnostic-covid-shield)
 
-# COVID Shield Diagnosis Server
+# COVID Alert Diagnosis Server
 
 ![Container Build](https://github.com/CovidShield/server/workflows/Container%20Builds/badge.svg)
 
-Adapted from <https://github.com/CovidShield/server> ([see changes](https://github.com/cds-snc/covid-shield-server/blob/master/FORK.md))
+Adapted from <https://github.com/CovidShield/server>
 
 This repository implements a diagnosis server to use as a server for Apple/Google's [Exposure
 Notification](https://www.apple.com/covid19/contacttracing) framework, informed by the [guidance
@@ -27,7 +27,7 @@ In this document:
 - [Deployment notes](#deployment-notes)
 - [Metrics and Tracing](#metrics-and-tracing)
 - [Contributing](#contributing)
-- [Who Built COVID Shield?](#who-built-covid-shield)
+- [Who Built COVID Alert?](#who-built-covid-alert)
 
 ## Overview
 
@@ -56,7 +56,7 @@ server. This submission timestamp is rounded to the nearest hour for privacy pre
 prevent correlation of multiple keys to the same user).
 
 The hour of submission is used to group keys into buckets, in order to prevent clients (the
-soon-to-be-released _COVID Shield_ mobile app) from having to download a given set of key data
+soon-to-be-released _COVID Alert_ mobile app) from having to download a given set of key data
 multiple times in order to repeatedly check for exposure.
 
 The published diagnosis keys are fetched—with some best-effort authentication—from a Content
@@ -80,7 +80,7 @@ $ curl https://retrieval.covidshield.app/exposure-configuration/ON.json
 In brief, upon receiving a positive diagnosis, a health care professional will generate a _One Time
 Code_ through a web application frontend (a reference implementation will be open-sourced soon), which
 communicates with `key-submission`. This code is sent to the patient, who enters the code into their
-(soon-to-be-released) _COVID Shield_ App. This code is used to authenticate the
+(soon-to-be-released) _COVID Alert_ App. This code is used to authenticate the
 Application (once) to the diagnosis server. Encryption keypairs are exchanged by the Application
 and the `key-submission` server to be stored for fourteen days, and the One Time Code is immediately
 purged from the database.
@@ -94,7 +94,7 @@ of Elliptic-Curve cryptography.
 
 ## Data usage
 
-The _Diagnosis Key_ retrieval protocol used in _COVID Shield_ was designed to restrict the data
+The _Diagnosis Key_ retrieval protocol used in _COVID Alert_ was designed to restrict the data
 transfer to a minimum. With large numbers of keys and assuming the client fetches using compression,
 there is minimal protocol overhead on top of the key data size of 16 bytes.
 
@@ -128,7 +128,7 @@ hour**.
 
 ### Deployed to entire world
 
-If _COVID Shield_ were deployed for the entire world, we would be inclined to use the "regions"
+If _COVID Alert_ were deployed for the entire world, we would be inclined to use the "regions"
 built into the protocol to implement key namespacing, in order to not serve up the entire set of
 global diagnosis keys to each and every person in the world, but let's work through the number in
 the case that we wouldn't:
@@ -176,7 +176,7 @@ We hope to provide reference implementations on AWS, GCP, and Azure via [Hashico
 
 ## Metrics and Tracing
 
-COVID Shield uses [OpenTelemetry](https://github.com/open-telemetry/opentelemetry-go) to configure the metrics and tracing for the server, both the key retrieval and key submission.
+COVID Alert uses [OpenTelemetry](https://github.com/open-telemetry/opentelemetry-go) to configure the metrics and tracing for the server, both the key retrieval and key submission.
 
 ### Metrics
 
@@ -198,7 +198,7 @@ In order to use Prometheus as a metrics solution, you'll need to be running it i
 
 You can follow the instructions [here](https://prometheus.io/docs/prometheus/latest/installation/) for running Prometheus. 
 
-You will need to edit the configuration file, `prometheus.yml` to add an additional target so it actually polls the metrics coming from the COVID Shield server:
+You will need to edit the configuration file, `prometheus.yml` to add an additional target so it actually polls the metrics coming from the COVID Alert server:
 
 ```
 ...
@@ -223,15 +223,15 @@ Note that logs are emitted to `stderr`, so with `stdout` mode, logs will be on `
 
 See the [_Contributing Guidelines_](CONTRIBUTING.md).
 
-## Who Built COVID Shield?
+## Who Built COVID Alert?
 
-COVID Shield was originally developed by [volunteers at Shopify](https://www.covidshield.app/). It was [released free of charge under a flexible open-source license](https://github.com/CovidShield/server).
+COVID Alert was originally developed by [volunteers at Shopify](https://www.covidshield.app/). It was [released free of charge under a flexible open-source license](https://github.com/CovidShield/server).
 
 This repository is being developed by the [Canadian Digital Service](https://digital.canada.ca/). We can be reached at <cds-snc@tbs-sct.gc.ca>.
 
 ____
 
-# Serveur de diagnostic COVID Shield
+# Serveur de diagnostic COVID Alert
 
 ![Container Build](https://github.com/CovidShield/server/workflows/Container%20Builds/badge.svg)
 
@@ -253,7 +253,7 @@ Dans la présente documentation :
 - [Remarques de déploiement](#remarques-de-déploiement)
 - [Indicateurs et traçage](#indicateurs-et-traçage)
 - [Contribution](#contribution)
-- [Qui a conçu COVID Shield?](#qui-a-conçu-covid-shield)
+- [Qui a conçu COVID Alert?](#qui-a-conçu-covid-alert)
 
 ## Aperçu
 
@@ -272,7 +272,7 @@ Pour une vue d’ensemble technique du code de base, particulièrement du protoc
 
 Au moment du téléversement des clés de diagnostic, le serveur `key-submission` stocke les données définies et requises par l’interface de programmation d’applications (API) de notification d’exposition en plus de la date à laquelle les données ont été reçues par le serveur. L’horodatage de cet envoi est arrondi à l’heure la plus proche pour la protection de la vie privée (pour empêcher la corrélation de plusieurs clés avec le même utilisateur).
 
-L’heure d’envoi est utilisée pour regrouper les clés en compartiments, afin d’empêcher que les clients (la sortie prochaine de l’application mobile _COVID Shield_) aient à télécharger un certain ensemble de données de clés plusieurs fois pour pouvoir vérifier l’exposition de manière répétée.
+L’heure d’envoi est utilisée pour regrouper les clés en compartiments, afin d’empêcher que les clients (la sortie prochaine de l’application mobile _COVID Alert_) aient à télécharger un certain ensemble de données de clés plusieurs fois pour pouvoir vérifier l’exposition de manière répétée.
 
 Les clés de diagnostic publiées sont extraites (avec une authentification optimisée) à partir d’un réseau de distribution du contenu (RDC), soutenu par `key-retrieval`. Cela permet un nombre fonctionnellement arbitraire d’utilisateurs simultanés.
 
@@ -287,7 +287,7 @@ $ curl https://retrieval.covidshield.app/exposure-configuration/ON.json
 
 ### Envoyer les clés de diagnostic
 
-En bref, lorsque qu’un diagnostic positif est établi, le professionnel de la santé générera un _code à usage unique_ avec une application Web frontale (une implémentation de référence sera bientôt disponible en code source libre) qui communique avec `key-submission`. Ce code est envoyé au patient, qui entre le code dans son application _COVID Shield_ (bientôt disponible). Ce code est utilisé pour authentifier l’application (une fois) vis-à-vis le serveur de diagnostic. Les paires de clés de chiffrement sont échangées par l’application et le serveur `key-submission` et sont stockée pendant quatorze jours, et la base de données est immédiatement purgée du code à usage unique.
+En bref, lorsque qu’un diagnostic positif est établi, le professionnel de la santé générera un _code à usage unique_ avec une application Web frontale (une implémentation de référence sera bientôt disponible en code source libre) qui communique avec `key-submission`. Ce code est envoyé au patient, qui entre le code dans son application _COVID Alert_ (bientôt disponible). Ce code est utilisé pour authentifier l’application (une fois) vis-à-vis le serveur de diagnostic. Les paires de clés de chiffrement sont échangées par l’application et le serveur `key-submission` et sont stockée pendant quatorze jours, et la base de données est immédiatement purgée du code à usage unique.
 
 Ces paires de clés sont utilisées pour chiffrer et autoriser les téléversements de _clé de diagnostic_ pendant les quatorze jours qui suivent, après quoi elles sont enlevées de la base de données.
 
@@ -295,7 +295,7 @@ Le schéma de chiffrement utilisé pour le téléchargement de clés est _NaCl B
 
 ## Utilisation des données
 
-Le protocole de récupération des _clés de diagnostic_ utilisé dans _COVID Shield_ a été conçu pour limiter le transfert de données à un minimum. Considérant le grand nombre de clés, et en supposant que le client les extraie en utilisant la compression, il y a un surdébit de protocole minimal en plus de la taille des données de clé de 16 octets.
+Le protocole de récupération des _clés de diagnostic_ utilisé dans _COVID Alert_ a été conçu pour limiter le transfert de données à un minimum. Considérant le grand nombre de clés, et en supposant que le client les extraie en utilisant la compression, il y a un surdébit de protocole minimal en plus de la taille des données de clé de 16 octets.
 
 Dans tous les exemples ci-dessous :
 
@@ -321,7 +321,7 @@ Il y a eu 18 000 nouveaux cas aux États-Unis le 10 mai 2020 : 18 000 * 28 * 18 
 
 ### Déployé dans le monde entier
 
-Si _COVID Shield_ était déployé dans le monde entier, nous serions enclins à utiliser les « régions » conçues dans le protocole pour établir des espaces de noms pour les clés, afin de ne pas desservir l’ensemble des clés de diagnostic mondiales pour chaque personne dans le monde. Passons cependant en revue les chiffres au cas où nous ne le ferions pas : 
+Si _COVID Alert_ était déployé dans le monde entier, nous serions enclins à utiliser les « régions » conçues dans le protocole pour établir des espaces de noms pour les clés, afin de ne pas desservir l’ensemble des clés de diagnostic mondiales pour chaque personne dans le monde. Passons cependant en revue les chiffres au cas où nous ne le ferions pas : 
 
 Le 10 mai 2020, il y a eu 74 000 nouveaux cas dans le monde : 74 000 * 28 * 16 = 36 Mo par jour. Ainsi, le déploiement dans le monde entier au taux d’infection actuel entraînerait **1,5 Mo de téléchargement par heure**.
 
@@ -356,7 +356,7 @@ Nous espérons fournir des implémentations de référence sur AWS, GCP et Azure
 
 ## Indicateurs et traçage
 
-COVID Shield utilise [OpenTelemetry](https://github.com/open-telemetry/opentelemetry-go) pour configurer les indicateurs et le traçage du serveur, à la fois pour la récupération et l’envoi des clés.
+COVID Alert utilise [OpenTelemetry](https://github.com/open-telemetry/opentelemetry-go) pour configurer les indicateurs et le traçage du serveur, à la fois pour la récupération et l’envoi des clés.
 
 ### Indicateurs 
 
@@ -376,7 +376,7 @@ Pour utiliser Prometheus comme solution d’indicateurs, vous devez l’exécute
 
 Vous pouvez suivre les instructions [ici](https://prometheus.io/docs/prometheus/latest/installation/) pour exécuter Prometheus. 
 
-Vous devrez éditer le fichier de configuration `prometheus.yml` pour ajouter une cible supplémentaire afin qu’il interroge réellement les indicateurs provenant du serveur COVID Shield :
+Vous devrez éditer le fichier de configuration `prometheus.yml` pour ajouter une cible supplémentaire afin qu’il interroge réellement les indicateurs provenant du serveur COVID Alert :
 
 ```
 ...
@@ -399,8 +399,8 @@ Notez que les journaux sont émis en mode `stderr`, de sorte qu’avec le mode `
 
 Consultez les [_Directives de contribution_](CONTRIBUTING.md).
 
-## Qui a conçu COVID Shield?
+## Qui a conçu COVID Alert?
 
-COVID Shield a été développé à l’origine par [des bénévoles de Shopify](https://www.covidshield.app/). Il a été [diffusé gratuitement en vertu d’une licence ouverte flexible](https://github.com/CovidShield/server).
+COVID Alert a été développé à l’origine par [des bénévoles de Shopify](https://www.covidshield.app/). Il a été [diffusé gratuitement en vertu d’une licence ouverte flexible](https://github.com/CovidShield/server).
 
 Ce dépôt est maintenu par le [Service numérique canadien](https://numerique.canada.ca/). Vous pouvez nous joindre à <cds-snc@tbs-sct.gc.ca>.

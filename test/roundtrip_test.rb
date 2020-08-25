@@ -11,21 +11,27 @@ class RoundtripTest < MiniTest::Test
     current_rsin - 144 * n
   end
 
+  def days_ago_at_noon(n)
+    ((Date.today.to_time.to_i + (12 * 60 * 60)) - (n * 86400)) / (60 * 10)
+  end
+
   def test_key_roundtrip
+    puts days_ago_at_noon(1)
+    puts days_ago(1)
     keys = [
-      tek(data: '111111111111111a', rolling_start_interval_number: days_ago(1)),
-      tek(data: '111111111111111b', rolling_start_interval_number: days_ago(2)),
-      tek(data: '111111111111111c', rolling_start_interval_number: days_ago(3)),
-      tek(data: '111111111111111d', rolling_start_interval_number: days_ago(4)),
-      tek(data: '111111111111111e', rolling_start_interval_number: days_ago(5)),
-      tek(data: '111111111111111f', rolling_start_interval_number: days_ago(6)),
-      tek(data: '111111111111111g', rolling_start_interval_number: days_ago(7)),
-      tek(data: '111111111111111h', rolling_start_interval_number: days_ago(8)),
-      tek(data: '111111111111111i', rolling_start_interval_number: days_ago(9)),
-      tek(data: '111111111111111j', rolling_start_interval_number: days_ago(10)),
-      tek(data: '111111111111111k', rolling_start_interval_number: days_ago(11)),
-      tek(data: '111111111111111l', rolling_start_interval_number: days_ago(12)),
-      tek(data: '111111111111111m', rolling_start_interval_number: days_ago(13)),
+      tek(data: '111111111111111a', rolling_start_interval_number: days_ago_at_noon(1)),
+      tek(data: '111111111111111b', rolling_start_interval_number: days_ago_at_noon(2)),
+      tek(data: '111111111111111c', rolling_start_interval_number: days_ago_at_noon(3)),
+      tek(data: '111111111111111d', rolling_start_interval_number: days_ago_at_noon(4)),
+      tek(data: '111111111111111e', rolling_start_interval_number: days_ago_at_noon(5)),
+      tek(data: '111111111111111f', rolling_start_interval_number: days_ago_at_noon(6)),
+      tek(data: '111111111111111g', rolling_start_interval_number: days_ago_at_noon(7)),
+      tek(data: '111111111111111h', rolling_start_interval_number: days_ago_at_noon(8)),
+      tek(data: '111111111111111i', rolling_start_interval_number: days_ago_at_noon(9)),
+      tek(data: '111111111111111j', rolling_start_interval_number: days_ago_at_noon(10)),
+      tek(data: '111111111111111k', rolling_start_interval_number: days_ago_at_noon(11)),
+      tek(data: '111111111111111l', rolling_start_interval_number: days_ago_at_noon(12)),
+      tek(data: '111111111111111m', rolling_start_interval_number: days_ago_at_noon(13)),
     ]
     first_keys = keys.dup
 
@@ -42,20 +48,20 @@ class RoundtripTest < MiniTest::Test
     # Replace one of the 14 keys with a "new" one
     keys.pop
     keys.each { |k| k.rolling_start_interval_number -= 144 }
-    keys.unshift(tek(data: '111111111111111z', rolling_start_interval_number: days_ago(1)))
+    keys.unshift(tek(data: '111111111111111z', rolling_start_interval_number: days_ago_at_noon(1)))
     payload = Covidshield::Upload.new(timestamp: Time.now, keys: keys).to_proto
 
     resp = @sub_conn.post('/upload', encrypted_request(payload, credentials).to_proto)
     assert_result(resp, 200, :NONE, 14)
     # expected ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"]
     # actual   [     "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m"]
-    expect_keys(first_keys[0..-2]) ###############################################################################################################################
+    expect_keys(first_keys[0..-1]) ###############################################################################################################################
 
-    move_forward_hours(1) # total: +1 day & 1 hour
-    expect_keys(first_keys[0..-2])
+    move_forward_hours(3) # total: +1 day & 1 hour
+    expect_keys(first_keys[0..-1])
 
     move_forward_hours(1) # total: +1 day & 2 hours
-    expect_keys(first_keys[0..-2])
+    expect_keys(first_keys[0..-1])
 
     move_forward_hours(11 * 24 + 21) # total: +12 days & 23 hours
     expect_keys(first_keys[0..0] + [keys.first])
@@ -65,7 +71,7 @@ class RoundtripTest < MiniTest::Test
     expect_keys(first_keys[0..0] + [keys.first])
 
     move_forward_hours(1) # total: +13 days
-    expect_keys([keys.first])
+    expect_keys(first_keys[0..0] + [keys.first])
 
     # In this range, the credentials could be valid or invalid, depending on
     # how far we were into the UTC date when we created the keypair.
@@ -76,7 +82,7 @@ class RoundtripTest < MiniTest::Test
 
     move_forward_days(1) # total: +14 days
     assert_result(resp, 200, :NONE, 14)
-    expect_keys([])
+    expect_keys([keys.first])
 
     move_forward_days(1) # total: +15 days
 
@@ -114,7 +120,7 @@ class RoundtripTest < MiniTest::Test
   end
 
   def current_rsin(ts: Time.now)
-    (ts.to_i / 86400) * 144
+    (ts.to_i / 86400) / (60 * 10)
   end
 
   def dummy_payload(nkeys=1)

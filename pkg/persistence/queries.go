@@ -133,6 +133,7 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, erro
 	s, err = tx.Prepare(
 		`SELECT server_public_key FROM encryption_keys WHERE app_public_key = ?`,
 	)
+
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
 			return nil, err
@@ -446,7 +447,7 @@ func persistNonce(db *sql.DB, nonce []byte) error {
 func storeEventMetric(db *sql.DB, identifier string, deviceType string) error {
 	date := time.Now().Format("2006-01-02")
 	_, err := db.Exec(
-		`INSERT INTO metrics
+		`INSERT INTO events
 			(identifier, device_type, date, count)
 			VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE count = count + 1`,
 		identifier, deviceType, date, 1,

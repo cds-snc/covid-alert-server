@@ -16,7 +16,7 @@ const (
 	// which the Key is rolled.
 	// 144 * 600 = 86400 (1 day)
 	MaxTEKRollingPeriod = 144
-	MaxKeysInUpload  = 28
+	MaxKeysInUpload     = 28
 )
 
 func IntoKey(bytes []byte) (*[KeyLength]byte, error) {

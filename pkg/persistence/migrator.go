@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS failed_key_claim_attempts (
 	}, {
 		id: "7",
 		statements: []string{`
-CREATE TABLE IF NOT EXISTS metrics (
+CREATE TABLE IF NOT EXISTS events (
 	identifier 	VARCHAR(32) NOT NULL,
 	device_type	VARCHAR(32) NOT NULL,
 	date 				DATE NOT NULL,

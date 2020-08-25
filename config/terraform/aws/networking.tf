@@ -296,18 +296,42 @@ resource "aws_security_group" "covidshield_load_balancer" {
     cidr_blocks = ["0.0.0.0/0"] #tfsec:ignore:AWS008
   }
 
-  egress {
+  ingress {
     protocol    = "tcp"
-    from_port   = 8001
-    to_port     = 8001
-    cidr_blocks = [var.vpc_cidr_block]
+    from_port   = 8443
+    to_port     = 8443
+    cidr_blocks = ["0.0.0.0/0"] #tfsec:ignore:AWS008
   }
 
-  egress {
-    protocol    = "tcp"
-    from_port   = 8000
-    to_port     = 8000
-    cidr_blocks = [var.vpc_cidr_block]
+  dynamic "egress" {
+    for_each = [for s in toset(aws_subnet.covidshield_private) : {
+      cidr = s.cidr_block
+      zone = s.availability_zone
+    }]
+
+    content {
+      protocol    = "tcp"
+      from_port   = 8001
+      to_port     = 8001
+      cidr_blocks = [egress.value.cidr]
+      description = "retrieval target ${egress.value.zone}"
+    }
+  }
+
+
+  dynamic "egress" {
+    for_each = [for s in toset(aws_subnet.covidshield_private) : {
+      cidr = s.cidr_block
+      zone = s.availability_zone
+    }]
+
+    content {
+      protocol    = "tcp"
+      from_port   = 8000
+      to_port     = 8000
+      cidr_blocks = [egress.value.cidr]
+      description = "submission target ${egress.value.zone}"
+    }
   }
 
   tags = {
