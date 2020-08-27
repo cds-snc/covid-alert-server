@@ -94,21 +94,26 @@ CREATE TABLE IF NOT EXISTS failed_key_claim_attempts (
 		id: "7",
 		statements: []string{`
 CREATE TABLE IF NOT EXISTS events (
-	identifier 	VARCHAR(32) NOT NULL,
+	identifier 	VARCHAR(255) NOT NULL,
 	device_type	VARCHAR(32) NOT NULL,
 	date 				DATE NOT NULL,
 	count 			SMALLINT UNSIGNED NOT NULL DEFAULT 0,
 
 	INDEX (identifier),
 	INDEX (device_type),
-	INDEX (date)
-	UNIQUE KEY identifier_date (identifier,date)
+	INDEX (date),
+	UNIQUE KEY identifier_date (identifier,device_type,date)
 )`, `
 CREATE TABLE IF NOT EXISTS nonces (
 	nonce			BINARY(24) NOT NULL UNIQUE,
 	created		TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
 	UNIQUE INDEX (nonce)
+)`, `
+CREATE TABLE IF NOT EXISTS event_stash (
+	identifier 	VARCHAR(255) NOT NULL,
+	device_type	VARCHAR(32) NOT NULL,
+	created		TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )`}},
 }
 

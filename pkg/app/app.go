@@ -10,11 +10,11 @@ import (
 	"github.com/Shopify/goose/srvutil"
 
 	"github.com/CovidShield/server/pkg/config"
-	"github.com/CovidShield/server/pkg/expiration"
 	"github.com/CovidShield/server/pkg/keyclaim"
 	"github.com/CovidShield/server/pkg/persistence"
 	"github.com/CovidShield/server/pkg/retrieval"
 	"github.com/CovidShield/server/pkg/server"
+	"github.com/CovidShield/server/pkg/workers"
 )
 
 var log = logger.New("app")
@@ -95,8 +95,8 @@ func bindAddr(defaultPort uint32) string {
 	return fmt.Sprintf("0.0.0.0:%d", defaultPort)
 }
 
-func newExpirationWorker(db persistence.Conn) expiration.Worker {
-	worker, err := expiration.StartWorker(db)
+func newExpirationWorker(db persistence.Conn) workers.Worker {
+	worker, err := workers.StartExpirationWorker(db)
 	fatalIfErr(err, "failed to do initial run of expiration worker")
 	return worker
 }

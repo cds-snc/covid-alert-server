@@ -444,13 +444,85 @@ func persistNonce(db *sql.DB, nonce []byte) error {
 	return err
 }
 
-func storeEventMetric(db *sql.DB, identifier string, deviceType string) error {
-	date := time.Now().Format("2006-01-02")
+func stashEventLog(db *sql.DB, identifier string, deviceType string) error {
 	_, err := db.Exec(
-		`INSERT INTO events
-			(identifier, device_type, date, count)
-			VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE count = count + 1`,
-		identifier, deviceType, date, 1,
+		`INSERT INTO event_stash
+			(identifier, device_type)
+			VALUES (?, ?)`,
+		identifier, deviceType,
 	)
+	return err
+}
+
+func aggregateEvents(db *sql.DB) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	rows, err := tx.Query(
+		`SELECT identifier, device_type, DATE(created), COUNT(*) 
+		FROM event_stash GROUP BY identifier, device_type, DATE(created)`)
+
+	if err != nil {
+		return err
+	}
+
+	var totalEvents int
+
+	type row struct {
+		identifier string
+		deviceType string
+		date       time.Time
+		count      int
+	}
+
+	data := []row{}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var r row
+		err := rows.Scan(&r.identifier, &r.deviceType, &r.date, &r.count)
+		if err != nil {
+			return err
+		}
+		data = append(data, r)
+		totalEvents = totalEvents + r.count
+	}
+
+	for _, v := range data {
+		if _, err := tx.Exec(`
+		INSERT INTO events
+		(identifier, device_type, date, count)
+		VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE count = count + ?`,
+			v.identifier, v.deviceType, v.date.Format("2006-01-02"), v.count, v.count); err != nil {
+			if err := tx.Rollback(); err != nil {
+				return err
+			}
+			return err
+		}
+	}
+
+	if err != nil {
+		return err
+	}
+
+	err = rows.Err()
+
+	if err != nil {
+		return err
+	}
+
+	if _, err := tx.Exec(`TRUNCATE TABLE event_stash`); err != nil {
+		if err := tx.Rollback(); err != nil {
+			return err
+		}
+		return err
+	}
+
+	log(nil, nil).WithField("totalEvents", totalEvents).Info("total events written from stash")
+
+	err = tx.Commit()
 	return err
 }

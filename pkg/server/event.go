@@ -82,7 +82,7 @@ func (s *eventServlet) event(w http.ResponseWriter, r *http.Request) {
 
 	identifier := event.GetEvent()
 
-	if err := s.db.StoreEventMetric(identifier, deviceType); err != nil {
+	if err := s.db.StashEventLog(identifier, deviceType); err != nil {
 		requestError(
 			ctx, w, err, "error saving event",
 			http.StatusBadRequest, eventError(pb.EventResponse_INVALID_DATA),
