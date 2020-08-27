@@ -16,6 +16,6 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Conventional Changelog Action
-        uses: TriPSs/conventional-changelog-action@vcc91f3d94e9a3c4c81d9e096e5fcd1fa2c71fa04
+        uses: TriPSs/conventional-changelog-action@cc91f3d94e9a3c4c81d9e096e5fcd1fa2c71fa04
         with:
           github-token: ${{ secrets.github_token }}
