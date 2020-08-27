@@ -1,4 +1,4 @@
-package expiration
+package workers
 
 import (
 	"context"
@@ -71,7 +71,7 @@ func (w *worker) Tomb() *tomb.Tomb {
 	return w.tomb
 }
 
-func StartWorker(db persistence.Conn) (Worker, error) {
+func StartExpirationWorker(db persistence.Conn) (Worker, error) {
 	return create(db, time.Duration(config.AppConstants.WorkerExpirationInterval)*time.Second)
 }
 
