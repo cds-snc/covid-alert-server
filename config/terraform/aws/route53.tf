@@ -46,7 +46,7 @@ resource "aws_route53_health_check" "covidshield_key_retrieval_healthcheck_ca_js
   resource_path     = "/exposure-configuration/CA.json"
   failure_threshold = "3"
   request_interval  = "30"
-  regions           = ["us-west-2","us-east-1","us-west-1"]
+  regions           = ["us-west-2", "us-east-1", "us-west-1"]
 
   tags = {
     (var.billing_tag_key) = var.billing_tag_value
@@ -60,7 +60,7 @@ resource "aws_route53_health_check" "covidshield_key_retrieval_healthcheck_regio
   resource_path     = "/exposure-configuration/region.json"
   failure_threshold = "3"
   request_interval  = "30"
-  regions           = ["us-west-2","us-east-1","us-west-1"]
+  regions           = ["us-west-2", "us-east-1", "us-west-1"]
 
   tags = {
     (var.billing_tag_key) = var.billing_tag_value
