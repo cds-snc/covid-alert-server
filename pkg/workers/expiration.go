@@ -7,38 +7,11 @@ import (
 	"github.com/CovidShield/server/pkg/config"
 	"github.com/CovidShield/server/pkg/persistence"
 
-	"github.com/Shopify/goose/genmain"
 	"github.com/Shopify/goose/logger"
 	"gopkg.in/tomb.v2"
 )
 
-var log = logger.New("expiration")
-
-type Worker interface {
-	genmain.Component
-}
-
-type worker struct {
-	db       persistence.Conn
-	interval time.Duration
-	tomb     *tomb.Tomb
-}
-
-func (w *worker) Run() error {
-	for {
-		select {
-		case <-w.tomb.Dying():
-			return nil
-		case <-time.After(w.interval):
-			ctx, _ := logger.WithUUID(context.Background())
-			if err := w.run(ctx); err != nil {
-				log(ctx, err).Error("expiration worker failed to run")
-			}
-		}
-	}
-}
-
-func (w *worker) run(ctx context.Context) error {
+var expirationRunner = func(w *worker, ctx context.Context) error {
 	log(ctx, nil).Info("running")
 
 	var lastErr error
@@ -67,25 +40,23 @@ func (w *worker) run(ctx context.Context) error {
 	return lastErr
 }
 
-func (w *worker) Tomb() *tomb.Tomb {
-	return w.tomb
-}
-
 func StartExpirationWorker(db persistence.Conn) (Worker, error) {
-	return create(db, time.Duration(config.AppConstants.WorkerExpirationInterval)*time.Second)
+	return createExpirationWorker(db, time.Duration(config.AppConstants.WorkerExpirationInterval)*time.Second)
 }
 
-func create(db persistence.Conn, interval time.Duration) (Worker, error) {
+func createExpirationWorker(db persistence.Conn, interval time.Duration) (Worker, error) {
 	worker := &worker{
+		name:     "expiration",
 		db:       db,
 		interval: interval,
 		tomb:     &tomb.Tomb{},
+		runner:   expirationRunner,
 	}
 
 	// Run the worker once, before returning, to clean out old data on boot.
 	// run will be called again in a loop by genmain
 	ctx, _ := logger.WithUUID(context.Background())
-	if err := worker.run(ctx); err != nil {
+	if err := worker.runner(worker, ctx); err != nil {
 		return nil, err
 	}
 
