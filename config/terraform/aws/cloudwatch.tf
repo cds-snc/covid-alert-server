@@ -426,7 +426,7 @@ resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
   }
 }
 
-resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
+resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check_ca_json" {
   provider = aws.us-east-1
 
   alarm_name          = "Route53RetrievalHealthCheckCAJson"
@@ -447,7 +447,7 @@ resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
   }
 }
 
-resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
+resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check_region_json" {
   provider = aws.us-east-1
 
   alarm_name          = "Route53RetrievalHealthCheckRegionJson"
