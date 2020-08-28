@@ -7,3 +7,4 @@
 config/terraform/*/.terraform/*
 config/terraform/*/terraform.tfstate*
 /server
+node_modules

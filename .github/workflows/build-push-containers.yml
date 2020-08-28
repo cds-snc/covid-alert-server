@@ -15,6 +15,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Install Config for Changelog
+        run: npm i conventional-changelog-conventionalcommits
+        
       - name: Generate Changelog and Bump Version
         id: bump-version
         uses: TriPSs/conventional-changelog-action@1643d852ba88d583cc2bacade8ec0e9436a5a6ba
@@ -23,6 +26,8 @@ jobs:
           skip-version-file: 'true'
           # For format see: https://www.conventionalcommits.org/en/v1.0.0/
           preset: 'conventionalcommits'
+          skip-on-empty: 'false'
+          config-file-path: '.clconfig.js'
 
       - name: Configure Staging AWS credentials
         id: aws-staging
