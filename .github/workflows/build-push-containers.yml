@@ -15,19 +15,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Install Config for Changelog
-        run: npm i conventional-changelog-conventionalcommits
+      # - name: Install Config for Changelog
+      #   run: npm i conventional-changelog-conventionalcommits
         
-      - name: Generate Changelog and Bump Version
-        id: bump-version
-        uses: TriPSs/conventional-changelog-action@1643d852ba88d583cc2bacade8ec0e9436a5a6ba
-        with:
-          github-token: ${{ secrets.github_token }}
-          skip-version-file: 'true'
-          # For format see: https://www.conventionalcommits.org/en/v1.0.0/
-          preset: 'conventionalcommits'
-          skip-on-empty: 'false'
-          config-file-path: '.clconfig.js'
+      # - name: Generate Changelog and Bump Version
+      #   id: bump-version
+      #   uses: TriPSs/conventional-changelog-action@1643d852ba88d583cc2bacade8ec0e9436a5a6ba
+      #   with:
+      #     github-token: ${{ secrets.github_token }}
+      #     skip-version-file: 'true'
+      #     # For format see: https://www.conventionalcommits.org/en/v1.0.0/
+      #     preset: 'conventionalcommits'
+      #     skip-on-empty: 'false'
+      #     config-file-path: '.clconfig.js'
 
       - name: Configure Staging AWS credentials
         id: aws-staging
@@ -47,13 +47,10 @@ jobs:
           PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
           ECR_REPOSITORY: covid-server/key-retrieval
           COMPONENT: key-retrieval
-          TAG_VERSION: ${{ steps.bump-version.outputs.tag}}
         run: |
           docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT \
           -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
           -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
-          -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:$TAG_VERSION \
-          -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:$TAG_VERSION \
           -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:latest \
           -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:latest .
 
@@ -65,13 +62,10 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
           BRANCH: ${{ github.ref }}
           COMPONENT: key-submission
-          TAG_VERSION: ${{ steps.bump-version.outputs.tag}}
         run: |
           docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT \
           -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
           -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
-          -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:$TAG_VERSION \
-          -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:$TAG_VERSION \
           -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:latest \
           -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:latest .
 
@@ -80,30 +74,23 @@ jobs:
           STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
           PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
           ECR_REPOSITORY: covid-server/monolith
-          TAG_VERSION: ${{ steps.bump-version.outputs.tag}}
           COMPONENT: monolith
         run: |
           docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT \
           -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
           -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
-          -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:$TAG_VERSION \
-          -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:$TAG_VERSION \
           -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:latest \
           -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:latest .
 
       - name: Push containers to Amazon staging ECR
         env:
           STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
-          TAG_VERSION: ${{ steps.bump-version.outputs.tag}}
         run: |
           docker push $STG_ECR_REGISTRY/covid-server/key-retrieval:$GITHUB_SHA
-          docker push $STG_ECR_REGISTRY/covid-server/key-retrieval:$TAG_VERSION
           docker push $STG_ECR_REGISTRY/covid-server/key-retrieval:latest
           docker push $STG_ECR_REGISTRY/covid-server/key-submission:$GITHUB_SHA
-          docker push $STG_ECR_REGISTRY/covid-server/key-submission:$TAG_VERSION
           docker push $STG_ECR_REGISTRY/covid-server/key-submission:latest
           docker push $STG_ECR_REGISTRY/covid-server/monolith:$GITHUB_SHA
-          docker push $STG_ECR_REGISTRY/covid-server/monolith:$TAG_VERSION
           docker push $STG_ECR_REGISTRY/covid-server/monolith:latest
 
       - name: Logout of Staging Amazon ECR
@@ -125,16 +112,12 @@ jobs:
       - name: Push all containers to production Amazon ECR
         env:
           PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
-          TAG_VERSION: ${{ steps.bump-version.outputs.tag}}
         run: |
           docker push $PROD_ECR_REGISTRY/covid-server/key-retrieval:$GITHUB_SHA
-          docker push $PROD_ECR_REGISTRY/covid-server/key-retrieval:$TAG_VERSION
           docker push $PROD_ECR_REGISTRY/covid-server/key-retrieval:latest
           docker push $PROD_ECR_REGISTRY/covid-server/key-submission:$GITHUB_SHA
-          docker push $PROD_ECR_REGISTRY/covid-server/key-submission:$TAG_VERSION
           docker push $PROD_ECR_REGISTRY/covid-server/key-submission:latest
           docker push $PROD_ECR_REGISTRY/covid-server/monolith:$GITHUB_SHA
-          docker push $PROD_ECR_REGISTRY/covid-server/monolith:$TAG_VERSION
           docker push $PROD_ECR_REGISTRY/covid-server/monolith:latest
 
       - name: Logout of Production Amazon ECR
