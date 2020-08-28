@@ -22,6 +22,7 @@ jobs:
           ref: ${{ github.sha }}
 
       - name: Wait for terraform apply
+        if: steps.wait-for-build.outputs.conclusion == 'success'
         uses: fountainhead/action-wait-for-check@v1.0.0
         id: wait-for-terraform
         with:
@@ -30,10 +31,11 @@ jobs:
           ref: ${{ github.sha }}
 
       - name: Checkout
-        if: steps.wait-for-build.outputs.conclusion == 'success'
+        if: steps.wait-for-terraform.outputs.conclusion == 'success'
         uses: actions/checkout@v2
 
       - name: Configure AWS credentials
+        if: steps.wait-for-terraform.outputs.conclusion == 'success'
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -41,21 +43,25 @@ jobs:
           aws-region: ca-central-1
 
       - name: Login to Amazon ECR
+        if: steps.wait-for-terraform.outputs.conclusion == 'success'
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Get Cluster Name
+        if: steps.wait-for-terraform.outputs.conclusion == 'success'
         id: cluster
         run: |
           echo "##[set-output name=name;]$(aws ecs list-clusters | jq -r '.clusterArns[0]' | cut -f 2 -d "/" )"
 
       - name: Download retrieval task definition
+        if: steps.wait-for-terraform.outputs.conclusion == 'success'
         id: download-taskdef-retrieval
         run: |
           aws ecs describe-task-definition --task-definition KeyRetrieval --query taskDefinition > task-definition-retrieval.json
           echo "##[set-output name=container_name;]$(jq -r '.containerDefinitions[0].name' task-definition-retrieval.json)"
 
       - name: Render image for retrieval service
+        if: steps.wait-for-terraform.outputs.conclusion == 'success'
         id: taskdef-retrieval
         uses: aws-actions/amazon-ecs-render-task-definition@9666dc9
         with:
@@ -64,6 +70,7 @@ jobs:
           image: ${{ steps.login-ecr.outputs.registry }}/covid-server/key-retrieval:${{ github.sha }}
 
       - name: Render appspec for retrieval service
+        if: steps.wait-for-terraform.outputs.conclusion == 'success'
         run: |
           CONTAINER_PORT=`jq '.containerDefinitions[0].portMappings[0].containerPort' task-definition-retrieval.json`
           CONTAINER_NAME=${{ steps.download-taskdef-retrieval.outputs.container_name }}
@@ -72,6 +79,7 @@ jobs:
           jq  --argjson port "$CONTAINER_PORT" --arg cname "$CONTAINER_NAME" --arg taskdefarn "$TASKDEF_ARN" --arg lambda "$LAMBDA" '.Resources[0].TargetService.Properties.TaskDefinition = $taskdefarn | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerName = $cname | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerPort = $port | .Hooks[0].BeforeAllowTraffic = $lambda ' config/infrastructure/aws/appspec-template.json > covidshield-retrieval-appspec.json
 
       - name: Deploy image for retrieval service
+        if: steps.wait-for-terraform.outputs.conclusion == 'success'
         timeout-minutes: 10
         uses: aws-actions/amazon-ecs-deploy-task-definition@7218b9c
         with:
@@ -98,6 +106,7 @@ jobs:
           ref: ${{ github.sha }}
 
       - name: Wait for terraform apply
+        if: steps.wait-for-build.outputs.conclusion == 'success'
         uses: fountainhead/action-wait-for-check@v1.0.0
         id: wait-for-terraform
         with:
@@ -106,10 +115,11 @@ jobs:
           ref: ${{ github.sha }}
 
       - name: Checkout
-        if: steps.wait-for-build.outputs.conclusion == 'success'
+        if: steps.wait-for-terraform.outputs.conclusion == 'success'
         uses: actions/checkout@v2
 
       - name: Configure AWS credentials
+        if: steps.wait-for-terraform.outputs.conclusion == 'success'
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -117,21 +127,25 @@ jobs:
           aws-region: ca-central-1
 
       - name: Login to Amazon ECR
+        if: steps.wait-for-terraform.outputs.conclusion == 'success'
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Get Cluster Name
+        if: steps.wait-for-terraform.outputs.conclusion == 'success'
         id: cluster
         run: |
           echo "##[set-output name=name;]$(aws ecs list-clusters | jq -r '.clusterArns[0]' | cut -f 2 -d "/" )"
 
       - name: Download submission task definition
+        if: steps.wait-for-terraform.outputs.conclusion == 'success'
         id: download-taskdef-submission
         run: |
           aws ecs describe-task-definition --task-definition KeySubmission --query taskDefinition > task-definition-submission.json
           echo "##[set-output name=container_name;]$(jq -r '.containerDefinitions[0].name' task-definition-submission.json)"
 
       - name: Render image for submission service
+        if: steps.wait-for-terraform.outputs.conclusion == 'success'
         id: taskdef-submission
         uses: aws-actions/amazon-ecs-render-task-definition@9666dc9
         with:
@@ -140,6 +154,7 @@ jobs:
           image: ${{ steps.login-ecr.outputs.registry }}/covid-server/key-submission:${{ github.sha }}
 
       - name: Render appspec for submission service
+        if: steps.wait-for-terraform.outputs.conclusion == 'success'
         run: |
           CONTAINER_PORT=`jq '.containerDefinitions[0].portMappings[0].containerPort' task-definition-submission.json`
           CONTAINER_NAME=${{ steps.download-taskdef-submission.outputs.container_name }}
@@ -148,6 +163,7 @@ jobs:
           jq  --argjson port "$CONTAINER_PORT" --arg cname "$CONTAINER_NAME" --arg taskdefarn "$TASKDEF_ARN" --arg lambda "$LAMBDA" '.Resources[0].TargetService.Properties.TaskDefinition = $taskdefarn | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerName = $cname | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerPort = $port | .Hooks[0].BeforeAllowTraffic = $lambda ' config/infrastructure/aws/appspec-template.json > covidshield-submission-appspec.json
 
       - name: Deploy image for submission service
+        if: steps.wait-for-terraform.outputs.conclusion == 'success'
         timeout-minutes: 10
         uses: aws-actions/amazon-ecs-deploy-task-definition@7218b9c
         with:
