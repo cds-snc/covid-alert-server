@@ -426,6 +426,48 @@ resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
   }
 }
 
+resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
+  provider = aws.us-east-1
+
+  alarm_name          = "Route53RetrievalHealthCheck"
+  alarm_description   = "Check that the Retrieval server is correctly serving CA.json"
+  comparison_operator = "LessThanThreshold"
+  metric_name         = "HealthCheckStatus"
+  namespace           = "AWS/Route53"
+  period              = "60"
+  evaluation_periods  = "2"
+  statistic           = "Average"
+  threshold           = "1"
+  treat_missing_data  = "breaching"
+
+  alarm_actions = [aws_sns_topic.alert_warning_us_east.arn, aws_sns_topic.alert_critical_us_east.arn]
+
+  dimensions = {
+    HealthCheckId = aws_route53_health_check.covidshield_key_retrieval_healthcheck_ca_json.id
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
+  provider = aws.us-east-1
+
+  alarm_name          = "Route53RetrievalHealthCheck"
+  alarm_description   = "Check that the Retrieval server is correctly serving region.json"
+  comparison_operator = "LessThanThreshold"
+  metric_name         = "HealthCheckStatus"
+  namespace           = "AWS/Route53"
+  period              = "60"
+  evaluation_periods  = "2"
+  statistic           = "Average"
+  threshold           = "1"
+  treat_missing_data  = "breaching"
+
+  alarm_actions = [aws_sns_topic.alert_warning_us_east.arn, aws_sns_topic.alert_critical_us_east.arn]
+
+  dimensions = {
+    HealthCheckId = aws_route53_health_check.covidshield_key_retrieval_healthcheck_region_json.id
+  }
+}
+
 resource "aws_cloudwatch_metric_alarm" "route53_submission_health_check" {
   provider = aws.us-east-1
 

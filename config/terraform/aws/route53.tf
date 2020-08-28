@@ -39,6 +39,34 @@ resource "aws_route53_health_check" "covidshield_key_retrieval_healthcheck" {
   }
 }
 
+resource "aws_route53_health_check" "covidshield_key_retrieval_healthcheck_ca_json" {
+  fqdn              = "retrieval.${var.route53_zone_name}"
+  port              = 443
+  type              = "HTTPS"
+  resource_path     = "/exposure-configuration/CA.json"
+  failure_threshold = "3"
+  request_interval  = "30"
+  regions           = ["us-west-2","us-east-1","us-west-1"]
+
+  tags = {
+    (var.billing_tag_key) = var.billing_tag_value
+  }
+}
+
+resource "aws_route53_health_check" "covidshield_key_retrieval_healthcheck_region_json" {
+  fqdn              = "retrieval.${var.route53_zone_name}"
+  port              = 443
+  type              = "HTTPS"
+  resource_path     = "/exposure-configuration/region.json"
+  failure_threshold = "3"
+  request_interval  = "30"
+  regions           = ["us-west-2","us-east-1","us-west-1"]
+
+  tags = {
+    (var.billing_tag_key) = var.billing_tag_value
+  }
+}
+
 ###
 # Route53 Record - Key Submission
 ###
