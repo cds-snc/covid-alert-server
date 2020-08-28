@@ -429,7 +429,7 @@ resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
 resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
   provider = aws.us-east-1
 
-  alarm_name          = "Route53RetrievalHealthCheck"
+  alarm_name          = "Route53RetrievalHealthCheckCAJson"
   alarm_description   = "Check that the Retrieval server is correctly serving CA.json"
   comparison_operator = "LessThanThreshold"
   metric_name         = "HealthCheckStatus"
@@ -450,7 +450,7 @@ resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
 resource "aws_cloudwatch_metric_alarm" "route53_retrieval_health_check" {
   provider = aws.us-east-1
 
-  alarm_name          = "Route53RetrievalHealthCheck"
+  alarm_name          = "Route53RetrievalHealthCheckRegionJson"
   alarm_description   = "Check that the Retrieval server is correctly serving region.json"
   comparison_operator = "LessThanThreshold"
   metric_name         = "HealthCheckStatus"
