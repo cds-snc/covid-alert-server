@@ -8,6 +8,7 @@ import (
 	"github.com/Shopify/goose/genmain"
 	"github.com/Shopify/goose/logger"
 	"github.com/Shopify/goose/srvutil"
+	"github.com/go-redis/redis"
 
 	"github.com/CovidShield/server/pkg/config"
 	"github.com/CovidShield/server/pkg/keyclaim"
@@ -28,7 +29,7 @@ type AppBuilder struct {
 	components        []genmain.Component
 	servlets          []srvutil.Servlet
 	database          persistence.Conn
-	redis							persistence.RedisConn
+	redis             persistence.RedisConn
 }
 
 func NewBuilder() *AppBuilder {
@@ -36,7 +37,7 @@ func NewBuilder() *AppBuilder {
 	builder := &AppBuilder{
 		defaultServerPort: config.AppConstants.DefaultServerPort,
 		database:          newDatabase(DatabaseURL()),
-		redis:						 newRedisCache(RedisURL())
+		redis:             newRedisCache(RedisURL()),
 	}
 	builder.servlets = append(builder.servlets, server.NewServicesServlet())
 	return builder
@@ -45,6 +46,7 @@ func NewBuilder() *AppBuilder {
 func (a *AppBuilder) WithSubmission() *AppBuilder {
 	a.defaultServerPort = config.AppConstants.DefaultSubmissionServerPort
 
+	a.servlets = append(a.servlets, server.NewEventServlet(a.redis))
 	a.servlets = append(a.servlets, server.NewUploadServlet(a.database))
 	a.servlets = append(a.servlets, server.NewKeyClaimServlet(a.database, keyclaim.NewAuthenticator()))
 	return a

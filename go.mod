@@ -8,7 +8,6 @@ require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-redis/redis v6.15.9+incompatible
-	github.com/go-redis/redis/v8 v8.0.0-beta.8 // indirect
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/mux v1.7.4
@@ -16,9 +15,8 @@ require (
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.6.1
-	go.opentelemetry.io/otel v0.11.0
+	go.opentelemetry.io/otel v0.6.0
 	go.opentelemetry.io/otel/exporters/metric/prometheus v0.6.0
-	go.opentelemetry.io/otel/sdk v0.11.0
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
 	google.golang.org/protobuf v1.23.0
 	gopkg.in/tomb.v2 v2.0.0-20161208151619-d5d1b5820637
