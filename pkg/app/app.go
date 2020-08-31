@@ -28,6 +28,7 @@ type AppBuilder struct {
 	components        []genmain.Component
 	servlets          []srvutil.Servlet
 	database          persistence.Conn
+	redis							persistence.RedisConn
 }
 
 func NewBuilder() *AppBuilder {
@@ -35,6 +36,7 @@ func NewBuilder() *AppBuilder {
 	builder := &AppBuilder{
 		defaultServerPort: config.AppConstants.DefaultServerPort,
 		database:          newDatabase(DatabaseURL()),
+		redis:						 newRedisCache(RedisURL())
 	}
 	builder.servlets = append(builder.servlets, server.NewServicesServlet())
 	return builder
@@ -82,6 +84,24 @@ func newDatabase(dbURL string) persistence.Conn {
 	fatalIfErr(err, "could not create db object")
 
 	return db
+}
+
+func RedisURL() string {
+	url := os.Getenv("REDIS_URL")
+	if url == "" {
+		panic("REDIS_URL must be set")
+	}
+	return url
+}
+
+func newRedisCache(cacheURL string) persistence.RedisConn {
+	opt, err := redis.ParseURL(cacheURL)
+	if err != nil {
+		fatalIfErr(err, "could not create cache object")
+	}
+	cache := persistence.DialRedis(opt)
+
+	return cache
 }
 
 func bindAddr(defaultPort uint32) string {
