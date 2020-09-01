@@ -436,8 +436,6 @@ func TestDBStoreKeys(t *testing.T) {
 	}
 
 	assert.Nil(t, receivedResult, "Expected nil when keys are commited")
-
-	assertLog(t, hook, 1, logrus.InfoLevel, "Inserted keys")
 }
 
 func TestDBFetchKeysForHours(t *testing.T) {
