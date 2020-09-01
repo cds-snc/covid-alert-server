@@ -297,7 +297,6 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 	if err = tx.Commit(); err != nil {
 		return err
 	}
-	log(nil, nil).WithField("keys", keysInserted).Info("Inserted keys")
 	return nil
 }
 
