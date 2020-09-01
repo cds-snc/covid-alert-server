@@ -10,9 +10,6 @@ import (
 	pb "github.com/CovidShield/server/pkg/proto/covidshield"
 	"github.com/CovidShield/server/pkg/timemath"
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/Shopify/goose/logger"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/nacl/box"
 )
@@ -528,17 +525,6 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	defer db.Close()
 
-	// Capture logs
-	oldLog := log
-	defer func() { log = oldLog }()
-
-	nullLog, hook := test.NewNullLogger()
-	nullLog.ExitFunc = func(code int) {}
-
-	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
-		return logrus.NewEntry(nullLog)
-	}
-
 	pub, _, _ := box.GenerateKey(rand.Reader)
 	keys := []*pb.TemporaryExposureKey{}
 	region := "302"
@@ -767,8 +753,6 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	}
 
 	assert.Nil(t, receivedResult, "Expected nil when keys are commited")
-
-	assertLog(t, hook, 1, logrus.InfoLevel, "Inserted keys")
 }
 
 func TestCheckClaimKeyBan(t *testing.T) {
