@@ -6,15 +6,19 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.4.1
 	github.com/Shopify/goose v0.0.0-20200402140107-fe0a5ddfd767
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
+	github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a // indirect
+	github.com/alicebob/miniredis v2.5.0+incompatible
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/golang/protobuf v1.4.2
+	github.com/gomodule/redigo v1.8.2 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/shirou/gopsutil v2.20.4+incompatible
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.6.1
+	github.com/yuin/gopher-lua v0.0.0-20200816102855-ee81675732da // indirect
 	go.opentelemetry.io/otel v0.6.0
 	go.opentelemetry.io/otel/exporters/metric/prometheus v0.6.0
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550

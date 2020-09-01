@@ -41,7 +41,7 @@ func (s *eventServlet) eventNonce(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Access-Control-Allow-Origin", config.AppConstants.CORSAccessControlAllowOrigin)
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	if _, err := w.Write([]byte(nonce + "\n")); err != nil {
+	if _, err := w.Write([]byte(nonce)); err != nil {
 		log(ctx, err).Warn("error writing nonce response")
 	}
 }
