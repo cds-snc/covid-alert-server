@@ -365,17 +365,6 @@ func TestDBPrivForPub(t *testing.T) {
 }
 
 func TestDBStoreKeys(t *testing.T) {
-	// Capture logs
-	oldLog := log
-	defer func() { log = oldLog }()
-
-	nullLog, hook := test.NewNullLogger()
-	nullLog.ExitFunc = func(code int) {}
-
-	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
-		return logrus.NewEntry(nullLog)
-	}
-
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
 	defer db.Close()
 
