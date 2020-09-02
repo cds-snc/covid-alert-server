@@ -37,45 +37,45 @@ proto:    $(PROTO_GO) $(PROTO_RB) $(RPC_RB)
 
 build/debug/%: $(GOFILES) $(PROTO_GO)
 	@mkdir -p "$(@D)"
-	@echo "     \x1b[1;34mgo build \x1b[0;1m(debug)\x1b[0m  $@"
+	@echo "     \e[1;34mgo build \e[0;1m(debug)\e[0m  $@"
 	@$(GO) build -trimpath -i -ldflags=$(GOLDFLAGS) -o "$@" -gcflags "$(GCFLAGS_DEBUG)" "$(MODULE)/cmd/$(@F)"
 
 build/release/%: $(GOFILES) $(PROTO_GO)
 	@mkdir -p "$(@D)"
-	@echo "   \x1b[1;34mgo build \x1b[0;1m(release)\x1b[0m  $@"
+	@echo "   \e[1;34mgo build \e[0;1m(release)\e[0m  $@"
 	@$(GO) build -trimpath -i -ldflags=$(GOLDFLAGS) -o "$@" -gcflags "$(GCFLAGS_RELEASE)" "$(MODULE)/cmd/$(@F)"
 
 pkg/proto/%/proto.pb.go: proto/%.proto
 	@mkdir -p "$(@D)"
-	@echo "          \x1b[1;34mprotoc \x1b[0;1m(go)\x1b[0m  $@"
+	@echo "          \e[1;34mprotoc \e[0;1m(go)\e[0m  $@"
 	@$(PROTOC) --go_out=. "--proto_path=$(*D)" "$<"
 	@mv "$(@D)/$(patsubst %.proto,%,$(*F)).pb.go" "$(@D)/proto.pb.go"
 
 test/lib/protocol/%_pb.rb: proto/%.proto
 	@mkdir -p "$(@D)"
-	@echo "          \x1b[1;34mprotoc \x1b[0;1m(rb)\x1b[0m  $@"
+	@echo "          \e[1;34mprotoc \e[0;1m(rb)\e[0m  $@"
 	@grpc_tools_ruby_protoc -I ./proto --ruby_out=test/lib/protocol "$<"
 
 test/lib/protocol/%_services_pb.rb: proto/%.proto
 	@mkdir -p "$(@D)"
-	@echo "          \x1b[1;34mprotoc \x1b[0;1m(rb)\x1b[0m  $@"
+	@echo "          \e[1;34mprotoc \e[0;1m(rb)\e[0m  $@"
 	@grpc_tools_ruby_protoc -I ./proto --grpc_out=test/lib/protocol "$<"
 
 test: debug $(PROTO_RB) $(RPC_RB)
 	ruby $(foreach file,$(TEST_FILES),-r ./$(file)) -e ''
 
 clean:
-	@echo "                   \x1b[1;31mrm\x1b[0m  $(CMDS)"
+	@echo "                   \e[1;31mrm\e[0m  $(CMDS)"
 	@rm -f $(CMDS)
-	@echo "                   \x1b[1;31mrm\x1b[0m  build"
+	@echo "                   \e[1;31mrm\e[0m  build"
 	@rm -rf build
 
 clean-proto:
-	@echo "                   \x1b[1;31mrm\x1b[0m  $(PROTO_GO)"
+	@echo "                   \e[1;31mrm\e[0m  $(PROTO_GO)"
 	@rm -f $(PROTO_GO)
-	@echo "                   \x1b[1;31mrm\x1b[0m  $(PROTO_RB)"
+	@echo "                   \e[1;31mrm\e[0m  $(PROTO_RB)"
 	@rm -f $(PROTO_RB)
-	@echo "                   \x1b[1;31mrm\x1b[0m  $(RPC_RB)"
+	@echo "                   \e[1;31mrm\e[0m  $(RPC_RB)"
 	@rm -f $(RPC_RB)
 
 format:
