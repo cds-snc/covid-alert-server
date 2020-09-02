@@ -13,5 +13,5 @@
 		"rebornix.Ruby"
 	],
 
-	"postCreateCommand": "export PATH=/usr/local/go/bin:$PATH && bundle install && GOBIN=/usr/local/bin go install google.golang.org/protobuf/cmd/protoc-gen-go",
+	"postCreateCommand": "bash /workspace/scripts/install-dev-tools.sh",
 }
