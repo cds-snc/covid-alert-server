@@ -1,8 +1,6 @@
 name: Build and Push monolith to Google Cloud
 
-on:
-  push:
-    branches: [pull_request]
+on: [pull_request]
 
 env:
   GITHUB_SHA: ${{ github.sha }}
@@ -20,8 +18,8 @@ jobs:
         uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
           version: '290.0.1'
-          service_account_email: ${{ secrets.GCP_SA_EMAIL }}
-          service_account_key: ${{ secrets.GCLOUD_AUTH }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
           export_default_credentials: true
 
       - name: Log in to GCR
