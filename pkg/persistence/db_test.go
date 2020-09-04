@@ -365,17 +365,6 @@ func TestDBPrivForPub(t *testing.T) {
 }
 
 func TestDBStoreKeys(t *testing.T) {
-	// Capture logs
-	oldLog := log
-	defer func() { log = oldLog }()
-
-	nullLog, hook := test.NewNullLogger()
-	nullLog.ExitFunc = func(code int) {}
-
-	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
-		return logrus.NewEntry(nullLog)
-	}
-
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
 	defer db.Close()
 
@@ -436,8 +425,6 @@ func TestDBStoreKeys(t *testing.T) {
 	}
 
 	assert.Nil(t, receivedResult, "Expected nil when keys are commited")
-
-	assertLog(t, hook, 1, logrus.InfoLevel, "Inserted keys")
 }
 
 func TestDBFetchKeysForHours(t *testing.T) {

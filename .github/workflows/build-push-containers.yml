@@ -69,19 +69,6 @@ jobs:
           -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:latest \
           -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:latest .
 
-      - name: Build Monolith
-        env:
-          STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
-          PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
-          ECR_REPOSITORY: covid-server/monolith
-          COMPONENT: monolith
-        run: |
-          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT \
-          -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
-          -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
-          -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:latest \
-          -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:latest .
-
       - name: Push containers to Amazon staging ECR
         env:
           STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
@@ -90,8 +77,6 @@ jobs:
           docker push $STG_ECR_REGISTRY/covid-server/key-retrieval:latest
           docker push $STG_ECR_REGISTRY/covid-server/key-submission:$GITHUB_SHA
           docker push $STG_ECR_REGISTRY/covid-server/key-submission:latest
-          docker push $STG_ECR_REGISTRY/covid-server/monolith:$GITHUB_SHA
-          docker push $STG_ECR_REGISTRY/covid-server/monolith:latest
 
       - name: Logout of Staging Amazon ECR
         if: always()
@@ -117,8 +102,6 @@ jobs:
           docker push $PROD_ECR_REGISTRY/covid-server/key-retrieval:latest
           docker push $PROD_ECR_REGISTRY/covid-server/key-submission:$GITHUB_SHA
           docker push $PROD_ECR_REGISTRY/covid-server/key-submission:latest
-          docker push $PROD_ECR_REGISTRY/covid-server/monolith:$GITHUB_SHA
-          docker push $PROD_ECR_REGISTRY/covid-server/monolith:latest
 
       - name: Logout of Production Amazon ECR
         if: always()
