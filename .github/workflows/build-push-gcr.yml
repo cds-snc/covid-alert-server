@@ -17,7 +17,7 @@ jobs:
 
       - name: Configure gCloud credentials
         id: gcloud-login
-        uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        uses: GoogleCloudPlatform/github-actions/setup-gcloud@3025a7711899c25380bbef9ba82f89714de40c95
         with:
           version: '290.0.1'
           project_id: ${{ secrets.GCP_PROJECT_ID }}
