@@ -7,7 +7,7 @@ env:
   BRANCH: ${{ github.ref }}
 
 jobs:
-  build-n-push:
+  build-and-push-gcr:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,7 +30,7 @@ jobs:
         run: |
           docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=monolith \
           -t gcr.io/cdssnc/covid-alert/server:$GITHUB_SHA \
-          -t gcr.io/cdssnc/covid-alert/server:latest \
+          -t gcr.io/cdssnc/covid-alert/server:latest .
 
       - name: Push containers to GCR
         run: |
