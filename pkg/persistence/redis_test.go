@@ -1,7 +1,6 @@
 package persistence
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/alicebob/miniredis"
