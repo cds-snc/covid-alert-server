@@ -30,3 +30,7 @@ corsAccessControlAllowOrigin: "*"
 # Feature flags
 disableCurrentDateCheckFeatureFlag: true
 enableEntirePeriodBundle: true
+
+#Eventlog configs
+redisNonceAttempts: 5
+redisNonceTimeoutSeconds: 30 

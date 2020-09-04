@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"time"
 
 	"github.com/Shopify/goose/logger"
 	"github.com/spf13/viper"
@@ -25,6 +26,8 @@ type Constants struct {
 	CORSAccessControlAllowOrigin       string
 	DisableCurrentDateCheckFeatureFlag bool
 	EnableEntirePeriodBundle           bool
+	RedisNonceAttempts                 int
+	RedisNonceTimeoutSeconds           time.Duration
 }
 
 var AppConstants Constants
@@ -62,4 +65,6 @@ func setDefaults() {
 	viper.SetDefault("corsAccessControlAllowOrigin", "*")
 	viper.SetDefault("disableCurrentDateCheckFeatureFlag", true)
 	viper.SetDefault("enableEntirePeriodBundle", false)
+	viper.SetDefault("redisNonceAttempts", 5)
+	viper.SetDefault("redisNonceTimeoutSeconds", 30)
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/CovidShield/server/pkg/config"
 	"github.com/go-redis/redis"
 )
 
@@ -26,7 +27,7 @@ func DialRedis(opt *redis.Options) RedisConn {
 
 func (c *redisConn) GenerateNonce() (string, error) {
 	nonce := make([]byte, 24)
-	for tries := 5; tries > 0; tries-- {
+	for tries := config.AppConstants.RedisNonceAttempts; tries > 0; tries-- {
 
 		_, err := rand.Read(nonce)
 
@@ -36,7 +37,7 @@ func (c *redisConn) GenerateNonce() (string, error) {
 
 		encodedNonce := base64.StdEncoding.EncodeToString(nonce)
 
-		err = c.rdb.Set(encodedNonce, true, time.Second*30).Err()
+		err = c.rdb.Set(encodedNonce, true, time.Second*config.AppConstants.RedisNonceTimeoutSeconds).Err()
 		if err == nil {
 			return encodedNonce, nil
 		} else if strings.Contains(err.Error(), "Duplicate entry") {
