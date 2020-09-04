@@ -19,7 +19,7 @@ class EventTest < MiniTest::Test
       req.url('/event/nonce')
     end
     assert_response(resp, 200, 'text/plain; charset=utf-8')
-    assert_match(/\A(.){32}\n\z/m, resp.body)
+    assert_match(/\A(.){32}\z/m, resp.body)
 
   end
 end

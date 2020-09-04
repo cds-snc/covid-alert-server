@@ -11,6 +11,13 @@ services:
       MYSQL_DATABASE: covidshield
       MYSQL_PASSWORD: covidshield
       MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+  redis:
+    image: redis:alpine
+    restart: unless-stopped
+    ports: 
+      - 6379:6379
+    environment:
+      REDIS_REPLICATION_MODE: master
   key-retrieval:
     build:
       context: .
@@ -30,6 +37,7 @@ services:
       DATABASE_URL: covidshield:covidshield@tcp(mysql)/covidshield
       RETRIEVE_HMAC_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
       METRIC_PROVIDER: stdout
+      REDIS_URL: redis://redis:6379/0
       TRACER_PROVIDER: 
   key-submission:
     build:
@@ -53,4 +61,5 @@ services:
       DATABASE_URL: covidshield:covidshield@tcp(mysql)/covidshield
       KEY_CLAIM_TOKEN: thisisaverylongtoken=302
       METRIC_PROVIDER: ""
+      REDIS_URL: redis://redis:6379/0
       TRACER_PROVIDER: ""
