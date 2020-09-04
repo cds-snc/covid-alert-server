@@ -1,6 +1,8 @@
 name: Build and Push monolith to Google Cloud
 
-on: [pull_request]
+on:
+  push:
+    branches: [master]
 
 env:
   GITHUB_SHA: ${{ github.sha }}
