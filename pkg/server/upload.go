@@ -138,8 +138,8 @@ func (s *uploadServlet) upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ts := time.Unix(upload.GetTimestamp().Seconds, 0)
-	if math.Abs(time.Since(ts).Seconds()) > 3600 {
+	ts := upload.GetTimestamp()
+	if ts == nil || math.Abs(time.Since(time.Unix(ts.Seconds, 0)).Seconds()) > 3600 {
 		requestError(
 			ctx, w, err, "invalid timestamp",
 			http.StatusBadRequest, uploadError(pb.EncryptedUploadResponse_INVALID_TIMESTAMP),
