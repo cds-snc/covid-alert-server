@@ -15,7 +15,7 @@ option go_package="pkg/proto/covidshield";
 // will fail.
 message KeyClaimRequest {
   // one_time_code is the code received from the testing portal.
-  optional string one_time_code = 1; // 8 numerical digits
+  optional string one_time_code = 1; // 10 alphanumeric characters
   // app_public_key is generated locally and saved upon successful request
   // completion.
   optional bytes app_public_key = 2; // 32 bytes
