@@ -28,6 +28,7 @@ type Constants struct {
 	EnableEntirePeriodBundle           bool
 	RedisNonceAttempts                 int
 	RedisNonceTimeoutSeconds           time.Duration
+	RegionCode                         string
 }
 
 var AppConstants Constants
@@ -67,4 +68,6 @@ func setDefaults() {
 	viper.SetDefault("enableEntirePeriodBundle", false)
 	viper.SetDefault("redisNonceAttempts", 5)
 	viper.SetDefault("redisNonceTimeoutSeconds", 30)
+	/// The MCC Region Code for Canada
+	viper.SetDefault("regionCode", "302")
 }

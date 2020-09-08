@@ -34,3 +34,5 @@ enableEntirePeriodBundle: true
 #Eventlog configs
 redisNonceAttempts: 5
 redisNonceTimeoutSeconds: 30 
+
+regionCode: "302"

@@ -1,0 +1,44 @@
+name: Build and Push monolith to Google Cloud
+
+on:
+  push:
+    branches: [master]
+
+env:
+  GITHUB_SHA: ${{ github.sha }}
+  BRANCH: ${{ github.ref }}
+
+jobs:
+  build-and-push-gcr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure gCloud credentials
+        id: gcloud-login
+        uses: GoogleCloudPlatform/github-actions/setup-gcloud@3025a7711899c25380bbef9ba82f89714de40c95
+        with:
+          version: '290.0.1'
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+
+      - name: Log in to GCR
+        run: |
+          gcloud auth configure-docker
+
+      - name: Build monolith
+        run: |
+          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=monolith \
+          -t gcr.io/cdssnc/covid-alert/server:$GITHUB_SHA \
+          -t gcr.io/cdssnc/covid-alert/server:latest .
+
+      - name: Push containers to GCR
+        run: |
+          docker push gcr.io/cdssnc/covid-alert/server:$GITHUB_SHA
+          docker push gcr.io/cdssnc/covid-alert/server:latest
+
+      - name: Logout of GCR
+        if: always()
+        run: docker logout ${{ steps.login-ecr-staging.outputs.registry }}

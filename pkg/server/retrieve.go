@@ -59,7 +59,12 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) resul
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
-	region := vars["region"]
+	/* Hardcode the region as 302 (Canada MCC)
+	You can see the reason for this in pkg/server/keyclaim.go
+	As stated there I'm going to open an issue to continue this work instead of just
+	relying on the hardcoded value.
+	*/
+	region := config.AppConstants.RegionCode
 	if !s.auth.Authenticate(region, vars["day"], vars["auth"]) {
 		return s.fail(log(ctx, nil), w, "invalid auth parameter", "unauthorized", http.StatusUnauthorized)
 	}
