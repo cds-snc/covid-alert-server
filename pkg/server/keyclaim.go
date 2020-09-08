@@ -17,6 +17,8 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+const mccRegionCode = "302"
+
 func NewKeyClaimServlet(db persistence.Conn, keyClaimAuth keyclaim.Authenticator) srvutil.Servlet {
 	return &keyClaimServlet{db: db, auth: keyClaimAuth}
 }
@@ -61,6 +63,16 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
+
+	/*
+		Since the region that is being retrieved above is no longer the MCC code for canada
+		we want to override that with the actual value. The reason for this is that we are now
+		using the bearer token environment variable to store the name of the provice it's associated with
+
+		Also please note this hurts me to not go through the rest of the code to pull out the region code
+		I will open an issue to continue with this work.
+	*/
+	region = mccRegionCode
 
 	hashID := vars["hashID"]
 

@@ -6,7 +6,7 @@
 #   12345678
 #   $
 
-TOKEN="test"
+TOKEN="thisisaverylongtoken"
 URL_BASE="http://127.0.0.1:8000"
 
 curl -XPOST -H "Authorization: Bearer ${TOKEN}" "${URL_BASE}/new-key-claim"
