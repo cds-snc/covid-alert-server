@@ -25,6 +25,7 @@ type Constants struct {
 	CORSAccessControlAllowOrigin       string
 	DisableCurrentDateCheckFeatureFlag bool
 	EnableEntirePeriodBundle           bool
+	RegionCode                         string
 }
 
 var AppConstants Constants
@@ -62,4 +63,6 @@ func setDefaults() {
 	viper.SetDefault("corsAccessControlAllowOrigin", "*")
 	viper.SetDefault("disableCurrentDateCheckFeatureFlag", true)
 	viper.SetDefault("enableEntirePeriodBundle", false)
+	/// The MCC Region Code for Canada
+	viper.SetDefault("regionCode", "302")
 }

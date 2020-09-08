@@ -17,8 +17,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-const mccRegionCode = "302"
-
 func NewKeyClaimServlet(db persistence.Conn, keyClaimAuth keyclaim.Authenticator) srvutil.Servlet {
 	return &keyClaimServlet{db: db, auth: keyClaimAuth}
 }
@@ -72,7 +70,7 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 		Also please note this hurts me to not go through the rest of the code to pull out the region code
 		I will open an issue to continue with this work.
 	*/
-	region = mccRegionCode
+	region = config.AppConstants.RegionCode
 
 	hashID := vars["hashID"]
 

@@ -20,7 +20,6 @@ import (
 const (
 	numberOfDaysToServe = 14
 	hoursInDay          = 24
-	mccRegionCode       = "302"
 )
 
 func NewRetrieveServlet(db persistence.Conn, auth retrieval.Authenticator, signer retrieval.Signer) srvutil.Servlet {
@@ -65,7 +64,7 @@ func (s *retrieveServlet) retrieve(w http.ResponseWriter, r *http.Request) resul
 	As stated there I'm going to open an issue to continue this work instead of just
 	relying on the hardcoded value.
 	*/
-	region := mccRegionCode
+	region := config.AppConstants.RegionCode
 	if !s.auth.Authenticate(region, vars["day"], vars["auth"]) {
 		return s.fail(log(ctx, nil), w, "invalid auth parameter", "unauthorized", http.StatusUnauthorized)
 	}
