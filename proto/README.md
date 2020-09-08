@@ -13,7 +13,7 @@ Some of the protocol is defined by [Google Protocol
 Buffers](https://developers.google.com/protocol-buffers). The file containing these definitions is
 in this repository at [covidshield.proto](covidshield.proto).
 
-The Diagnosis Server implements five main endpoints:
+The Diagnosis Server implements four main endpoints:
 
 
 * `/retrieve`: Fetch a set of Diagnosis Keys for a given UTC date number
