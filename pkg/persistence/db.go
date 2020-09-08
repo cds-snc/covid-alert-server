@@ -164,6 +164,12 @@ func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 			err = persistEncryptionKey(c.db, region, originator, pub, priv, oneTimeCode)
 		}
 		if err == nil {
+
+			if err := c.SaveEvent(Event{ deviceType:  "server", identifier:  keyGenerated, date:  time.Now(), count: 1 }); err != nil {
+				// We don't necessarily want to crash if we were unable to log a metric
+				log(nil, err).Warn(keyGenerated + " event failed to log")
+			}
+
 			return oneTimeCode, nil
 		} else if strings.Contains(err.Error(), "used hashID found") {
 			return "", ErrHashIDClaimed
