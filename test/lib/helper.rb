@@ -56,10 +56,6 @@ module Helper
       ret
     end
 
-    def get_exposure_config(region, method: :get)
-      @ret_conn.send(method, "/exposure-configuration/#{region}.json")
-    end
-
     def get_date(date_number, method: :get)
       hmac = OpenSSL::HMAC.hexdigest(
         "SHA256",
