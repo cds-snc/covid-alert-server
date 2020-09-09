@@ -165,9 +165,9 @@ func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 		}
 		if err == nil {
 
-			if err := c.SaveEvent(Event{ deviceType:  "server", identifier:  keyGenerated, date:  time.Now(), count: 1 }); err != nil {
+			if err := c.SaveEvent(Event{ deviceType:  Server, identifier: KeyGenerated, date:  time.Now(), count: 1 }); err != nil {
 				// We don't necessarily want to crash if we were unable to log a metric
-				log(nil, err).Warn(keyGenerated + " event failed to log")
+				log(nil, err).Warn(KeyGenerated + " event failed to log")
 			}
 
 			return oneTimeCode, nil
