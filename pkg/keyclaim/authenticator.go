@@ -24,28 +24,35 @@ func NewAuthenticator() Authenticator {
 	if tokens == "" {
 		panic("no KEY_CLAIM_TOKEN")
 	}
-	for _, tokenWithRegion := range strings.Split(tokens, ":") {
+	for _, tokenWithProvince := range strings.Split(tokens, ":") {
 		assignmentParts := config.AppConstants.AssignmentParts
-		parts := strings.SplitN(tokenWithRegion, "=", assignmentParts)
+		parts := strings.SplitN(tokenWithProvince, "=", assignmentParts)
+
+
 		if len(parts) != assignmentParts {
 			panic("invalid KEY_CLAIM_TOKEN")
 		}
-		if len(parts[0]) > 63 {
+
+		token := parts[0]
+		if len(token) > 63 {
 			panic("token too long")
 		}
-		if len(parts[0]) < 20 {
+		if len(token) < 20 {
 			panic("token too short")
 		}
-		if len(parts[1]) > 31 {
-			panic("region too long")
+
+		province := parts[1]
+		if len(province) > 31 {
+			panic("province too long")
 		}
-		authTokens[parts[0]] = parts[1]
+
+		authTokens[token] = province
 	}
 
 	return &authenticator{tokens: authTokens}
 }
 
 func (a *authenticator) Authenticate(token string) (string, bool) {
-	region, ok := a.tokens[token]
-	return region, ok
+	province, ok := a.tokens[token]
+	return province, ok
 }

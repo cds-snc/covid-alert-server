@@ -27,7 +27,7 @@ func TestNewAuthenticator(t *testing.T) {
 	assert.PanicsWithValue(t, "token too short", func() { NewAuthenticator() }, "KEY_CLAIM_TOKEN must include secret that is at least 20 characters long")
 
 	os.Setenv("KEY_CLAIM_TOKEN", strings.Repeat("a", 20)+"="+strings.Repeat("a", 32))
-	assert.PanicsWithValue(t, "region too long", func() { NewAuthenticator() }, "KEY_CLAIM_TOKEN must include a region that is less than 32 characters long")
+	assert.PanicsWithValue(t, "province too long", func() { NewAuthenticator() }, "KEY_CLAIM_TOKEN must include a region that is less than 32 characters long")
 
 	tokens := make(map[string]string)
 	tokens[strings.Repeat("a", 20)] = "302"
