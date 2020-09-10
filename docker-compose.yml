@@ -51,6 +51,6 @@ services:
     restart: always
     environment:
       DATABASE_URL: covidshield:covidshield@tcp(mysql)/covidshield
-      KEY_CLAIM_TOKEN: thisisaverylongtoken=302
+      KEY_CLAIM_TOKEN: thisisaverylongtoken=TestProvince
       METRIC_PROVIDER: ""
       TRACER_PROVIDER: ""

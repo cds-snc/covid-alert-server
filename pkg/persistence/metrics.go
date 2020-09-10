@@ -9,10 +9,11 @@ import (
 
 // Event the event that we are to log
 type Event struct {
-	identifier EventType
-	deviceType DeviceType
-	date       time.Time
-	count      int
+	Identifier EventType
+	DeviceType DeviceType
+	Date       time.Time
+	Count      int
+	Originator string
 }
 
 // SaveEvent log an Event in the database
@@ -37,8 +38,10 @@ const (
 )
 
 const (
-	KeyClaimed   EventType = "KeyClaimed"
-	KeyGenerated EventType = "KeyGenerated"
+	OTKClaimed   EventType = "OTKClaimed"
+	OTKGenerated EventType = "OTKGenerated"
+	OTKExpired   EventType = "OTKExpired"
+	TEKUploaded  EventType = "TEKUploaded"
 )
 
 // IsValid validates the Device Type against a list of allowed strings
@@ -54,7 +57,7 @@ func (dt DeviceType) IsValid() error {
 // IsValid validates the Event Type against a list of allowed strings
 func (et EventType) IsValid() error {
 	switch et {
-	case KeyGenerated, KeyClaimed:
+	case OTKGenerated, OTKClaimed, OTKExpired, TEKUploaded:
 		return nil
 	}
 	return errors.New(fmt.Sprintf("Invalid EventType: (%s)\n", et))
@@ -62,11 +65,11 @@ func (et EventType) IsValid() error {
 
 
 func saveEvent(db *sql.DB, e Event) error {
-	if err := e.deviceType.IsValid(); err != nil {
+	if err := e.DeviceType.IsValid(); err != nil {
 		return err
 	}
 
-	if err := e.identifier.IsValid(); err != nil {
+	if err := e.Identifier.IsValid(); err != nil {
 		return err
 	}
 
@@ -77,9 +80,9 @@ func saveEvent(db *sql.DB, e Event) error {
 
 	if _, err := tx.Exec(`
 		INSERT INTO events
-		(identifier, device_type, date, count)
-		VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE count = count + ?`,
-		e.identifier, e.deviceType, e.date.Format("2006-01-02"), e.count, e.count); err != nil {
+		(source, identifier, device_type, date, count)
+		VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE count = count + ?`,
+		e.Originator, e.Identifier, e.DeviceType, e.Date.Format("2006-01-02"), e.Count, e.Count); err != nil {
 
 		if err := tx.Rollback(); err != nil {
 			return err

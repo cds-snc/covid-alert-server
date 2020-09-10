@@ -22,7 +22,7 @@ func TestEventType_IsValid(t *testing.T) {
 		t.Errorf("Invalid Event Type Passed")
 	}
 
-	for _,et := range [2]EventType{KeyClaimed, KeyGenerated}{
+	for _,et := range [2]EventType{OTKClaimed, OTKGenerated}{
 		if err := et.IsValid(); err != nil {
 			t.Errorf("Valid EventType failed: %s",et)
 		}

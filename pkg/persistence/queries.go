@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/CovidShield/server/mocks/pkg/persistence"
 	"strings"
 	"time"
 
@@ -60,13 +61,18 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, erro
 	}
 
 	var created time.Time
-	if err := tx.QueryRow("SELECT created FROM encryption_keys WHERE one_time_code = ?", oneTimeCode).Scan(&created); err != nil {
+	var originator string
+
+	row := tx.QueryRow("SELECT created, originator FROM encryption_keys WHERE one_time_code = ?", oneTimeCode)
+	if err := row.Scan(&created, &originator); err != nil {
 		if err := tx.Rollback(); err != nil {
 			return nil, err
 		}
 		return nil, ErrInvalidOneTimeCode
 	}
 	created = timemath.MostRecentUTCMidnight(created)
+
+
 
 	if created.Unix() == int64(0) {
 		if err := tx.Rollback(); err != nil {
@@ -127,7 +133,11 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, erro
 		return nil, err
 	}
 
-	row := s.QueryRow(appPublicKey)
+	row = s.QueryRow(appPublicKey)
+
+	if err := saveEvent(db, Event{ Originator: originator, DeviceType: Server, Identifier: OTKClaimed, Count:  1, Date: time.Now()}); err != nil {
+		log(nil, err).Warn("Unable to log event OTKClaimed")
+	}
 
 	var serverPub []byte
 	if err := row.Scan(&serverPub); err != nil {
