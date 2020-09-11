@@ -15,20 +15,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # - name: Install Config for Changelog
-      #   run: npm i conventional-changelog-conventionalcommits
-        
-      # - name: Generate Changelog and Bump Version
-      #   id: bump-version
-      #   uses: TriPSs/conventional-changelog-action@1643d852ba88d583cc2bacade8ec0e9436a5a6ba
-      #   with:
-      #     github-token: ${{ secrets.github_token }}
-      #     skip-version-file: 'true'
-      #     # For format see: https://www.conventionalcommits.org/en/v1.0.0/
-      #     preset: 'conventionalcommits'
-      #     skip-on-empty: 'false'
-      #     config-file-path: '.clconfig.js'
-
       - name: Configure Staging AWS credentials
         id: aws-staging
         uses: aws-actions/configure-aws-credentials@v1
@@ -45,12 +31,15 @@ jobs:
         env:
           STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
           PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
+          DEMO_ECR_REGISTRY: ${{ secrets.DEMO_ECR_REGISTRY}}
           ECR_REPOSITORY: covid-server/key-retrieval
           COMPONENT: key-retrieval
         run: |
           docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT \
+          -t $DEMO_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
           -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
           -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
+          -t $DEMO_ECR_REGISTRY/$ECR_REPOSITORY:latest \
           -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:latest \
           -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:latest .
 
@@ -58,14 +47,17 @@ jobs:
         env:
           STG_ECR_REGISTRY: ${{ steps.login-ecr-staging.outputs.registry }}
           PROD_ECR_REGISTRY: ${{ secrets.PROD_ECR_REGISTRY }}
+          DEMO_ECR_REGISTRY: ${{ secrets.DEMO_ECR_REGISTRY}}
           ECR_REPOSITORY: covid-server/key-submission
           GITHUB_SHA: ${{ github.sha }}
           BRANCH: ${{ github.ref }}
           COMPONENT: key-submission
         run: |
           docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=$COMPONENT \
+          -t $DEMO_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
           -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
           -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:$GITHUB_SHA \
+          -t $DEMO_ECR_REGISTRY/$ECR_REPOSITORY:latest \
           -t $STG_ECR_REGISTRY/$ECR_REPOSITORY:latest \
           -t $PROD_ECR_REGISTRY/$ECR_REPOSITORY:latest .
 
@@ -81,6 +73,32 @@ jobs:
       - name: Logout of Staging Amazon ECR
         if: always()
         run: docker logout ${{ steps.login-ecr-staging.outputs.registry }}
+
+
+      - name: Configure Demo AWS credentials
+        id: aws-demo
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.DEMO_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.DEMO_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ca-central-1
+
+      - name: Login to Demo Amazon ECR
+        id: login-ecr-demo
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Push containers to Amazon demo ECR
+        env:
+          DEMO_ECR_REGISTRY: ${{ steps.login-ecr-demo.outputs.registry }}
+        run: |
+          docker push $DEMO_ECR_REGISTRY/covid-server/key-retrieval:$GITHUB_SHA
+          docker push $DEMO_ECR_REGISTRY/covid-server/key-retrieval:latest
+          docker push $DEMO_ECR_REGISTRY/covid-server/key-submission:$GITHUB_SHA
+          docker push $DEMO_ECR_REGISTRY/covid-server/key-submission:latest
+
+      - name: Logout of Demo Amazon ECR
+        if: always()
+        run: docker logout ${{ steps.login-ecr-demo.outputs.registry }}
 
       - name: Configure Production AWS credentials
         id: aws-production
