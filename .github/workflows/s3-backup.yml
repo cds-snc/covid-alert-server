@@ -13,7 +13,7 @@ jobs:
     - name: Get ZIP bundle
       run: |
         mkdir -p ${{ github.repository }}
-        wget -O ${{ github.repository }}/`basename ${{ github.repository }}`-`date '+%Y-%m-%d'`.zip https://github.com/cds-snc/${{ github.repository }}/archive/master.zip
+        wget -O ${{ github.repository }}/`basename ${{ github.repository }}`-`date '+%Y-%m-%d'`.zip https://github.com/${{ github.repository }}/archive/master.zip
     - name: AWS Deploy
       run: |
         aws s3 sync . s3://${{ secrets.AWS_S3_BACKUP_BUCKET }} --exclude='*' --include='${{ github.repository }}/*'
