@@ -12,7 +12,7 @@ jobs:
         aws-region: ca-central-1
     - name: Get ZIP bundle
       run: |
-        mkdir ${{ github.repository }}
+        mkdir -p ${{ github.repository }}
         wget -O ${{ github.repository }}/${{ github.repository }}-`date '+%Y-%m-%d'`.zip https://github.com/cds-snc/${{ github.repository }}/archive/master.zip
     - name: AWS Deploy
       run: |
