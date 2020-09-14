@@ -5,7 +5,10 @@ if [ -z "$AWS_PROFILE" ]; then
   exit 0
 fi
 
-source get-sg-ids.sh
+MYDIR="$(dirname "$(which "$0")")"
+
+# shellcheck source=./get-sg-ids.sh
+source "$MYDIR"/get-sg-ids.sh
 
 aws ec2 revoke-security-group-ingress \
   --group-id "$DB"  \
