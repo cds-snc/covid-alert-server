@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -z "$AWS_PROFILE" ]; then 
+if [ -z "$AWS_PROFILE" ]; then
   echo "please set AWS_PROFILE"
   exit 0
 fi

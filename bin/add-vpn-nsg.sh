@@ -1,13 +1,9 @@
 #!/bin/bash
 
-if [ -z "$AWS_PROFILE" ]; then 
-  echo "please set AWS_PROFILE"
-  exit 0
-fi
-MYDIR="$(dirname "$(which "$0")")"
+mydir="$(dirname "$(which "$0")")"
 
 # shellcheck source=./get-sg-ids.sh
-source "$MYDIR"/get-sg-ids.sh
+source "$mydir"/get-sg-ids.sh
 
 # Add Ingress
 aws ec2 authorize-security-group-ingress \
