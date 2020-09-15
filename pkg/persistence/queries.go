@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/CovidShield/server/mocks/pkg/persistence"
 	"strings"
 	"time"
 
@@ -22,6 +21,43 @@ func deleteOldDiagnosisKeys(db *sql.DB) (int64, error) {
 		return 0, err
 	}
 	return res.RowsAffected()
+}
+
+type CountByOriginator struct {
+	Originator string
+	Count int
+}
+
+func countOldEncryptionKeysByOriginator(db *sql.DB) ([]CountByOriginator, error) {
+
+	rows, err := db.Query(fmt.Sprintf(`
+			SELECT originator, count(*) FROM encryption_keys
+			WHERE  (created < (NOW() - INTERVAL %d DAY))
+			OR    ((created < (NOW() - INTERVAL %d MINUTE)) AND app_public_key IS NULL)
+			OR    remaining_keys = 0
+			GROUP BY encryption_keys.originator `, config.AppConstants.EncryptionKeyValidityDays, config.AppConstants.OneTimeCodeExpiryInMinutes))
+	if err != nil {
+		return nil, err
+	}
+
+	var counts []CountByOriginator
+	for rows.Next() {
+		var (
+			numberToDelete int
+			originator     string
+		)
+
+		if err := rows.Scan(&originator, &numberToDelete); err != nil {
+			return nil, err
+		}
+
+		counts = append(counts, CountByOriginator{
+			Originator: originator,
+			Count: numberToDelete,
+		})
+	}
+
+	return counts, nil
 }
 
 // Delete anything past our data retention threshold, AND any timed-out KeyClaims.
@@ -61,6 +97,8 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, erro
 	}
 
 	var created time.Time
+
+	// we need to capture originator so that we can log it later when capturing this event
 	var originator string
 
 	row := tx.QueryRow("SELECT created, originator FROM encryption_keys WHERE one_time_code = ?", oneTimeCode)
@@ -71,8 +109,6 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, erro
 		return nil, ErrInvalidOneTimeCode
 	}
 	created = timemath.MostRecentUTCMidnight(created)
-
-
 
 	if created.Unix() == int64(0) {
 		if err := tx.Rollback(); err != nil {
@@ -135,7 +171,7 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, erro
 
 	row = s.QueryRow(appPublicKey)
 
-	if err := saveEvent(db, Event{ Originator: originator, DeviceType: Server, Identifier: OTKClaimed, Count:  1, Date: time.Now()}); err != nil {
+	if err := saveEvent(db, Event{Originator: originator, DeviceType: Server, Identifier: OTKClaimed, Count: 1, Date: time.Now()}); err != nil {
 		log(nil, err).Warn("Unable to log event OTKClaimed")
 	}
 

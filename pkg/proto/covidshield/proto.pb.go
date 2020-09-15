@@ -204,7 +204,7 @@ type KeyClaimRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// one_time_code is the code received from the testing portal.
-	OneTimeCode *string `protobuf:"bytes,1,opt,name=one_time_code,json=oneTimeCode" json:"one_time_code,omitempty"` // 8 numerical digits
+	OneTimeCode *string `protobuf:"bytes,1,opt,name=one_time_code,json=oneTimeCode" json:"one_time_code,omitempty"` // 10 alphanumeric characters
 	// app_public_key is generated locally and saved upon successful request
 	// completion.
 	AppPublicKey []byte `protobuf:"bytes,2,opt,name=app_public_key,json=appPublicKey" json:"app_public_key,omitempty"` // 32 bytes

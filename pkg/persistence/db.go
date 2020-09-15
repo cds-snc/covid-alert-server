@@ -49,6 +49,7 @@ type Conn interface {
 	CountClaimedOneTimeCodes() (int64, error)
 	CountDiagnosisKeys() (int64, error)
 	CountUnclaimedOneTimeCodes() (int64, error)
+	CountOldEncryptionKeysByOriginator() ([]CountByOriginator, error)
 
 	SaveEvent(event Event) error
 
@@ -114,6 +115,10 @@ func Dial(url string) (Conn, error) {
 
 func (c *conn) DeleteOldDiagnosisKeys() (int64, error) {
 	return deleteOldDiagnosisKeys(c.db)
+}
+
+func (c *conn) CountOldEncryptionKeysByOriginator() ([]CountByOriginator, error) {
+	return countOldEncryptionKeysByOriginator(c.db)
 }
 
 func (c *conn) DeleteOldEncryptionKeys() (int64, error) {
