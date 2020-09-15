@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	covidshield "github.com/CovidShield/server/pkg/proto/covidshield"
+	covidshield "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
 	mock "github.com/stretchr/testify/mock"
 
 	time "time"

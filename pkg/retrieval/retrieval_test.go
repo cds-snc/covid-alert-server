@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	mockSigner "github.com/CovidShield/server/mocks/pkg/retrieval"
-	pb "github.com/CovidShield/server/pkg/proto/covidshield"
+	mockSigner "github.com/cds-snc/covid-alert-server/mocks/pkg/retrieval"
+	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

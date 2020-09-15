@@ -3,7 +3,7 @@ package timemath
 import (
 	"time"
 
-	pb "github.com/CovidShield/server/pkg/proto/covidshield"
+	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
 )
 
 const (

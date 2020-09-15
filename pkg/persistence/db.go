@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/CovidShield/server/pkg/proto/covidshield"
+	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
 
 	"github.com/Shopify/goose/logger"
 	"github.com/go-sql-driver/mysql"

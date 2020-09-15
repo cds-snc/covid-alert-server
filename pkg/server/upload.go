@@ -8,8 +8,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/CovidShield/server/pkg/persistence"
-	pb "github.com/CovidShield/server/pkg/proto/covidshield"
+	"github.com/cds-snc/covid-alert-server/pkg/persistence"
+	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
 
 	"github.com/Shopify/goose/srvutil"
 	"github.com/gorilla/mux"

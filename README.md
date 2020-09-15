@@ -2,9 +2,9 @@
 
 # COVID Alert Diagnosis Server
 
-![Container Build](https://github.com/CovidShield/server/workflows/Container%20Builds/badge.svg)
+![Container Build](https://github.com/cds-snc/covid-alert-server/workflows/Container%20Builds/badge.svg)
 
-Adapted from <https://github.com/CovidShield/server>
+Adapted from <https://github.com/cds-snc/covid-alert-server>
 
 This repository implements a diagnosis server to use as a server for Apple/Google's [Exposure
 Notification](https://www.apple.com/covid19/contacttracing) framework, informed by the [guidance
@@ -147,7 +147,7 @@ This depends on a separate service, holding credentials to talk to this (`key-su
 We have a sample implementation we will open source soon, but we anticipate that health authorities
 will prefer to integrate this feature into their existing systems. The integration is extremely
 straightforward, and we have [minimal examples in several
-languages](https://github.com/CovidShield/server/tree/master/examples/new-key-claim). Most
+languages](https://github.com/cds-snc/covid-alert-server/tree/master/examples/new-key-claim). Most
 minimally:
 
 ```bash
@@ -225,7 +225,7 @@ See the [_Contributing Guidelines_](CONTRIBUTING.md).
 
 ## Who Built COVID Alert?
 
-COVID Alert was originally developed by [volunteers at Shopify](https://www.covidshield.app/). It was [released free of charge under a flexible open-source license](https://github.com/CovidShield/server).
+COVID Alert was originally developed by [volunteers at Shopify](https://www.covidshield.app/). It was [released free of charge under a flexible open-source license](https://github.com/cds-snc/covid-alert-server).
 
 This repository is being developed by the [Canadian Digital Service](https://digital.canada.ca/). We can be reached at <cds-snc@tbs-sct.gc.ca>.
 
@@ -233,9 +233,9 @@ ____
 
 # Serveur de diagnostic COVID Alert
 
-![Container Build](https://github.com/CovidShield/server/workflows/Container%20Builds/badge.svg)
+![Container Build](https://github.com/cds-snc/covid-alert-server/workflows/Container%20Builds/badge.svg)
 
-Adapté à partir de <https://github.com/CovidShield/server> ([voir les modifications](https://github.com/cds-snc/covid-shield-server/blob/master/FORK.md))
+Adapté à partir de <https://github.com/cds-snc/covid-alert-server> ([voir les modifications](https://github.com/cds-snc/covid-shield-server/blob/master/FORK.md))
 
 Ce dépôt implémente un serveur de diagnostic à utiliser comme serveur pour le [cadriciel de notification d’exposition](https://www.apple.com/covid19/contacttracing) d’Apple et de Google, suivant les [directives fournies par les commissaires à la protection de la vie privée du Canada](https://priv.gc.ca/fr/nouvelles-du-commissariat/allocutions/2020/s-d_20200507/).
 
@@ -330,7 +330,7 @@ Le 10 mai 2020, il y a eu 74 000 nouveaux cas dans le monde : 74 000 * 28 * 16 =
 Nous utilisons un système de génération de codes à usage unique qui permet aux professionnels authentifiés d’émettre des codes. Ces codes doivent être transmis aux patients présentant un diagnostic positif par l’intermédiaire de n’importe quel canal de communication pratique.
 
 Cette démarche dépend d’un service différent, qui détient des justificatifs pour communiquer avec ce serveur (`key-submission`).
-Nous avons une implémentation à titre d’exemple dont le code source sera bientôt ouvert. Cependant, nous nous attendons à ce que les autorités sanitaires préfèrent intégrer cette fonctionnalité dans leurs systèmes existants. L’intégration est extrêmement simple, et on dispose [d’exemples en plusieurs languages](https://github.com/CovidShield/server/tree/master/examples/new-key-claim). Au minimum :
+Nous avons une implémentation à titre d’exemple dont le code source sera bientôt ouvert. Cependant, nous nous attendons à ce que les autorités sanitaires préfèrent intégrer cette fonctionnalité dans leurs systèmes existants. L’intégration est extrêmement simple, et on dispose [d’exemples en plusieurs languages](https://github.com/cds-snc/covid-alert-server/tree/master/examples/new-key-claim). Au minimum :
 
 ```bash
 curl -XPOST -H "Authorization: Bearer $token" "https://submission.covidshield.app/new-key-claim"
@@ -401,6 +401,6 @@ Consultez les [_Directives de contribution_](CONTRIBUTING.md).
 
 ## Qui a conçu COVID Alert?
 
-COVID Alert a été développé à l’origine par [des bénévoles de Shopify](https://www.covidshield.app/). Il a été [diffusé gratuitement en vertu d’une licence ouverte flexible](https://github.com/CovidShield/server).
+COVID Alert a été développé à l’origine par [des bénévoles de Shopify](https://www.covidshield.app/). Il a été [diffusé gratuitement en vertu d’une licence ouverte flexible](https://github.com/cds-snc/covid-alert-server).
 
 Ce dépôt est maintenu par le [Service numérique canadien](https://numerique.canada.ca/). Vous pouvez nous joindre à <cds-snc@tbs-sct.gc.ca>.

@@ -9,12 +9,12 @@ import (
 	"github.com/Shopify/goose/logger"
 	"github.com/Shopify/goose/srvutil"
 
-	"github.com/CovidShield/server/pkg/config"
-	"github.com/CovidShield/server/pkg/keyclaim"
-	"github.com/CovidShield/server/pkg/persistence"
-	"github.com/CovidShield/server/pkg/retrieval"
-	"github.com/CovidShield/server/pkg/server"
-	"github.com/CovidShield/server/pkg/workers"
+	"github.com/cds-snc/covid-alert-server/pkg/config"
+	"github.com/cds-snc/covid-alert-server/pkg/keyclaim"
+	"github.com/cds-snc/covid-alert-server/pkg/persistence"
+	"github.com/cds-snc/covid-alert-server/pkg/retrieval"
+	"github.com/cds-snc/covid-alert-server/pkg/server"
+	"github.com/cds-snc/covid-alert-server/pkg/workers"
 )
 
 var log = logger.New("app")

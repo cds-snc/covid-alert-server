@@ -5,11 +5,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/CovidShield/server/pkg/config"
-	"github.com/CovidShield/server/pkg/persistence"
-	pb "github.com/CovidShield/server/pkg/proto/covidshield"
-	"github.com/CovidShield/server/pkg/retrieval"
-	"github.com/CovidShield/server/pkg/timemath"
+	"github.com/cds-snc/covid-alert-server/pkg/config"
+	"github.com/cds-snc/covid-alert-server/pkg/persistence"
+	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
+	"github.com/cds-snc/covid-alert-server/pkg/retrieval"
+	"github.com/cds-snc/covid-alert-server/pkg/timemath"
 
 	"github.com/sirupsen/logrus"
 
