@@ -343,6 +343,20 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 	if err = tx.Commit(); err != nil {
 		return err
 	}
+
+	if keysInserted > 0 {
+		if err := saveEvent(db, Event {
+			Originator: originator,
+			Identifier: TEKUploaded,
+			DeviceType: Server,
+			// This is a safe conversion as we have a max of 28 keys as defined in the protobuf
+			// we should revisit if that changes
+			Count: int(keysInserted),
+		}); err != nil {
+			log(nil, err).Info("Unable to log event TEKUploaded")
+		}
+	}
+
 	return nil
 }
 
