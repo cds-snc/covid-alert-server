@@ -2,9 +2,7 @@
 
 # COVID Alert Diagnosis Server
 
-![Container Build](https://github.com/cds-snc/covid-alert-server/workflows/Container%20Builds/badge.svg)
-
-Adapted from <https://github.com/cds-snc/covid-alert-server>
+Adapted from <https://github.com/CovidShield/server>
 
 This repository implements a diagnosis server to use as a server for Apple/Google's [Exposure
 Notification](https://www.apple.com/covid19/contacttracing) framework, informed by the [guidance
@@ -225,7 +223,7 @@ See the [_Contributing Guidelines_](CONTRIBUTING.md).
 
 ## Who Built COVID Alert?
 
-COVID Alert was originally developed by [volunteers at Shopify](https://www.covidshield.app/). It was [released free of charge under a flexible open-source license](https://github.com/cds-snc/covid-alert-server).
+COVID Alert was originally developed by [volunteers at Shopify](https://www.covidshield.app/). It was [released free of charge under a flexible open-source license](https://github.com/CovidShield/server).
 
 This repository is being developed by the [Canadian Digital Service](https://digital.canada.ca/). We can be reached at <cds-snc@tbs-sct.gc.ca>.
 
@@ -233,9 +231,7 @@ ____
 
 # Serveur de diagnostic COVID Alert
 
-![Container Build](https://github.com/cds-snc/covid-alert-server/workflows/Container%20Builds/badge.svg)
-
-Adapté à partir de <https://github.com/cds-snc/covid-alert-server> ([voir les modifications](https://github.com/cds-snc/covid-shield-server/blob/master/FORK.md))
+Adapté à partir de <https://github.com/CovidShield/server> ([voir les modifications](https://github.com/cds-snc/covid-shield-server/blob/master/FORK.md))
 
 Ce dépôt implémente un serveur de diagnostic à utiliser comme serveur pour le [cadriciel de notification d’exposition](https://www.apple.com/covid19/contacttracing) d’Apple et de Google, suivant les [directives fournies par les commissaires à la protection de la vie privée du Canada](https://priv.gc.ca/fr/nouvelles-du-commissariat/allocutions/2020/s-d_20200507/).
 
@@ -401,6 +397,6 @@ Consultez les [_Directives de contribution_](CONTRIBUTING.md).
 
 ## Qui a conçu COVID Alert?
 
-COVID Alert a été développé à l’origine par [des bénévoles de Shopify](https://www.covidshield.app/). Il a été [diffusé gratuitement en vertu d’une licence ouverte flexible](https://github.com/cds-snc/covid-alert-server).
+COVID Alert a été développé à l’origine par [des bénévoles de Shopify](https://www.covidshield.app/). Il a été [diffusé gratuitement en vertu d’une licence ouverte flexible](https://github.com/CovidShield/server).
 
 Ce dépôt est maintenu par le [Service numérique canadien](https://numerique.canada.ca/). Vous pouvez nous joindre à <cds-snc@tbs-sct.gc.ca>.
