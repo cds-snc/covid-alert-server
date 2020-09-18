@@ -1,4 +1,4 @@
-module github.com/CovidShield/server
+module github.com/cds-snc/covid-alert-server
 
 go 1.14
 

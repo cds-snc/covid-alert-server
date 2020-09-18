@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/CovidShield/server/pkg/config"
-	"github.com/CovidShield/server/pkg/persistence"
+	"github.com/cds-snc/covid-alert-server/pkg/config"
+	"github.com/cds-snc/covid-alert-server/pkg/persistence"
 
 	"github.com/Shopify/goose/logger"
 	"gopkg.in/tomb.v2"

@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/CovidShield/server/pkg/config"
+	"github.com/cds-snc/covid-alert-server/pkg/config"
 	"github.com/gorilla/mux"
 	"os"
 	"testing"

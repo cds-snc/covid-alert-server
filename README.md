@@ -2,8 +2,6 @@
 
 # COVID Alert Diagnosis Server
 
-![Container Build](https://github.com/CovidShield/server/workflows/Container%20Builds/badge.svg)
-
 Adapted from <https://github.com/CovidShield/server>
 
 This repository implements a diagnosis server to use as a server for Apple/Google's [Exposure
@@ -147,7 +145,7 @@ This depends on a separate service, holding credentials to talk to this (`key-su
 We have a sample implementation we will open source soon, but we anticipate that health authorities
 will prefer to integrate this feature into their existing systems. The integration is extremely
 straightforward, and we have [minimal examples in several
-languages](https://github.com/CovidShield/server/tree/master/examples/new-key-claim). Most
+languages](https://github.com/cds-snc/covid-alert-server/tree/master/examples/new-key-claim). Most
 minimally:
 
 ```bash
@@ -232,8 +230,6 @@ This repository is being developed by the [Canadian Digital Service](https://dig
 ____
 
 # Serveur de diagnostic COVID Alert
-
-![Container Build](https://github.com/CovidShield/server/workflows/Container%20Builds/badge.svg)
 
 Adapté à partir de <https://github.com/CovidShield/server> ([voir les modifications](https://github.com/cds-snc/covid-shield-server/blob/master/FORK.md))
 
@@ -330,7 +326,7 @@ Le 10 mai 2020, il y a eu 74 000 nouveaux cas dans le monde : 74 000 * 28 * 16 =
 Nous utilisons un système de génération de codes à usage unique qui permet aux professionnels authentifiés d’émettre des codes. Ces codes doivent être transmis aux patients présentant un diagnostic positif par l’intermédiaire de n’importe quel canal de communication pratique.
 
 Cette démarche dépend d’un service différent, qui détient des justificatifs pour communiquer avec ce serveur (`key-submission`).
-Nous avons une implémentation à titre d’exemple dont le code source sera bientôt ouvert. Cependant, nous nous attendons à ce que les autorités sanitaires préfèrent intégrer cette fonctionnalité dans leurs systèmes existants. L’intégration est extrêmement simple, et on dispose [d’exemples en plusieurs languages](https://github.com/CovidShield/server/tree/master/examples/new-key-claim). Au minimum :
+Nous avons une implémentation à titre d’exemple dont le code source sera bientôt ouvert. Cependant, nous nous attendons à ce que les autorités sanitaires préfèrent intégrer cette fonctionnalité dans leurs systèmes existants. L’intégration est extrêmement simple, et on dispose [d’exemples en plusieurs languages](https://github.com/cds-snc/covid-alert-server/tree/master/examples/new-key-claim). Au minimum :
 
 ```bash
 curl -XPOST -H "Authorization: Bearer $token" "https://submission.covidshield.app/new-key-claim"

@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/CovidShield/server/pkg/config"
-	pb "github.com/CovidShield/server/pkg/proto/covidshield"
-	"github.com/CovidShield/server/pkg/timemath"
+	"github.com/cds-snc/covid-alert-server/pkg/config"
+	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
+	"github.com/cds-snc/covid-alert-server/pkg/timemath"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/nacl/box"
