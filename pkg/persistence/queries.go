@@ -351,6 +351,7 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 			Originator: originator,
 			Identifier: TEKUploaded,
 			DeviceType: Server,
+			Date: time.Now(),
 			// This is a safe conversion as we have a max of 28 keys as defined in the protobuf
 			// we should revisit if that changes
 			Count: int(keysInserted),

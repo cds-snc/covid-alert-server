@@ -71,7 +71,6 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 		Also please note this hurts me to not go through the rest of the code to pull out the region code
 		I will open an issue to continue with this work.
 	*/
-	source := region
 	region = config.AppConstants.RegionCode
 
 	hashID := vars["hashID"]
@@ -87,7 +86,7 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.db.SaveEvent(persistence.Event{Originator: source, DeviceType: persistence.Server, Identifier: persistence.OTKGenerated, Date:  time.Now(), Count: 1 }); err != nil {
+	if err := s.db.SaveEvent(persistence.Event{Originator: originator, DeviceType: persistence.Server, Identifier: persistence.OTKGenerated, Date:  time.Now(), Count: 1 }); err != nil {
 		// We don't necessarily want to crash if we were unable to log a metric
 		log(nil, err).Warn(persistence.OTKGenerated + " event failed to log")
 	}

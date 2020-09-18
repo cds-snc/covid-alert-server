@@ -8,12 +8,10 @@ import (
 	"time"
 )
 
-
-
 var originatorLookup keyclaim.Authenticator
 
 // InitLookup Setup the originator lookup used to map events to bearerTokens
-func SetupLookup(lookup keyclaim.Authenticator){
+func SetupLookup(lookup keyclaim.Authenticator) {
 	originatorLookup = lookup
 }
 
@@ -26,7 +24,7 @@ type Event struct {
 	Originator string
 }
 
-func  translateToken(token string) string {
+func translateToken(token string) string {
 	region, ok := originatorLookup.Authenticate(token)
 
 	// If we forgot to map a token to a PT just return the token
@@ -73,7 +71,8 @@ const (
 // IsValid validates the Device Type against a list of allowed strings
 func (dt DeviceType) IsValid() error {
 	switch dt {
-		case Android, iOS, Server:{
+	case Android, iOS, Server:
+		{
 			return nil
 		}
 	}
@@ -89,9 +88,8 @@ func (et EventType) IsValid() error {
 	return errors.New(fmt.Sprintf("Invalid EventType: (%s)\n", et))
 }
 
-
 func saveEvent(db *sql.DB, e Event) error {
-	log(nil,nil).Info(fmt.Sprintf(`Logging Event %+v`, e))
+	log(nil, nil).Info(fmt.Sprintf(`Logging Event %+v`, e))
 	if err := e.DeviceType.IsValid(); err != nil {
 		return err
 	}
