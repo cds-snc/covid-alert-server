@@ -103,6 +103,8 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, erro
 
 	row := tx.QueryRow("SELECT created, originator FROM encryption_keys WHERE one_time_code = ?", oneTimeCode)
 	if err := row.Scan(&created, &originator); err != nil {
+
+		fmt.Println(err)
 		if err := tx.Rollback(); err != nil {
 			return nil, err
 		}

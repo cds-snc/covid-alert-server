@@ -51,7 +51,7 @@ func TestDeleteOldEncryptionKeys(t *testing.T) {
 
 }
 
-func TestCaimKey(t *testing.T) {
+func TestClaimKey(t *testing.T) {
 
 	pub, _, _ := box.GenerateKey(rand.Reader)
 	oneTimeCode := "80311300"
@@ -91,8 +91,8 @@ func TestCaimKey(t *testing.T) {
 	rows = sqlmock.NewRows([]string{"count"}).AddRow(0)
 	mock.ExpectQuery(`SELECT COUNT(*) FROM encryption_keys WHERE app_public_key = ?`).WithArgs(pub[:]).WillReturnRows(rows)
 
-	rows = sqlmock.NewRows([]string{"created"}).AddRow("1950-01-01 00:00:00")
-	mock.ExpectQuery(`SELECT created FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
+	current, _ := time.Parse("2006-01-02 03:04:05","1950-01-01 00:00:00")
+	setupSelectOneTimeCode(mock, oneTimeCode, current)
 
 	mock.ExpectRollback()
 	_, receivedErr = claimKey(db, oneTimeCode, pub[:])
@@ -109,8 +109,7 @@ func TestCaimKey(t *testing.T) {
 	rows = sqlmock.NewRows([]string{"count"}).AddRow(0)
 	mock.ExpectQuery(`SELECT COUNT(*) FROM encryption_keys WHERE app_public_key = ?`).WithArgs(pub[:]).WillReturnRows(rows)
 
-	rows = sqlmock.NewRows([]string{"created"}).AddRow(time.Now())
-	mock.ExpectQuery(`SELECT created FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
+	setupSelectOneTimeCode(mock, oneTimeCode, time.Now())
 
 	query := fmt.Sprintf(
 		`UPDATE encryption_keys
@@ -141,8 +140,7 @@ func TestCaimKey(t *testing.T) {
 
 	created := time.Now()
 
-	rows = sqlmock.NewRows([]string{"created"}).AddRow(created)
-	mock.ExpectQuery(`SELECT created FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
+	setupSelectOneTimeCode(mock, oneTimeCode, created)
 
 	created = timemath.MostRecentUTCMidnight(created)
 
@@ -165,8 +163,7 @@ func TestCaimKey(t *testing.T) {
 
 	created = time.Now()
 
-	rows = sqlmock.NewRows([]string{"created"}).AddRow(created)
-	mock.ExpectQuery(`SELECT created FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
+	setupSelectOneTimeCode(mock, oneTimeCode, created)
 
 	created = timemath.MostRecentUTCMidnight(created)
 
@@ -189,8 +186,7 @@ func TestCaimKey(t *testing.T) {
 
 	created = time.Now()
 
-	rows = sqlmock.NewRows([]string{"created"}).AddRow(created)
-	mock.ExpectQuery(`SELECT created FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
+	setupSelectOneTimeCode(mock, oneTimeCode, created)
 
 	created = timemath.MostRecentUTCMidnight(created)
 
@@ -215,8 +211,7 @@ func TestCaimKey(t *testing.T) {
 
 	created = time.Now()
 
-	rows = sqlmock.NewRows([]string{"created"}).AddRow(created)
-	mock.ExpectQuery(`SELECT created FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
+	setupSelectOneTimeCode(mock, oneTimeCode, created)
 
 	created = timemath.MostRecentUTCMidnight(created)
 
@@ -235,6 +230,11 @@ func TestCaimKey(t *testing.T) {
 
 	assert.Equal(t, pub[:], serverKey, "should return server key")
 
+}
+
+func setupSelectOneTimeCode(mock sqlmock.Sqlmock, oneTimeCode string, time time.Time) {
+	rows := sqlmock.NewRows([]string{"created", "originator"}).AddRow(time, "originator")
+	mock.ExpectQuery(`SELECT created, originator FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
 }
 
 func TestPersistEncryptionKey(t *testing.T) {

@@ -31,8 +31,6 @@ func (a AnyType) Match(v driver.Value) bool {
 }
 
 func TestDBDeleteOldDiagnosisKeys(t *testing.T) {
-	// Init config
-	config.InitConfig()
 
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
 	defer db.Close()
@@ -89,9 +87,9 @@ func TestDBClaimKey(t *testing.T) {
 	mock.ExpectQuery(`SELECT COUNT(*) FROM encryption_keys WHERE app_public_key = ?`).WithArgs(pub[:]).WillReturnRows(rows)
 
 	created := time.Now()
-
-	rows = sqlmock.NewRows([]string{"created"}).AddRow(created)
-	mock.ExpectQuery(`SELECT created FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
+	originator := "onAPI"
+	rows = sqlmock.NewRows([]string{"created", "originator"}).AddRow(created, originator)
+	mock.ExpectQuery(`SELECT created, originator FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
 
 	created = timemath.MostRecentUTCMidnight(created)
 

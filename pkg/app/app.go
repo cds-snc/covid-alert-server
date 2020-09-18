@@ -17,7 +17,10 @@ import (
 	"github.com/CovidShield/server/pkg/workers"
 )
 
-var log = logger.New("app")
+var (
+	log = logger.New("app")
+	lookup keyclaim.Authenticator
+)
 
 type App struct {
 	*genmain.Main
@@ -32,6 +35,10 @@ type AppBuilder struct {
 
 func NewBuilder() *AppBuilder {
 	config.InitConfig() // read configuration into a structure
+
+	lookup = keyclaim.NewAuthenticator()
+	persistence.SetupLookup(lookup)
+
 	builder := &AppBuilder{
 		defaultServerPort: config.AppConstants.DefaultServerPort,
 		database:          newDatabase(DatabaseURL()),
@@ -44,7 +51,7 @@ func (a *AppBuilder) WithSubmission() *AppBuilder {
 	a.defaultServerPort = config.AppConstants.DefaultSubmissionServerPort
 
 	a.servlets = append(a.servlets, server.NewUploadServlet(a.database))
-	a.servlets = append(a.servlets, server.NewKeyClaimServlet(a.database, keyclaim.NewAuthenticator()))
+	a.servlets = append(a.servlets, server.NewKeyClaimServlet(a.database, lookup))
 	return a
 }
 

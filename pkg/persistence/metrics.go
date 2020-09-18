@@ -4,8 +4,18 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/CovidShield/server/pkg/keyclaim"
 	"time"
 )
+
+
+
+var originatorLookup keyclaim.Authenticator
+
+// InitLookup Setup the originator lookup used to map events to bearerTokens
+func SetupLookup(lookup keyclaim.Authenticator){
+	originatorLookup = lookup
+}
 
 // Event the event that we are to log
 type Event struct {
@@ -14,6 +24,22 @@ type Event struct {
 	Date       time.Time
 	Count      int
 	Originator string
+}
+
+func  translateToken(token string) string {
+	region, ok := originatorLookup.Authenticate(token)
+
+	// If we forgot to map a token to a PT just return the token
+	if region == "302" {
+		return token
+	}
+
+	// If it's an old token or unknown just return the token
+	if ok == false {
+		return token
+	}
+
+	return region
 }
 
 // SaveEvent log an Event in the database
@@ -65,6 +91,7 @@ func (et EventType) IsValid() error {
 
 
 func saveEvent(db *sql.DB, e Event) error {
+	log(nil,nil).Info(fmt.Sprintf(`Logging Event %+v`, e))
 	if err := e.DeviceType.IsValid(); err != nil {
 		return err
 	}
@@ -72,6 +99,8 @@ func saveEvent(db *sql.DB, e Event) error {
 	if err := e.Identifier.IsValid(); err != nil {
 		return err
 	}
+
+	originator := translateToken(e.Originator)
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -82,7 +111,7 @@ func saveEvent(db *sql.DB, e Event) error {
 		INSERT INTO events
 		(source, identifier, device_type, date, count)
 		VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE count = count + ?`,
-		e.Originator, e.Identifier, e.DeviceType, e.Date.Format("2006-01-02"), e.Count, e.Count); err != nil {
+		originator, e.Identifier, e.DeviceType, e.Date.Format("2006-01-02"), e.Count, e.Count); err != nil {
 
 		if err := tx.Rollback(); err != nil {
 			return err
