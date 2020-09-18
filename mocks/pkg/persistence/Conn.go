@@ -6,7 +6,7 @@ import (
 	covidshield "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
 	mock "github.com/stretchr/testify/mock"
 
-	persistence "github.com/CovidShield/server/pkg/persistence"
+	persistence "github.com/cds-snc/covid-alert-server/pkg/persistence"
 
 	time "time"
 )

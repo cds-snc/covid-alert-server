@@ -4,8 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/CovidShield/server/pkg/keyclaim"
 	"time"
+
+	"github.com/cds-snc/covid-alert-server/pkg/keyclaim"
 )
 
 var originatorLookup keyclaim.Authenticator
