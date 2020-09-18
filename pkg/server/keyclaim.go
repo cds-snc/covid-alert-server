@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CovidShield/server/pkg/config"
-	"github.com/CovidShield/server/pkg/keyclaim"
-	"github.com/CovidShield/server/pkg/persistence"
-	pb "github.com/CovidShield/server/pkg/proto/covidshield"
+	"github.com/cds-snc/covid-alert-server/pkg/config"
+	"github.com/cds-snc/covid-alert-server/pkg/keyclaim"
+	"github.com/cds-snc/covid-alert-server/pkg/persistence"
+	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
 
 	"github.com/Shopify/goose/srvutil"
 	"github.com/golang/protobuf/ptypes"

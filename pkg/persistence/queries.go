@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/CovidShield/server/pkg/config"
-	pb "github.com/CovidShield/server/pkg/proto/covidshield"
-	"github.com/CovidShield/server/pkg/timemath"
+	"github.com/cds-snc/covid-alert-server/pkg/config"
+	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
+	"github.com/cds-snc/covid-alert-server/pkg/timemath"
 )
 
 func deleteOldDiagnosisKeys(db *sql.DB) (int64, error) {

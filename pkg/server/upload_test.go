@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	persistence "github.com/CovidShield/server/mocks/pkg/persistence"
-	persistenceErrors "github.com/CovidShield/server/pkg/persistence"
-	pb "github.com/CovidShield/server/pkg/proto/covidshield"
+	persistence "github.com/cds-snc/covid-alert-server/mocks/pkg/persistence"
+	persistenceErrors "github.com/cds-snc/covid-alert-server/pkg/persistence"
+	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
 	"github.com/Shopify/goose/logger"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
