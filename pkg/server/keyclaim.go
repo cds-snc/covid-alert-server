@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
@@ -86,9 +87,16 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.db.SaveEvent(persistence.Event{Originator: originator, DeviceType: persistence.Server, Identifier: persistence.OTKGenerated, Date:  time.Now(), Count: 1 }); err != nil {
+	event := persistence.Event{
+		Originator: originator,
+		DeviceType: persistence.Server,
+		Identifier: persistence.OTKGenerated,
+		Date:  time.Now(),
+		Count: 1,
+	}
+	if err := s.db.SaveEvent(event); err != nil {
 		// We don't necessarily want to crash if we were unable to log a metric
-		log(nil, err).Warn(persistence.OTKGenerated + " event failed to log")
+		log(nil, err).Warn(fmt.Sprintf("Unable to log event: %#v\n", event))
 	}
 
 	w.Header().Add("Access-Control-Allow-Origin", config.AppConstants.CORSAccessControlAllowOrigin)

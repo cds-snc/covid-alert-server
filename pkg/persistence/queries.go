@@ -173,8 +173,9 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, erro
 
 	row = s.QueryRow(appPublicKey)
 
-	if err := saveEvent(db, Event{Originator: originator, DeviceType: Server, Identifier: OTKClaimed, Count: 1, Date: time.Now()}); err != nil {
-		log(nil, err).Warn("Unable to log event OTKClaimed")
+	event := Event{Originator: originator, DeviceType: Server, Identifier: OTKClaimed, Count: 1, Date: time.Now()}
+	if err := saveEvent(db, event); err != nil {
+		log(nil, err).Warn(fmt.Sprintf("Unable to log event: %#v\n", event))
 	}
 
 	var serverPub []byte
@@ -347,7 +348,7 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 	}
 
 	if keysInserted > 0 {
-		if err := saveEvent(db, Event {
+		event := Event{
 			Originator: originator,
 			Identifier: TEKUploaded,
 			DeviceType: Server,
@@ -355,8 +356,9 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 			// This is a safe conversion as we have a max of 28 keys as defined in the protobuf
 			// we should revisit if that changes
 			Count: int(keysInserted),
-		}); err != nil {
-			log(nil, err).Info("Unable to log event TEKUploaded")
+		}
+		if err := saveEvent(db, event); err != nil {
+			log(nil, err).Info(fmt.Sprintf("Unable to log event: %#v\n", event))
 		}
 	}
 

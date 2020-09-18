@@ -2,6 +2,7 @@ package workers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/cds-snc/covid-alert-server/pkg/config"
@@ -37,13 +38,16 @@ var expirationRunner = func(w *worker, ctx context.Context) error {
 		lastErr = err
 	} else {
 		for _, count := range counts {
-			w.db.SaveEvent(persistence.Event{
+			event := persistence.Event{
 				Identifier: persistence.OTKExpired,
 				DeviceType: persistence.Server,
 				Date: time.Now(),
 				Count : count.Count,
 				Originator: count.Originator,
-			})
+			}
+			if err := w.db.SaveEvent(event); err != nil {
+				log(nil, err).Warn(fmt.Sprintf("Unable to log event: %#v\n", event))
+			}
 
 		}
 		log(ctx, nil).WithField("count", nDeleted).Info("deleted old encryption keys")
