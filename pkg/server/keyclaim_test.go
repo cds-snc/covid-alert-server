@@ -6,6 +6,7 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
+	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -60,6 +61,9 @@ func TestNewKeyClaim(t *testing.T) {
 	auth.On("Authenticate", "errortoken").Return("302", true)
 
 	hashID := hex.EncodeToString(SHA512([]byte("abcd")))
+
+	// Until we get a mockable time library we'll have to be less picky about events here
+	db.On( "SaveEvent", mock.AnythingOfType("persistence.Event")).Return(nil)
 
 	// DB Mock
 	db.On("NewKeyClaim", "302", "goodtoken", "").Return("AAABBBCCCC", nil)
