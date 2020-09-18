@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"crypto/rand"
+	"database/sql/driver"
 	"fmt"
 	"testing"
 	"time"
@@ -91,8 +92,7 @@ func TestClaimKey(t *testing.T) {
 	rows = sqlmock.NewRows([]string{"count"}).AddRow(0)
 	mock.ExpectQuery(`SELECT COUNT(*) FROM encryption_keys WHERE app_public_key = ?`).WithArgs(pub[:]).WillReturnRows(rows)
 
-	current, _ := time.Parse("2006-01-02 03:04:05","1950-01-01 00:00:00")
-	setupSelectOneTimeCode(mock, oneTimeCode, current)
+	setupSelectOneTimeCode(mock, oneTimeCode,"1950-01-01 00:00:00" )
 
 	mock.ExpectRollback()
 	_, receivedErr = claimKey(db, oneTimeCode, pub[:])
@@ -232,7 +232,7 @@ func TestClaimKey(t *testing.T) {
 
 }
 
-func setupSelectOneTimeCode(mock sqlmock.Sqlmock, oneTimeCode string, time time.Time) {
+func setupSelectOneTimeCode(mock sqlmock.Sqlmock, oneTimeCode string, time driver.Value) {
 	rows := sqlmock.NewRows([]string{"created", "originator"}).AddRow(time, "originator")
 	mock.ExpectQuery(`SELECT created, originator FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
 }
