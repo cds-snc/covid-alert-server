@@ -209,13 +209,13 @@ func TestClaimKey(t *testing.T) {
 	serverPub, _, _ := box.GenerateKey(rand.Reader)
 
 	// Valid Code
-	db.On("ClaimKey", "AAAAAAAAAA", appPub[:]).Return(serverPub[:], nil)
+	db.On("ClaimKey", "AAAAAAAAAA", appPub[:], mock.Anything).Return(serverPub[:], nil)
 
 	// Error Code
-	db.On("ClaimKey", "BBBBBBBBBB", appPub[:]).Return(nil, err.ErrInvalidKeyFormat)
-	db.On("ClaimKey", "CCCCCCCCCC", appPub[:]).Return(nil, err.ErrDuplicateKey)
-	db.On("ClaimKey", "DDDDDDDDDD", appPub[:]).Return(nil, err.ErrInvalidOneTimeCode)
-	db.On("ClaimKey", "EEEEEEEEEE", appPub[:]).Return(nil, fmt.Errorf("Generic Error"))
+	db.On("ClaimKey", "BBBBBBBBBB", appPub[:], mock.Anything).Return(nil, err.ErrInvalidKeyFormat)
+	db.On("ClaimKey", "CCCCCCCCCC", appPub[:], mock.Anything).Return(nil, err.ErrDuplicateKey)
+	db.On("ClaimKey", "DDDDDDDDDD", appPub[:], mock.Anything).Return(nil, err.ErrInvalidOneTimeCode)
+	db.On("ClaimKey", "EEEEEEEEEE", appPub[:], mock.Anything).Return(nil, fmt.Errorf("Generic Error"))
 
 	// Mock failure log
 	db.On("ClaimKeyFailure", "3.3.3.3").Return(triesRemaining-1, banDuration, nil)

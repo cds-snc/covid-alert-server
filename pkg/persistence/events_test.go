@@ -2,6 +2,8 @@ package persistence
 
 import (
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
@@ -41,6 +43,21 @@ func Test_translateToken(t *testing.T) {
 	token3 := strings.Repeat("c",20)
 
 	originator := translateToken(token1)
+	assert.Equal(t, onApi, originator)
+
+	originator = translateTokenForLogs(token2)
+	assert.Equal(t, token2, "b...b")
+
+	originator = translateTokenForLogs(token3)
+	assert.Equal(t, token3, "b...b")
+
+}
+
+func Test_translateTokenForLogs(t *testing.T) {
+
+	token3 := strings.Repeat("c",20)
+
+	originator := translateTokenForLogs(token1)
 	assert.Equal(t, onApi, originator)
 
 	originator = translateToken(token2)
@@ -84,4 +101,38 @@ func Test_SaveEvent(t *testing.T) {
 
 	saveEvent(db, event)
 
+}
+
+
+func Test_LogEvent(t *testing.T){
+
+	hook := test.NewGlobal()
+
+	now := time.Now()
+	event := Event {
+		Identifier: OTKGenerated,
+		Originator: token1,
+		Count: 1,
+		DeviceType: Server,
+		Date: now,
+	}
+
+	LogEvent(nil, nil, event)
+
+	assert.Equal(t,logrus.WarnLevel, hook.LastEntry().Level)
+	assert.Contains(t, hook.LastEntry().Message, "Unable to log event")
+	assert.Equal(t, 1,  hook.LastEntry().Data["Count"] )
+	assert.Equal(t, onApi, hook.LastEntry().Data["Originator"])
+	assert.Equal(t, OTKGenerated, hook.LastEntry().Data["Identifier"])
+	assert.Equal(t, Server, hook.LastEntry().Data["DeviceType"])
+	assert.Equal(t, now, hook.LastEntry().Data["Date"])
+
+	event = Event {
+		Originator: token2,
+	}
+
+	// Test anonymizing bearer tokens
+	LogEvent(nil, nil, event)
+
+	assert.Equal(t, "b...b", hook.LastEntry().Data["Originator"])
 }

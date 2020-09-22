@@ -1,9 +1,11 @@
 package persistence
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/cds-snc/covid-alert-server/pkg/keyclaim"
@@ -39,6 +41,28 @@ func translateToken(token string) string {
 	}
 
 	return region
+}
+
+func translateTokenForLogs(token string) string {
+	region, ok := originatorLookup.Authenticate(token)
+
+	if region == "302" || ok == false{
+		return fmt.Sprintf("%v...%v", token[0:1], token[len(token)-1:len(token)])
+	}
+
+	return region
+}
+
+func LogEvent(ctx context.Context, err error, event Event){
+
+
+	log(ctx, err).WithFields(logrus.Fields{
+		"Originator": translateTokenForLogs(event.Originator),
+		"DeviceType": event.DeviceType,
+		"Identifier": event.Identifier,
+		"Date" : event.Date,
+		"Count": event.Count,
+	}).Warn("Unable to log event")
 }
 
 // SaveEvent log an Event in the database

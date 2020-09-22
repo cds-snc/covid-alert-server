@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
@@ -95,8 +94,7 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 		Count: 1,
 	}
 	if err := s.db.SaveEvent(event); err != nil {
-		// We don't necessarily want to crash if we were unable to log a metric
-		log(nil, err).Warn(fmt.Sprintf("Unable to log event: %#v\n", event))
+		persistence.LogEvent(ctx, err, event)
 	}
 
 	w.Header().Add("Access-Control-Allow-Origin", config.AppConstants.CORSAccessControlAllowOrigin)
@@ -168,7 +166,7 @@ func (s *keyClaimServlet) claimKey(w http.ResponseWriter, r *http.Request) resul
 
 	appPublicKey := req.GetAppPublicKey()
 
-	serverPub, err := s.db.ClaimKey(oneTimeCode, appPublicKey)
+	serverPub, err := s.db.ClaimKey(oneTimeCode, appPublicKey, ctx)
 	if err == persistence.ErrInvalidKeyFormat {
 		return requestError(
 			ctx, w, err, "invalid key format",

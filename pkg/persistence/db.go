@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
@@ -33,9 +34,9 @@ type Conn interface {
 	// Only returns keys that correspond to a Key for a date
 	// less than 14 days ago.
 	FetchKeysForHours(string, uint32, uint32, int32) ([]*pb.TemporaryExposureKey, error)
-	StoreKeys(*[32]byte, []*pb.TemporaryExposureKey) error
+	StoreKeys(*[32]byte, []*pb.TemporaryExposureKey, context.Context) error
 	NewKeyClaim(string, string, string) (string, error)
-	ClaimKey(string, []byte) ([]byte, error)
+	ClaimKey(string, []byte, context.Context) ([]byte, error)
 	PrivForPub([]byte) ([]byte, error)
 
 	CheckClaimKeyBan(string) (triesRemaining int, banDuration time.Duration, err error)
@@ -138,11 +139,11 @@ var ErrDuplicateKey = errors.New("key is already registered")
 
 var ErrInvalidOneTimeCode = errors.New("argument had wrong size")
 
-func (c *conn) ClaimKey(oneTimeCode string, appPublicKey []byte) ([]byte, error) {
+func (c *conn) ClaimKey(oneTimeCode string, appPublicKey []byte, ctx context.Context) ([]byte, error) {
 	if len(appPublicKey) != pb.KeyLength {
 		return nil, ErrInvalidKeyFormat
 	}
-	return claimKey(c.db, oneTimeCode, appPublicKey)
+	return claimKey(c.db, oneTimeCode, appPublicKey, ctx)
 }
 
 // ErrHashIDClaimed is returned when the client tries to get a new code for a
@@ -240,8 +241,8 @@ func (c *conn) PrivForPub(pub []byte) ([]byte, error) {
 	}
 }
 
-func (c *conn) StoreKeys(appPubKey *[32]byte, keys []*pb.TemporaryExposureKey) error {
-	return registerDiagnosisKeys(c.db, appPubKey, keys)
+func (c *conn) StoreKeys(appPubKey *[32]byte, keys []*pb.TemporaryExposureKey, ctx context.Context) error {
+	return registerDiagnosisKeys(c.db, appPubKey, keys, ctx)
 }
 
 func (c *conn) FetchKeysForHours(region string, startHour uint32, endHour uint32, currentRSIN int32) ([]*pb.TemporaryExposureKey, error) {

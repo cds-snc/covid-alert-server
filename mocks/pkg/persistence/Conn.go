@@ -3,6 +3,8 @@
 package mocks
 
 import (
+	context "context"
+
 	covidshield "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
 	mock "github.com/stretchr/testify/mock"
 
@@ -44,13 +46,13 @@ func (_m *Conn) CheckClaimKeyBan(_a0 string) (int, time.Duration, error) {
 	return r0, r1, r2
 }
 
-// ClaimKey provides a mock function with given fields: _a0, _a1
-func (_m *Conn) ClaimKey(_a0 string, _a1 []byte) ([]byte, error) {
-	ret := _m.Called(_a0, _a1)
+// ClaimKey provides a mock function with given fields: _a0, _a1, _a2
+func (_m *Conn) ClaimKey(_a0 string, _a1 []byte, _a2 context.Context) ([]byte, error) {
+	ret := _m.Called(_a0, _a1, _a2)
 
 	var r0 []byte
-	if rf, ok := ret.Get(0).(func(string, []byte) []byte); ok {
-		r0 = rf(_a0, _a1)
+	if rf, ok := ret.Get(0).(func(string, []byte, context.Context) []byte); ok {
+		r0 = rf(_a0, _a1, _a2)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]byte)
@@ -58,8 +60,8 @@ func (_m *Conn) ClaimKey(_a0 string, _a1 []byte) ([]byte, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, []byte) error); ok {
-		r1 = rf(_a0, _a1)
+	if rf, ok := ret.Get(1).(func(string, []byte, context.Context) error); ok {
+		r1 = rf(_a0, _a1, _a2)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -353,13 +355,13 @@ func (_m *Conn) SaveEvent(event persistence.Event) error {
 	return r0
 }
 
-// StoreKeys provides a mock function with given fields: _a0, _a1
-func (_m *Conn) StoreKeys(_a0 *[32]byte, _a1 []*covidshield.TemporaryExposureKey) error {
-	ret := _m.Called(_a0, _a1)
+// StoreKeys provides a mock function with given fields: _a0, _a1, _a2
+func (_m *Conn) StoreKeys(_a0 *[32]byte, _a1 []*covidshield.TemporaryExposureKey, _a2 context.Context) error {
+	ret := _m.Called(_a0, _a1, _a2)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*[32]byte, []*covidshield.TemporaryExposureKey) error); ok {
-		r0 = rf(_a0, _a1)
+	if rf, ok := ret.Get(0).(func(*[32]byte, []*covidshield.TemporaryExposureKey, context.Context) error); ok {
+		r0 = rf(_a0, _a1, _a2)
 	} else {
 		r0 = ret.Error(0)
 	}

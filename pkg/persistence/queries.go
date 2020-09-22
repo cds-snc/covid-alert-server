@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -76,7 +77,7 @@ func deleteOldEncryptionKeys(db *sql.DB) (int64, error) {
 	return res.RowsAffected()
 }
 
-func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, error) {
+func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte, ctx context.Context) ([]byte, error) {
 	tx, err := db.Begin()
 	if err != nil {
 		return nil, err
@@ -175,7 +176,7 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, erro
 
 	event := Event{Originator: originator, DeviceType: Server, Identifier: OTKClaimed, Count: 1, Date: time.Now()}
 	if err := saveEvent(db, event); err != nil {
-		log(nil, err).Warn(fmt.Sprintf("Unable to log event: %#v\n", event))
+		LogEvent(ctx, err, event)
 	}
 
 	var serverPub []byte
@@ -261,7 +262,7 @@ func diagnosisKeysForHours(db *sql.DB, region string, startHour uint32, endHour 
 	)
 }
 
-func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.TemporaryExposureKey) error {
+func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.TemporaryExposureKey, ctx context.Context) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -358,7 +359,7 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 			Count: int(keysInserted),
 		}
 		if err := saveEvent(db, event); err != nil {
-			log(nil, err).Info(fmt.Sprintf("Unable to log event: %#v\n", event))
+			LogEvent(ctx, err, event)
 		}
 	}
 

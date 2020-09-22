@@ -2,7 +2,6 @@ package workers
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/cds-snc/covid-alert-server/pkg/config"
@@ -46,7 +45,7 @@ var expirationRunner = func(w *worker, ctx context.Context) error {
 				Originator: count.Originator,
 			}
 			if err := w.db.SaveEvent(event); err != nil {
-				log(nil, err).Warn(fmt.Sprintf("Unable to log event: %#v\n", event))
+				persistence.LogEvent(ctx, err, event)
 			}
 
 		}

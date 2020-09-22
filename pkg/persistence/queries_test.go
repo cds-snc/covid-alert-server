@@ -64,7 +64,7 @@ func TestClaimKey(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery(`SELECT COUNT(*) FROM encryption_keys WHERE app_public_key = ?`).WithArgs(pub[:]).WillReturnError(fmt.Errorf("error"))
 	mock.ExpectRollback()
-	_, receivedErr := claimKey(db, oneTimeCode, pub[:])
+	_, receivedErr := claimKey(db, oneTimeCode, pub[:], nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -78,7 +78,7 @@ func TestClaimKey(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"count"}).AddRow(1)
 	mock.ExpectQuery(`SELECT COUNT(*) FROM encryption_keys WHERE app_public_key = ?`).WithArgs(pub[:]).WillReturnRows(rows)
 	mock.ExpectRollback()
-	_, receivedErr = claimKey(db, oneTimeCode, pub[:])
+	_, receivedErr = claimKey(db, oneTimeCode, pub[:], nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -95,7 +95,7 @@ func TestClaimKey(t *testing.T) {
 	setupSelectOneTimeCode(mock, oneTimeCode,"1950-01-01 00:00:00" )
 
 	mock.ExpectRollback()
-	_, receivedErr = claimKey(db, oneTimeCode, pub[:])
+	_, receivedErr = claimKey(db, oneTimeCode, pub[:], nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -124,7 +124,7 @@ func TestClaimKey(t *testing.T) {
 	mock.ExpectPrepare(query).WillReturnError(fmt.Errorf("error"))
 
 	mock.ExpectRollback()
-	_, receivedErr = claimKey(db, oneTimeCode, pub[:])
+	_, receivedErr = claimKey(db, oneTimeCode, pub[:], nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -147,7 +147,7 @@ func TestClaimKey(t *testing.T) {
 	mock.ExpectPrepare(query).ExpectExec().WithArgs(pub[:], created, oneTimeCode).WillReturnError(fmt.Errorf("error"))
 
 	mock.ExpectRollback()
-	_, receivedErr = claimKey(db, oneTimeCode, pub[:])
+	_, receivedErr = claimKey(db, oneTimeCode, pub[:], nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -170,7 +170,7 @@ func TestClaimKey(t *testing.T) {
 	mock.ExpectPrepare(query).ExpectExec().WithArgs(pub[:], created, oneTimeCode).WillReturnResult(sqlmock.NewResult(1, 2))
 
 	mock.ExpectRollback()
-	_, receivedErr = claimKey(db, oneTimeCode, pub[:])
+	_, receivedErr = claimKey(db, oneTimeCode, pub[:], nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -195,7 +195,7 @@ func TestClaimKey(t *testing.T) {
 	mock.ExpectPrepare(`SELECT server_public_key FROM encryption_keys WHERE app_public_key = ?`).ExpectQuery().WithArgs(pub[:]).WillReturnError(fmt.Errorf("error"))
 
 	mock.ExpectRollback()
-	_, receivedErr = claimKey(db, oneTimeCode, pub[:])
+	_, receivedErr = claimKey(db, oneTimeCode, pub[:], nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -222,7 +222,7 @@ func TestClaimKey(t *testing.T) {
 
 	mock.ExpectCommit()
 
-	serverKey, _ := claimKey(db, oneTimeCode, pub[:])
+	serverKey, _ := claimKey(db, oneTimeCode, pub[:], nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -534,7 +534,7 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery(`SELECT region, originator, remaining_keys FROM encryption_keys WHERE app_public_key = ? FOR UPDATE`).WithArgs(pub[:]).WillReturnError(fmt.Errorf("error"))
 	mock.ExpectRollback()
-	receivedErr := registerDiagnosisKeys(db, pub, keys)
+	receivedErr := registerDiagnosisKeys(db, pub, keys, nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -548,7 +548,7 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	row := sqlmock.NewRows([]string{"region", "originator", "remaining_keys"}).AddRow(region, originator, 0)
 	mock.ExpectQuery(`SELECT region, originator, remaining_keys FROM encryption_keys WHERE app_public_key = ? FOR UPDATE`).WillReturnRows(row)
 	mock.ExpectRollback()
-	receivedErr = registerDiagnosisKeys(db, pub, keys)
+	receivedErr = registerDiagnosisKeys(db, pub, keys, nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -568,7 +568,7 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	).WillReturnError(fmt.Errorf("error"))
 
 	mock.ExpectRollback()
-	receivedErr = registerDiagnosisKeys(db, pub, keys)
+	receivedErr = registerDiagnosisKeys(db, pub, keys, nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -601,7 +601,7 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	).WillReturnError(fmt.Errorf("error"))
 
 	mock.ExpectRollback()
-	receivedErr = registerDiagnosisKeys(db, pub, keys)
+	receivedErr = registerDiagnosisKeys(db, pub, keys, nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -642,7 +642,7 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	}
 
 	mock.ExpectRollback()
-	receivedErr = registerDiagnosisKeys(db, pub, keys)
+	receivedErr = registerDiagnosisKeys(db, pub, keys, nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -694,7 +694,7 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	).WillReturnError(fmt.Errorf("error"))
 
 	mock.ExpectRollback()
-	receivedErr = registerDiagnosisKeys(db, pub, keys)
+	receivedErr = registerDiagnosisKeys(db, pub, keys, nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -746,7 +746,7 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	).WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectCommit()
-	receivedResult := registerDiagnosisKeys(db, pub, keys)
+	receivedResult := registerDiagnosisKeys(db, pub, keys, nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)

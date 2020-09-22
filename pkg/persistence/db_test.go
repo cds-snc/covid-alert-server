@@ -77,7 +77,7 @@ func TestDBClaimKey(t *testing.T) {
 	oneTimeCode := "80311300"
 
 	// App key to short
-	receivedResult, receivedError := conn.ClaimKey(oneTimeCode, make([]byte, 8))
+	receivedResult, receivedError := conn.ClaimKey(oneTimeCode, make([]byte, 8), nil)
 	assert.Equal(t, receivedError, ErrInvalidKeyFormat)
 	assert.Nil(t, receivedResult)
 
@@ -111,7 +111,7 @@ func TestDBClaimKey(t *testing.T) {
 	mock.ExpectCommit()
 
 	expectedResult := pub[:]
-	receivedResult, receivedError = conn.ClaimKey(oneTimeCode, pub[:])
+	receivedResult, receivedError = conn.ClaimKey(oneTimeCode, pub[:], nil)
 
 	assert.Equal(t, expectedResult, receivedResult)
 	assert.Nil(t, receivedError)
@@ -416,7 +416,7 @@ func TestDBStoreKeys(t *testing.T) {
 	).WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectCommit()
-	receivedResult := conn.StoreKeys(pub, keys)
+	receivedResult := conn.StoreKeys(pub, keys, nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
