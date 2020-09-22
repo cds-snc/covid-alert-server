@@ -6,6 +6,7 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
+	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -60,6 +61,9 @@ func TestNewKeyClaim(t *testing.T) {
 	auth.On("Authenticate", "errortoken").Return("302", true)
 
 	hashID := hex.EncodeToString(SHA512([]byte("abcd")))
+
+	// Until we get a mockable time library we'll have to be less picky about events here
+	db.On( "SaveEvent", mock.AnythingOfType("persistence.Event")).Return(nil)
 
 	// DB Mock
 	db.On("NewKeyClaim", "302", "goodtoken", "").Return("AAABBBCCCC", nil)
@@ -205,13 +209,13 @@ func TestClaimKey(t *testing.T) {
 	serverPub, _, _ := box.GenerateKey(rand.Reader)
 
 	// Valid Code
-	db.On("ClaimKey", "AAAAAAAAAA", appPub[:]).Return(serverPub[:], nil)
+	db.On("ClaimKey", "AAAAAAAAAA", appPub[:], mock.Anything).Return(serverPub[:], nil)
 
 	// Error Code
-	db.On("ClaimKey", "BBBBBBBBBB", appPub[:]).Return(nil, err.ErrInvalidKeyFormat)
-	db.On("ClaimKey", "CCCCCCCCCC", appPub[:]).Return(nil, err.ErrDuplicateKey)
-	db.On("ClaimKey", "DDDDDDDDDD", appPub[:]).Return(nil, err.ErrInvalidOneTimeCode)
-	db.On("ClaimKey", "EEEEEEEEEE", appPub[:]).Return(nil, fmt.Errorf("Generic Error"))
+	db.On("ClaimKey", "BBBBBBBBBB", appPub[:], mock.Anything).Return(nil, err.ErrInvalidKeyFormat)
+	db.On("ClaimKey", "CCCCCCCCCC", appPub[:], mock.Anything).Return(nil, err.ErrDuplicateKey)
+	db.On("ClaimKey", "DDDDDDDDDD", appPub[:], mock.Anything).Return(nil, err.ErrInvalidOneTimeCode)
+	db.On("ClaimKey", "EEEEEEEEEE", appPub[:], mock.Anything).Return(nil, fmt.Errorf("Generic Error"))
 
 	// Mock failure log
 	db.On("ClaimKeyFailure", "3.3.3.3").Return(triesRemaining-1, banDuration, nil)

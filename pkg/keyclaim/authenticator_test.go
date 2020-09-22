@@ -1,6 +1,7 @@
 package keyclaim
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -18,7 +19,7 @@ func TestNewAuthenticator(t *testing.T) {
 	assert.PanicsWithValue(t, "no KEY_CLAIM_TOKEN", func() { NewAuthenticator() }, "KEY_CLAIM_TOKEN needs to be defined")
 
 	os.Setenv("KEY_CLAIM_TOKEN", "foobaz")
-	assert.PanicsWithValue(t, "invalid KEY_CLAIM_TOKEN", func() { NewAuthenticator() }, "KEY_CLAIM_TOKEN must include a `=` and have "+string(config.AppConstants.AssignmentParts)+"parts")
+	assert.PanicsWithValue(t, "invalid KEY_CLAIM_TOKEN", func() { NewAuthenticator() }, "KEY_CLAIM_TOKEN must include a `=` and have "+fmt.Sprint(config.AppConstants.AssignmentParts)+"parts")
 
 	os.Setenv("KEY_CLAIM_TOKEN", strings.Repeat("a", 64)+"=302")
 	assert.PanicsWithValue(t, "token too long", func() { NewAuthenticator() }, "KEY_CLAIM_TOKEN must include secret that is at less than 64 characters long")

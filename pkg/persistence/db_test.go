@@ -31,8 +31,6 @@ func (a AnyType) Match(v driver.Value) bool {
 }
 
 func TestDBDeleteOldDiagnosisKeys(t *testing.T) {
-	// Init config
-	config.InitConfig()
 
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
 	defer db.Close()
@@ -79,7 +77,7 @@ func TestDBClaimKey(t *testing.T) {
 	oneTimeCode := "80311300"
 
 	// App key to short
-	receivedResult, receivedError := conn.ClaimKey(oneTimeCode, make([]byte, 8))
+	receivedResult, receivedError := conn.ClaimKey(oneTimeCode, make([]byte, 8), nil)
 	assert.Equal(t, receivedError, ErrInvalidKeyFormat)
 	assert.Nil(t, receivedResult)
 
@@ -89,9 +87,9 @@ func TestDBClaimKey(t *testing.T) {
 	mock.ExpectQuery(`SELECT COUNT(*) FROM encryption_keys WHERE app_public_key = ?`).WithArgs(pub[:]).WillReturnRows(rows)
 
 	created := time.Now()
-
-	rows = sqlmock.NewRows([]string{"created"}).AddRow(created)
-	mock.ExpectQuery(`SELECT created FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
+	originator := "onAPI"
+	rows = sqlmock.NewRows([]string{"created", "originator"}).AddRow(created, originator)
+	mock.ExpectQuery(`SELECT created, originator FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
 
 	created = timemath.MostRecentUTCMidnight(created)
 
@@ -113,7 +111,7 @@ func TestDBClaimKey(t *testing.T) {
 	mock.ExpectCommit()
 
 	expectedResult := pub[:]
-	receivedResult, receivedError = conn.ClaimKey(oneTimeCode, pub[:])
+	receivedResult, receivedError = conn.ClaimKey(oneTimeCode, pub[:], nil)
 
 	assert.Equal(t, expectedResult, receivedResult)
 	assert.Nil(t, receivedError)
@@ -418,7 +416,7 @@ func TestDBStoreKeys(t *testing.T) {
 	).WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectCommit()
-	receivedResult := conn.StoreKeys(pub, keys)
+	receivedResult := conn.StoreKeys(pub, keys, nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)

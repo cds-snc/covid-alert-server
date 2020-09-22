@@ -23,10 +23,32 @@ var expirationRunner = func(w *worker, ctx context.Context) error {
 		log(ctx, nil).WithField("count", nDeleted).Info("deleted old diagnosis keys")
 	}
 
+	// Count the keys we are going to delete
+	var (
+		counts []persistence.CountByOriginator
+		countErr error
+	)
+	if counts, countErr = w.db.CountOldEncryptionKeysByOriginator(); countErr != nil {
+		log(ctx, countErr).Info("Unable to count old encryption keys")
+	}
+
 	if nDeleted, err := w.db.DeleteOldEncryptionKeys(); err != nil {
 		log(ctx, err).Info("failed to delete old encryption keys")
 		lastErr = err
 	} else {
+		for _, count := range counts {
+			event := persistence.Event{
+				Identifier: persistence.OTKExpired,
+				DeviceType: persistence.Server,
+				Date: time.Now(),
+				Count : count.Count,
+				Originator: count.Originator,
+			}
+			if err := w.db.SaveEvent(event); err != nil {
+				persistence.LogEvent(ctx, err, event)
+			}
+
+		}
 		log(ctx, nil).WithField("count", nDeleted).Info("deleted old encryption keys")
 	}
 

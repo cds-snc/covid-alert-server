@@ -90,6 +90,23 @@ CREATE TABLE IF NOT EXISTS failed_key_claim_attempts (
 			`UPDATE encryption_keys SET hash_id = NULL WHERE hash_id = ''`,
 			`ALTER TABLE encryption_keys ADD UNIQUE (hash_id)`,
 		},
+	},{
+		id: "7",
+		statements: []string{
+			`
+CREATE TABLE IF NOT EXISTS events (
+	source          VARCHAR(32)     NOT NULL,
+	identifier      VARCHAR(255)    NOT NULL,
+	device_type     VARCHAR(32)     NOT NULL,
+	date            DATE            NOT NULL,
+	count           INT             UNSIGNED NOT NULL DEFAULT 0,
+	INDEX (source),
+	INDEX (identifier),
+	INDEX (device_type),
+	INDEX (date),
+	UNIQUE KEY identifier_type_date (source, identifier,device_type,date)
+)`,
+		},
 	},
 }
 

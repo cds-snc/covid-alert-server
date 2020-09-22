@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/cds-snc/covid-alert-server/pkg/config"
 	"github.com/cds-snc/covid-alert-server/pkg/keyclaim"
@@ -85,6 +86,17 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	event := persistence.Event{
+		Originator: originator,
+		DeviceType: persistence.Server,
+		Identifier: persistence.OTKGenerated,
+		Date:  time.Now(),
+		Count: 1,
+	}
+	if err := s.db.SaveEvent(event); err != nil {
+		persistence.LogEvent(ctx, err, event)
+	}
+
 	w.Header().Add("Access-Control-Allow-Origin", config.AppConstants.CORSAccessControlAllowOrigin)
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	if _, err := w.Write([]byte(keyClaim + "\n")); err != nil {
@@ -154,7 +166,7 @@ func (s *keyClaimServlet) claimKey(w http.ResponseWriter, r *http.Request) resul
 
 	appPublicKey := req.GetAppPublicKey()
 
-	serverPub, err := s.db.ClaimKey(oneTimeCode, appPublicKey)
+	serverPub, err := s.db.ClaimKey(oneTimeCode, appPublicKey, ctx)
 	if err == persistence.ErrInvalidKeyFormat {
 		return requestError(
 			ctx, w, err, "invalid key format",

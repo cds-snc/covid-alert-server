@@ -151,7 +151,7 @@ func (s *uploadServlet) upload(w http.ResponseWriter, r *http.Request) {
 		return // requestError done by validateKeys
 	}
 
-	err = s.db.StoreKeys(appPubKey, upload.GetKeys())
+	err = s.db.StoreKeys(appPubKey, upload.GetKeys(), ctx)
 	if err == persistence.ErrKeyConsumed {
 		requestError(
 			ctx, w, err, "key is used up",

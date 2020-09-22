@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"crypto/rand"
+	"database/sql/driver"
 	"fmt"
 	"testing"
 	"time"
@@ -51,7 +52,7 @@ func TestDeleteOldEncryptionKeys(t *testing.T) {
 
 }
 
-func TestCaimKey(t *testing.T) {
+func TestClaimKey(t *testing.T) {
 
 	pub, _, _ := box.GenerateKey(rand.Reader)
 	oneTimeCode := "80311300"
@@ -63,7 +64,7 @@ func TestCaimKey(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery(`SELECT COUNT(*) FROM encryption_keys WHERE app_public_key = ?`).WithArgs(pub[:]).WillReturnError(fmt.Errorf("error"))
 	mock.ExpectRollback()
-	_, receivedErr := claimKey(db, oneTimeCode, pub[:])
+	_, receivedErr := claimKey(db, oneTimeCode, pub[:], nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -77,7 +78,7 @@ func TestCaimKey(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"count"}).AddRow(1)
 	mock.ExpectQuery(`SELECT COUNT(*) FROM encryption_keys WHERE app_public_key = ?`).WithArgs(pub[:]).WillReturnRows(rows)
 	mock.ExpectRollback()
-	_, receivedErr = claimKey(db, oneTimeCode, pub[:])
+	_, receivedErr = claimKey(db, oneTimeCode, pub[:], nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -91,11 +92,10 @@ func TestCaimKey(t *testing.T) {
 	rows = sqlmock.NewRows([]string{"count"}).AddRow(0)
 	mock.ExpectQuery(`SELECT COUNT(*) FROM encryption_keys WHERE app_public_key = ?`).WithArgs(pub[:]).WillReturnRows(rows)
 
-	rows = sqlmock.NewRows([]string{"created"}).AddRow("1950-01-01 00:00:00")
-	mock.ExpectQuery(`SELECT created FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
+	setupSelectOneTimeCode(mock, oneTimeCode,"1950-01-01 00:00:00" )
 
 	mock.ExpectRollback()
-	_, receivedErr = claimKey(db, oneTimeCode, pub[:])
+	_, receivedErr = claimKey(db, oneTimeCode, pub[:], nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -109,8 +109,7 @@ func TestCaimKey(t *testing.T) {
 	rows = sqlmock.NewRows([]string{"count"}).AddRow(0)
 	mock.ExpectQuery(`SELECT COUNT(*) FROM encryption_keys WHERE app_public_key = ?`).WithArgs(pub[:]).WillReturnRows(rows)
 
-	rows = sqlmock.NewRows([]string{"created"}).AddRow(time.Now())
-	mock.ExpectQuery(`SELECT created FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
+	setupSelectOneTimeCode(mock, oneTimeCode, time.Now())
 
 	query := fmt.Sprintf(
 		`UPDATE encryption_keys
@@ -125,7 +124,7 @@ func TestCaimKey(t *testing.T) {
 	mock.ExpectPrepare(query).WillReturnError(fmt.Errorf("error"))
 
 	mock.ExpectRollback()
-	_, receivedErr = claimKey(db, oneTimeCode, pub[:])
+	_, receivedErr = claimKey(db, oneTimeCode, pub[:], nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -141,15 +140,14 @@ func TestCaimKey(t *testing.T) {
 
 	created := time.Now()
 
-	rows = sqlmock.NewRows([]string{"created"}).AddRow(created)
-	mock.ExpectQuery(`SELECT created FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
+	setupSelectOneTimeCode(mock, oneTimeCode, created)
 
 	created = timemath.MostRecentUTCMidnight(created)
 
 	mock.ExpectPrepare(query).ExpectExec().WithArgs(pub[:], created, oneTimeCode).WillReturnError(fmt.Errorf("error"))
 
 	mock.ExpectRollback()
-	_, receivedErr = claimKey(db, oneTimeCode, pub[:])
+	_, receivedErr = claimKey(db, oneTimeCode, pub[:], nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -165,15 +163,14 @@ func TestCaimKey(t *testing.T) {
 
 	created = time.Now()
 
-	rows = sqlmock.NewRows([]string{"created"}).AddRow(created)
-	mock.ExpectQuery(`SELECT created FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
+	setupSelectOneTimeCode(mock, oneTimeCode, created)
 
 	created = timemath.MostRecentUTCMidnight(created)
 
 	mock.ExpectPrepare(query).ExpectExec().WithArgs(pub[:], created, oneTimeCode).WillReturnResult(sqlmock.NewResult(1, 2))
 
 	mock.ExpectRollback()
-	_, receivedErr = claimKey(db, oneTimeCode, pub[:])
+	_, receivedErr = claimKey(db, oneTimeCode, pub[:], nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -189,8 +186,7 @@ func TestCaimKey(t *testing.T) {
 
 	created = time.Now()
 
-	rows = sqlmock.NewRows([]string{"created"}).AddRow(created)
-	mock.ExpectQuery(`SELECT created FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
+	setupSelectOneTimeCode(mock, oneTimeCode, created)
 
 	created = timemath.MostRecentUTCMidnight(created)
 
@@ -199,7 +195,7 @@ func TestCaimKey(t *testing.T) {
 	mock.ExpectPrepare(`SELECT server_public_key FROM encryption_keys WHERE app_public_key = ?`).ExpectQuery().WithArgs(pub[:]).WillReturnError(fmt.Errorf("error"))
 
 	mock.ExpectRollback()
-	_, receivedErr = claimKey(db, oneTimeCode, pub[:])
+	_, receivedErr = claimKey(db, oneTimeCode, pub[:], nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -215,8 +211,7 @@ func TestCaimKey(t *testing.T) {
 
 	created = time.Now()
 
-	rows = sqlmock.NewRows([]string{"created"}).AddRow(created)
-	mock.ExpectQuery(`SELECT created FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
+	setupSelectOneTimeCode(mock, oneTimeCode, created)
 
 	created = timemath.MostRecentUTCMidnight(created)
 
@@ -227,7 +222,7 @@ func TestCaimKey(t *testing.T) {
 
 	mock.ExpectCommit()
 
-	serverKey, _ := claimKey(db, oneTimeCode, pub[:])
+	serverKey, _ := claimKey(db, oneTimeCode, pub[:], nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -235,6 +230,11 @@ func TestCaimKey(t *testing.T) {
 
 	assert.Equal(t, pub[:], serverKey, "should return server key")
 
+}
+
+func setupSelectOneTimeCode(mock sqlmock.Sqlmock, oneTimeCode string, time driver.Value) {
+	rows := sqlmock.NewRows([]string{"created", "originator"}).AddRow(time, "originator")
+	mock.ExpectQuery(`SELECT created, originator FROM encryption_keys WHERE one_time_code = ?`).WithArgs(oneTimeCode).WillReturnRows(rows)
 }
 
 func TestPersistEncryptionKey(t *testing.T) {
@@ -534,7 +534,7 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	mock.ExpectBegin()
 	mock.ExpectQuery(`SELECT region, originator, remaining_keys FROM encryption_keys WHERE app_public_key = ? FOR UPDATE`).WithArgs(pub[:]).WillReturnError(fmt.Errorf("error"))
 	mock.ExpectRollback()
-	receivedErr := registerDiagnosisKeys(db, pub, keys)
+	receivedErr := registerDiagnosisKeys(db, pub, keys, nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -548,7 +548,7 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	row := sqlmock.NewRows([]string{"region", "originator", "remaining_keys"}).AddRow(region, originator, 0)
 	mock.ExpectQuery(`SELECT region, originator, remaining_keys FROM encryption_keys WHERE app_public_key = ? FOR UPDATE`).WillReturnRows(row)
 	mock.ExpectRollback()
-	receivedErr = registerDiagnosisKeys(db, pub, keys)
+	receivedErr = registerDiagnosisKeys(db, pub, keys, nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -568,7 +568,7 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	).WillReturnError(fmt.Errorf("error"))
 
 	mock.ExpectRollback()
-	receivedErr = registerDiagnosisKeys(db, pub, keys)
+	receivedErr = registerDiagnosisKeys(db, pub, keys, nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -601,7 +601,7 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	).WillReturnError(fmt.Errorf("error"))
 
 	mock.ExpectRollback()
-	receivedErr = registerDiagnosisKeys(db, pub, keys)
+	receivedErr = registerDiagnosisKeys(db, pub, keys, nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -642,7 +642,7 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	}
 
 	mock.ExpectRollback()
-	receivedErr = registerDiagnosisKeys(db, pub, keys)
+	receivedErr = registerDiagnosisKeys(db, pub, keys, nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -694,7 +694,7 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	).WillReturnError(fmt.Errorf("error"))
 
 	mock.ExpectRollback()
-	receivedErr = registerDiagnosisKeys(db, pub, keys)
+	receivedErr = registerDiagnosisKeys(db, pub, keys, nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -746,7 +746,7 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	).WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectCommit()
-	receivedResult := registerDiagnosisKeys(db, pub, keys)
+	receivedResult := registerDiagnosisKeys(db, pub, keys, nil)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)

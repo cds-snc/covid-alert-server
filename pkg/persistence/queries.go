@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -23,6 +24,43 @@ func deleteOldDiagnosisKeys(db *sql.DB) (int64, error) {
 	return res.RowsAffected()
 }
 
+type CountByOriginator struct {
+	Originator string
+	Count int
+}
+
+func countOldEncryptionKeysByOriginator(db *sql.DB) ([]CountByOriginator, error) {
+
+	rows, err := db.Query(fmt.Sprintf(`
+			SELECT originator, count(*) FROM encryption_keys
+			WHERE  (created < (NOW() - INTERVAL %d DAY))
+			OR    ((created < (NOW() - INTERVAL %d MINUTE)) AND app_public_key IS NULL)
+			OR    remaining_keys = 0
+			GROUP BY encryption_keys.originator `, config.AppConstants.EncryptionKeyValidityDays, config.AppConstants.OneTimeCodeExpiryInMinutes))
+	if err != nil {
+		return nil, err
+	}
+
+	var counts []CountByOriginator
+	for rows.Next() {
+		var (
+			numberToDelete int
+			originator     string
+		)
+
+		if err := rows.Scan(&originator, &numberToDelete); err != nil {
+			return nil, err
+		}
+
+		counts = append(counts, CountByOriginator{
+			Originator: originator,
+			Count: numberToDelete,
+		})
+	}
+
+	return counts, nil
+}
+
 // Delete anything past our data retention threshold, AND any timed-out KeyClaims.
 func deleteOldEncryptionKeys(db *sql.DB) (int64, error) {
 	res, err := db.Exec(
@@ -39,7 +77,7 @@ func deleteOldEncryptionKeys(db *sql.DB) (int64, error) {
 	return res.RowsAffected()
 }
 
-func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, error) {
+func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte, ctx context.Context) ([]byte, error) {
 	tx, err := db.Begin()
 	if err != nil {
 		return nil, err
@@ -60,7 +98,14 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, erro
 	}
 
 	var created time.Time
-	if err := tx.QueryRow("SELECT created FROM encryption_keys WHERE one_time_code = ?", oneTimeCode).Scan(&created); err != nil {
+
+	// we need to capture originator so that we can log it later when capturing this event
+	var originator string
+
+	row := tx.QueryRow("SELECT created, originator FROM encryption_keys WHERE one_time_code = ?", oneTimeCode)
+	if err := row.Scan(&created, &originator); err != nil {
+
+		fmt.Println(err)
 		if err := tx.Rollback(); err != nil {
 			return nil, err
 		}
@@ -127,7 +172,12 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte) ([]byte, erro
 		return nil, err
 	}
 
-	row := s.QueryRow(appPublicKey)
+	row = s.QueryRow(appPublicKey)
+
+	event := Event{Originator: originator, DeviceType: Server, Identifier: OTKClaimed, Count: 1, Date: time.Now()}
+	if err := saveEvent(db, event); err != nil {
+		LogEvent(ctx, err, event)
+	}
 
 	var serverPub []byte
 	if err := row.Scan(&serverPub); err != nil {
@@ -212,7 +262,7 @@ func diagnosisKeysForHours(db *sql.DB, region string, startHour uint32, endHour 
 	)
 }
 
-func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.TemporaryExposureKey) error {
+func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.TemporaryExposureKey, ctx context.Context) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -297,6 +347,7 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 	if err = tx.Commit(); err != nil {
 		return err
 	}
+
 	return nil
 }
 
