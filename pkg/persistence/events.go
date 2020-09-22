@@ -90,7 +90,6 @@ const (
 	OTKClaimed   EventType = "OTKClaimed"
 	OTKGenerated EventType = "OTKGenerated"
 	OTKExpired   EventType = "OTKExpired"
-	TEKUploaded  EventType = "TEKUploaded"
 )
 
 // IsValid validates the Device Type against a list of allowed strings
@@ -107,7 +106,7 @@ func (dt DeviceType) IsValid() error {
 // IsValid validates the Event Type against a list of allowed strings
 func (et EventType) IsValid() error {
 	switch et {
-	case OTKGenerated, OTKClaimed, OTKExpired, TEKUploaded:
+	case OTKGenerated, OTKClaimed, OTKExpired:
 		return nil
 	}
 	return errors.New(fmt.Sprintf("Invalid EventType: (%s)\n", et))

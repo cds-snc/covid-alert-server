@@ -46,10 +46,10 @@ func Test_translateToken(t *testing.T) {
 	assert.Equal(t, onApi, originator)
 
 	originator = translateTokenForLogs(token2)
-	assert.Equal(t, token2, "b...b")
+	assert.Equal(t, "b...b", originator)
 
 	originator = translateTokenForLogs(token3)
-	assert.Equal(t, token3, "b...b")
+	assert.Equal(t, "c...c", originator)
 
 }
 
