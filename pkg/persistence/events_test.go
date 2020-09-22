@@ -17,7 +17,7 @@ func TestDeviceType_IsValid(t *testing.T) {
 		t.Errorf("Invalid Device Type Passed")
 	}
 
-	for _,dt := range [3]DeviceType{Server, Android, iOS} {
+	for _,dt := range [3]DeviceType{Server, Android, IOS} {
 		if err := dt.IsValid(); err != nil {
 			t.Errorf("Valid Device Type Failed")
 		}
