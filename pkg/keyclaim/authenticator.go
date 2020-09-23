@@ -9,6 +9,7 @@ import (
 
 type Authenticator interface {
 	Authenticate(string) (string, bool)
+	RegionFromAuthHeader(string) (string, string, bool)
 }
 
 type authenticator struct {
@@ -48,4 +49,14 @@ func NewAuthenticator() Authenticator {
 func (a *authenticator) Authenticate(token string) (string, bool) {
 	region, ok := a.tokens[token]
 	return region, ok
+}
+
+// RegionFromAuthHeader authenticate using the Auth Header
+func (a *authenticator) RegionFromAuthHeader(header string) (string, string, bool) {
+	parts := strings.SplitN(header, " ", 2)
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return "", "", false
+	}
+	region, ok := a.Authenticate(parts[1])
+	return region, parts[1], ok
 }
