@@ -22,11 +22,11 @@ fi
 echo "Getting distribution ID"
 DIST_ID="$(jq -r '.DistributionList.Items[0].Id' <<< "$DISTRIBUTIONS")"
 
-echo "$DIST_ID"
+echo "Invalidting for: $DIST_ID"
 echo "Creating Invalidation ..."
-RETVAL=aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/*" 
 
-INVALIDATION_ID="$(jq -r .Status)"
+RETVAL="$(aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/*")"
+INVALIDATION_ID="$(jq -r .Invalidation.Id <<< "$RETVAL")"
 
 while true; do
 
