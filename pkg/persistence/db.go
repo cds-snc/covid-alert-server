@@ -53,6 +53,7 @@ type Conn interface {
 	CountOldEncryptionKeysByOriginator() ([]CountByOriginator, error)
 
 	SaveEvent(event Event) error
+	GetServerEventsByRegion(region string) ([]*Events, error)
 
 	Close() error
 }

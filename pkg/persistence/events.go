@@ -152,3 +152,44 @@ func saveEvent(db *sql.DB, e Event) error {
 
 	return nil
 }
+
+type Events struct {
+	identifier string `json:id`
+	date       string `json:date`
+	count      int64  `json:count`
+}
+
+func (c *conn) GetServerEventsByRegion(region string) ([]*Events, error) {
+	return getServerEventsByRegion(c.db, region)
+}
+
+func getServerEventsByRegion(db *sql.DB, region string) ([]*Events, error) {
+
+	rows, err := db.Query(`
+		SELECT identifier, date, count 
+		FROM events 
+		WHERE events.source = ? AND events.device_type = ?`,
+		region, Server)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var events []*Events
+
+	for rows.Next() {
+		e := Events{}
+		var t time.Time
+
+		err := rows.Scan(&e.identifier, &t, &e.count)
+
+		if err != nil {
+			return nil, err
+		}
+
+		e.date = t.Format("2006-01-02")
+		events = append(events, &e)
+	}
+
+	return events, nil
+}
