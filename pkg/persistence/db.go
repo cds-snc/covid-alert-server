@@ -53,7 +53,7 @@ type Conn interface {
 	CountOldEncryptionKeysByOriginator() ([]CountByOriginator, error)
 
 	SaveEvent(event Event) error
-	GetServerEventsByRegion(region string) ([]*Events, error)
+	GetServerEventsByType(eventType EventType) ([]Events, error)
 
 	Close() error
 }
@@ -173,7 +173,6 @@ func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 			err = persistEncryptionKey(c.db, region, originator, pub, priv, oneTimeCode)
 		}
 		if err == nil {
-
 
 			return oneTimeCode, nil
 		} else if strings.Contains(err.Error(), "used hashID found") {
