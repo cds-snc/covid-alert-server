@@ -3,12 +3,14 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"os"
+
 	"github.com/Shopify/goose/srvutil"
 	"github.com/cds-snc/covid-alert-server/pkg/config"
 	"github.com/cds-snc/covid-alert-server/pkg/keyclaim"
 	"github.com/cds-snc/covid-alert-server/pkg/persistence"
 	"github.com/gorilla/mux"
-	"net/http"
 
 	"context"
 )
@@ -30,14 +32,23 @@ func (m metricsServlet) RegisterRouting(r *mux.Router) {
 	r.HandleFunc("/expired-keys", m.expiredKeys)
 }
 
-func authorizeRequest (r *http.Request) error {
+func authorizeRequest(r *http.Request) error {
 
 	uname, pword, ok := r.BasicAuth()
 	if !ok {
 		return fmt.Errorf("basic auth required for access")
 	}
 
-	if uname != "foo" || pword != "bar" {
+	metricUsername, uok := os.LookupEnv("METRICS_USERNAME")
+	if !uok {
+		log(nil, nil).Panic("Metrics username not set")
+	}
+
+	metricPassword, pok := os.LookupEnv("METRICS_PASSWORD")
+	if !pok {
+		log(nil, nil).Panic("Metrics username not set")
+	}
+	if uname != metricUsername || pword != metricPassword {
 		return fmt.Errorf("invalid username or password")
 	}
 

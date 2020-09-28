@@ -297,6 +297,29 @@ func (_m *Conn) FetchKeysForHours(_a0 string, _a1 uint32, _a2 uint32, _a3 int32)
 	return r0, r1
 }
 
+// GetServerEventsByType provides a mock function with given fields: eventType
+func (_m *Conn) GetServerEventsByType(eventType persistence.EventType) ([]persistence.Events, error) {
+	ret := _m.Called(eventType)
+
+	var r0 []persistence.Events
+	if rf, ok := ret.Get(0).(func(persistence.EventType) []persistence.Events); ok {
+		r0 = rf(eventType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]persistence.Events)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(persistence.EventType) error); ok {
+		r1 = rf(eventType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // NewKeyClaim provides a mock function with given fields: _a0, _a1, _a2
 func (_m *Conn) NewKeyClaim(_a0 string, _a1 string, _a2 string) (string, error) {
 	ret := _m.Called(_a0, _a1, _a2)
