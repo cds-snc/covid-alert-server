@@ -50,7 +50,10 @@ type Conn interface {
 	CountClaimedOneTimeCodes() (int64, error)
 	CountDiagnosisKeys() (int64, error)
 	CountUnclaimedOneTimeCodes() (int64, error)
-	CountOldEncryptionKeysByOriginator() ([]CountByOriginator, error)
+
+	CountUnclaimedEncryptionKeysByOriginator() ([]CountByOriginator, error)
+	CountExhaustedEncryptionKeysByOriginator() ([]CountByOriginator, error)
+	CountExpiredClaimedEncryptionKeysByOriginator() ([]CountByOriginator, error)
 
 	SaveEvent(event Event) error
 
@@ -118,10 +121,18 @@ func (c *conn) DeleteOldDiagnosisKeys() (int64, error) {
 	return deleteOldDiagnosisKeys(c.db)
 }
 
-func (c *conn) CountOldEncryptionKeysByOriginator() ([]CountByOriginator, error) {
-	return countOldEncryptionKeysByOriginator(c.db)
+func (c *conn) CountUnclaimedEncryptionKeysByOriginator() ([]CountByOriginator, error) {
+	return countUnclaimedEncryptionKeysByOriginator(c.db)
 }
 
+func (c *conn) CountExhaustedEncryptionKeysByOriginator() ([]CountByOriginator, error) {
+	return countExhaustedEncryptionKeysByOriginator(c.db)
+}
+
+func (c *conn) CountExpiredClaimedEncryptionKeysByOriginator() ([]CountByOriginator, error) {
+	return countExpiredClaimedEncryptionKeysByOriginator(c.db)
+
+}
 func (c *conn) DeleteOldEncryptionKeys() (int64, error) {
 	return deleteOldEncryptionKeys(c.db)
 }

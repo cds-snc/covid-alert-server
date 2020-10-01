@@ -168,7 +168,7 @@ func (_m *Conn) CountDiagnosisKeys() (int64, error) {
 }
 
 // CountOldEncryptionKeysByOriginator provides a mock function with given fields:
-func (_m *Conn) CountOldEncryptionKeysByOriginator() ([]persistence.CountByOriginator, error) {
+func (_m *Conn) CountUnclaimedEncryptionKeysByOriginator() ([]persistence.CountByOriginator, error) {
 	ret := _m.Called()
 
 	var r0 []persistence.CountByOriginator
