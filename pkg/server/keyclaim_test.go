@@ -60,6 +60,8 @@ func TestNewKeyClaim(t *testing.T) {
 	auth.On("Authenticate", "goodtoken").Return("302", true)
 	auth.On("Authenticate", "errortoken").Return("302", true)
 
+	auth.On("RegionFromAuthHeader", "").Return("302", "goodtoken",false)
+	auth.On("RegionFromAuthHeader", "Bear thisisaverylongtoken").Return("", "", false)
 	hashID := hex.EncodeToString(SHA512([]byte("abcd")))
 
 	// Until we get a mockable time library we'll have to be less picky about events here
