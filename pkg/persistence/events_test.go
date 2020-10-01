@@ -48,14 +48,14 @@ func setupSaveEventMock(mock sqlmock.Sqlmock, event Event){
 		`INSERT INTO events
 		(source, identifier, device_type, date, count)
 		VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE count = count + ?`).WithArgs(
-		onApi,
+		event.Originator,
 		event.Identifier,
-		event.Date,
 		event.DeviceType,
-		event.Date,
+		AnyType{},
 		event.Count,
-	)
-	mock.ExpectRollback()
+		event.Count,
+	).WillReturnResult(sqlmock.NewResult(0,1))
+	mock.ExpectCommit()
 }
 
 func Test_SaveEvent(t *testing.T) {
