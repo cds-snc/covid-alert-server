@@ -35,7 +35,7 @@ type Conn interface {
 	// less than 14 days ago.
 	FetchKeysForHours(string, uint32, uint32, int32) ([]*pb.TemporaryExposureKey, error)
 	StoreKeys(*[32]byte, []*pb.TemporaryExposureKey, context.Context) error
-	NewKeyClaim(string, string, string) (string, error)
+	NewKeyClaim(context.Context, string, string, string) (string, error)
 	ClaimKey(string, []byte, context.Context) ([]byte, error)
 	PrivForPub([]byte) ([]byte, error)
 
@@ -131,8 +131,8 @@ func (c *conn) CountExhaustedEncryptionKeysByOriginator() ([]CountByOriginator, 
 
 func (c *conn) CountExpiredClaimedEncryptionKeysByOriginator() ([]CountByOriginator, error) {
 	return countExpiredClaimedEncryptionKeysByOriginator(c.db)
-
 }
+
 func (c *conn) DeleteOldEncryptionKeys() (int64, error) {
 	return deleteOldEncryptionKeys(c.db)
 }
@@ -161,7 +161,7 @@ func (c *conn) ClaimKey(oneTimeCode string, appPublicKey []byte, ctx context.Con
 // HashID that has already used the code
 var ErrHashIDClaimed = errors.New("HashID claimed")
 
-func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
+func (c *conn) NewKeyClaim(ctx context.Context, region, originator, hashID string) (string, error) {
 	var err error
 
 	pub, priv, err := box.GenerateKey(rand.Reader)
@@ -184,11 +184,33 @@ func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 		}
 		if err == nil {
 
+			event := Event{
+				Originator: originator,
+				DeviceType: Server,
+				Identifier: OTKGenerated,
+				Date:  time.Now(),
+				Count: 1,
+			}
+			if err := saveEvent(c.db, event); err != nil {
+				LogEvent(ctx, err, event)
+			}
 
 			return oneTimeCode, nil
 		} else if strings.Contains(err.Error(), "used hashID found") {
 			return "", ErrHashIDClaimed
 		} else if strings.Contains(err.Error(), "regenerate OTC for hashID") {
+
+			event := Event{
+				Originator: originator,
+				DeviceType: Server,
+				Identifier: OTKRegenerated,
+				Date:  time.Now(),
+				Count: 1,
+			}
+			if err := saveEvent(c.db, event); err != nil {
+				LogEvent(ctx, err, event)
+			}
+
 			log(nil, err).Warn("regenerating OTC for hashID")
 		} else if strings.Contains(err.Error(), "Duplicate entry") {
 			log(nil, err).Warn("duplicate one_time_code")
