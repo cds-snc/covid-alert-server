@@ -68,11 +68,11 @@ func TestNewKeyClaim(t *testing.T) {
 	db.On( "SaveEvent", mock.AnythingOfType("persistence.Event")).Return(nil)
 
 	// DB Mock
-	db.On("NewKeyClaim", "302", "goodtoken", "").Return("AAABBBCCCC", nil)
-	db.On("NewKeyClaim", "302", "goodtoken", hashID).Return("AAABBBCCCC", nil)
+	db.On("NewKeyClaim",mock.Anything, "302", "goodtoken", "").Return("AAABBBCCCC", nil)
+	db.On("NewKeyClaim",mock.Anything, "302", "goodtoken", hashID).Return("AAABBBCCCC", nil)
 
-	db.On("NewKeyClaim", "302", "errortoken", "").Return("", fmt.Errorf("Random error"))
-	db.On("NewKeyClaim", "302", "errortoken", hashID).Return("", err.ErrHashIDClaimed)
+	db.On("NewKeyClaim", mock.Anything, "302", "errortoken", "").Return("", fmt.Errorf("Random error"))
+	db.On("NewKeyClaim", mock.Anything, "302", "errortoken", hashID).Return("", err.ErrHashIDClaimed)
 
 	servlet := NewKeyClaimServlet(db, auth)
 	router := Router()

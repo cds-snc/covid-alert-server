@@ -25,30 +25,31 @@ var expirationRunner = func(w *worker, ctx context.Context) error {
 
 	// Count the keys we are going to delete
 	var (
-		counts []persistence.CountByOriginator
-		countErr error
+		unclaimedCounts []persistence.CountByOriginator
+		expiredCounts []persistence.CountByOriginator
+		exhaustedCounts []persistence.CountByOriginator
+		countErr        error
 	)
-	if counts, countErr = w.db.CountOldEncryptionKeysByOriginator(); countErr != nil {
-		log(ctx, countErr).Info("Unable to count old encryption keys")
+
+	if unclaimedCounts, countErr = w.db.CountUnclaimedEncryptionKeysByOriginator(); countErr != nil {
+		log(ctx, countErr).Info("Unable to count unclaimed encryption keys")
+	}
+
+	if expiredCounts, countErr = w.db.CountExpiredClaimedEncryptionKeysByOriginator(); countErr != nil {
+		log(ctx, countErr).Info("Unable to count expired encryption keys")
+	}
+
+	if exhaustedCounts, countErr = w.db.CountExhaustedEncryptionKeysByOriginator(); countErr != nil {
+		log(ctx, countErr).Info("Unable to count exhausted encryption keys")
 	}
 
 	if nDeleted, err := w.db.DeleteOldEncryptionKeys(); err != nil {
 		log(ctx, err).Info("failed to delete old encryption keys")
 		lastErr = err
 	} else {
-		for _, count := range counts {
-			event := persistence.Event{
-				Identifier: persistence.OTKExpired,
-				DeviceType: persistence.Server,
-				Date: time.Now(),
-				Count : count.Count,
-				Originator: count.Originator,
-			}
-			if err := w.db.SaveEvent(event); err != nil {
-				persistence.LogEvent(ctx, err, event)
-			}
-
-		}
+		saveCountEvents(ctx, w, persistence.OTKUnclaimed, unclaimedCounts)
+		saveCountEvents(ctx, w, persistence.OTKExpired, expiredCounts)
+		saveCountEvents(ctx, w, persistence.OTKExhausted, exhaustedCounts)
 		log(ctx, nil).WithField("count", nDeleted).Info("deleted old encryption keys")
 	}
 
@@ -60,6 +61,23 @@ var expirationRunner = func(w *worker, ctx context.Context) error {
 	}
 
 	return lastErr
+}
+
+func saveCountEvents(ctx context.Context, w *worker, identifier persistence.EventType, counts []persistence.CountByOriginator) {
+
+	for _, count := range counts {
+		event := persistence.Event{
+			Identifier: identifier,
+			DeviceType: persistence.Server,
+			Date: time.Now(),
+			Count : count.Count,
+			Originator: count.Originator,
+		}
+		if err := w.db.SaveEvent(event); err != nil {
+			persistence.LogEvent(ctx, err, event)
+		}
+
+	}
 }
 
 func StartExpirationWorker(db persistence.Conn) (Worker, error) {

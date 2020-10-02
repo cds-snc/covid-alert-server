@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha512"
 	"database/sql/driver"
@@ -10,11 +11,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/Shopify/goose/logger"
 	"github.com/cds-snc/covid-alert-server/pkg/config"
 	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
 	"github.com/cds-snc/covid-alert-server/pkg/timemath"
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/Shopify/goose/logger"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -117,17 +118,23 @@ func TestDBClaimKey(t *testing.T) {
 	assert.Nil(t, receivedError)
 }
 
-func TestDBNewKeyClaim(t *testing.T) {
+const (
+	region string = "302"
+	originator string = "randomOrigin"
+)
+
+func TestSuccessWithNoHashID(t *testing.T) {
 	// Capture logs
 	oldLog := log
 	defer func() { log = oldLog }()
 
-	nullLog, hook := test.NewNullLogger()
+	nullLog, _ := test.NewNullLogger()
 	nullLog.ExitFunc = func(code int) {}
 
 	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
 		return logrus.NewEntry(nullLog)
 	}
+
 
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
 	defer db.Close()
@@ -136,10 +143,6 @@ func TestDBNewKeyClaim(t *testing.T) {
 		db: db,
 	}
 
-	region := "302"
-	originator := "randomOrigin"
-
-	// Success with no HashID
 	mock.ExpectExec(
 		`INSERT INTO encryption_keys
 		(region, originator, server_private_key, server_public_key, one_time_code, remaining_keys)
@@ -152,7 +155,15 @@ func TestDBNewKeyClaim(t *testing.T) {
 		config.AppConstants.InitialRemainingKeys,
 	).WillReturnResult(sqlmock.NewResult(1, 1))
 
-	receivedResult, receivedError := conn.NewKeyClaim(region, originator, "")
+	setupSaveEventMock(mock, Event{
+		Identifier: OTKGenerated,
+		DeviceType: Server,
+		Date:       time.Now(),
+		Count:      1,
+		Originator: originator,
+	})
+
+	receivedResult, receivedError := conn.NewKeyClaim(context.TODO(), region, originator, "")
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -160,8 +171,28 @@ func TestDBNewKeyClaim(t *testing.T) {
 
 	assert.Less(t, 0, len(receivedResult))
 	assert.Nil(t, receivedError, "Expected nil if it could execute insert")
+}
 
-	// Error - Generic
+func TestErrorGeneric(t *testing.T) {
+
+	// Capture logs
+	oldLog := log
+	defer func() { log = oldLog }()
+
+	nullLog, _ := test.NewNullLogger()
+	nullLog.ExitFunc = func(code int) {}
+
+	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
+		return logrus.NewEntry(nullLog)
+	}
+
+
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
+	defer db.Close()
+
+	conn := conn{
+		db: db,
+	}
 	mock.ExpectExec(
 		`INSERT INTO encryption_keys
 		(region, originator, server_private_key, server_public_key, one_time_code, remaining_keys)
@@ -174,7 +205,7 @@ func TestDBNewKeyClaim(t *testing.T) {
 		config.AppConstants.InitialRemainingKeys,
 	).WillReturnError(fmt.Errorf("error"))
 
-	receivedResult, receivedError = conn.NewKeyClaim(region, originator, "")
+	receivedResult, receivedError := conn.NewKeyClaim(context.TODO(), region, originator, "")
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -183,8 +214,29 @@ func TestDBNewKeyClaim(t *testing.T) {
 	expectedErr := fmt.Errorf("error")
 	assert.Equal(t, "", receivedResult, "Expected result if could not execute insert")
 	assert.Equal(t, expectedErr, receivedError, "Expected error if could not execute insert")
+}
 
-	// Error - existing code
+func TestErrorExistingCode(t *testing.T) {
+
+	// Capture logs
+	oldLog := log
+	defer func() { log = oldLog }()
+
+	nullLog, hook := test.NewNullLogger()
+	nullLog.ExitFunc = func(code int) {}
+
+	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
+		return logrus.NewEntry(nullLog)
+	}
+
+
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
+	defer db.Close()
+
+	conn := conn{
+		db: db,
+	}
+
 	mock.ExpectExec(
 		`INSERT INTO encryption_keys
 		(region, originator, server_private_key, server_public_key, one_time_code, remaining_keys)
@@ -209,7 +261,15 @@ func TestDBNewKeyClaim(t *testing.T) {
 		config.AppConstants.InitialRemainingKeys,
 	).WillReturnResult(sqlmock.NewResult(1, 1))
 
-	receivedResult, receivedError = conn.NewKeyClaim(region, originator, "")
+	setupSaveEventMock(mock,
+		Event{
+			Identifier: OTKGenerated,
+			DeviceType: Server,
+			Date:       time.Time{},
+			Count:      1,
+			Originator: "randomOrigin",
+		})
+	receivedResult, receivedError := conn.NewKeyClaim(context.TODO(), region, originator, "")
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -219,15 +279,35 @@ func TestDBNewKeyClaim(t *testing.T) {
 	assert.Nil(t, receivedError, "Expected nil if it could execute insert")
 
 	assertLog(t, hook, 1, logrus.WarnLevel, "duplicate one_time_code")
+}
 
-	// Error - never succeeds with duplicate codes
+func TestNeverSucceedsWithDuplicateCodes(t *testing.T) {
+
+	// Capture logs
+	oldLog := log
+	defer func() { log = oldLog }()
+
+	nullLog, hook := test.NewNullLogger()
+	nullLog.ExitFunc = func(code int) {}
+
+	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
+		return logrus.NewEntry(nullLog)
+	}
+
+
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
+	defer db.Close()
+
+	conn := conn{
+		db: db,
+	}
 
 	for i := 0; i < 5; i++ {
 		mock.ExpectExec(
 			`INSERT INTO encryption_keys
 		(region, originator, server_private_key, server_public_key, one_time_code, remaining_keys)
 		VALUES (?, ?, ?, ?, ?, ?)`).WithArgs(
-			region,
+			"302",
 			originator,
 			AnyType{},
 			AnyType{},
@@ -236,7 +316,7 @@ func TestDBNewKeyClaim(t *testing.T) {
 		).WillReturnError(fmt.Errorf("Duplicate entry"))
 	}
 
-	receivedResult, receivedError = conn.NewKeyClaim(region, originator, "")
+	receivedResult, receivedError := conn.NewKeyClaim(context.TODO(), region, originator, "")
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -246,8 +326,30 @@ func TestDBNewKeyClaim(t *testing.T) {
 	assert.Nil(t, receivedError) // This is a bug and should be fixed, however, it is high unlikely to trigger
 
 	assertLog(t, hook, 5, logrus.WarnLevel, "duplicate one_time_code")
+}
 
-	// Error - unclaimed HashID, eventual success
+func TestUnclaimedHashIDEventualSuccess(t *testing.T) {
+
+	// Capture logs
+	oldLog := log
+	defer func() { log = oldLog }()
+
+	nullLog, hook := test.NewNullLogger()
+	nullLog.ExitFunc = func(code int) {}
+
+	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
+		return logrus.NewEntry(nullLog)
+	}
+
+
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
+	defer db.Close()
+
+	conn := conn{
+		db: db,
+	}
+
+
 	hashID := hex.EncodeToString(SHA512([]byte("abcd")))
 
 	mock.ExpectExec(
@@ -281,7 +383,16 @@ func TestDBNewKeyClaim(t *testing.T) {
 		config.AppConstants.InitialRemainingKeys,
 	).WillReturnResult(sqlmock.NewResult(1, 1))
 
-	receivedResult, receivedError = conn.NewKeyClaim(region, originator, hashID)
+	setupSaveEventMock(mock, Event{
+		Identifier: OTKRegenerated,
+		DeviceType: Server,
+		Date:       time.Now(),
+		Count:      1,
+		Originator: "randomOrigin",
+	})
+
+
+	receivedResult, receivedError := conn.NewKeyClaim(context.TODO(), region, originator, hashID)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -291,8 +402,30 @@ func TestDBNewKeyClaim(t *testing.T) {
 	assert.Nil(t, receivedError, "Expected nil if it could execute insert")
 
 	assertLog(t, hook, 1, logrus.WarnLevel, "regenerating OTC for hashID")
+}
 
-	// Error - claimed HashID
+func TestClaimedHashID(t *testing.T) {
+	// Capture logs
+	oldLog := log
+	defer func() { log = oldLog }()
+
+	nullLog, _ := test.NewNullLogger()
+	nullLog.ExitFunc = func(code int) {}
+
+	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
+		return logrus.NewEntry(nullLog)
+	}
+
+
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
+	defer db.Close()
+
+	conn := conn{
+		db: db,
+	}
+
+	hashID := hex.EncodeToString(SHA512([]byte("abcd")))
+
 	mock.ExpectExec(
 		`INSERT INTO encryption_keys
 		(region, originator, server_private_key, server_public_key, one_time_code, remaining_keys)
@@ -306,11 +439,12 @@ func TestDBNewKeyClaim(t *testing.T) {
 		config.AppConstants.InitialRemainingKeys,
 	).WillReturnError(fmt.Errorf("for key 'hash_id"))
 
-	rows = sqlmock.NewRows([]string{"one_time_code"}).AddRow(nil)
+	rows := sqlmock.NewRows([]string{"one_time_code"}).AddRow(nil)
 	mock.ExpectQuery(
 		`SELECT one_time_code FROM encryption_keys WHERE hash_id = ? FOR UPDATE`).WithArgs(hashID).WillReturnRows(rows)
 
-	receivedResult, receivedError = conn.NewKeyClaim(region, originator, hashID)
+
+	receivedResult, receivedError := conn.NewKeyClaim(context.TODO(), region, originator, hashID)
 
 	assert.Equal(t, "", receivedResult, "Expected result if could not execute insert")
 	assert.Equal(t, ErrHashIDClaimed, receivedError) // This is a bug and should be fixed, however, it is high unlikely to trigger

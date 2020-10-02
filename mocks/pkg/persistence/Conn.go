@@ -167,8 +167,54 @@ func (_m *Conn) CountDiagnosisKeys() (int64, error) {
 	return r0, r1
 }
 
-// CountOldEncryptionKeysByOriginator provides a mock function with given fields:
-func (_m *Conn) CountOldEncryptionKeysByOriginator() ([]persistence.CountByOriginator, error) {
+// CountExhaustedEncryptionKeysByOriginator provides a mock function with given fields:
+func (_m *Conn) CountExhaustedEncryptionKeysByOriginator() ([]persistence.CountByOriginator, error) {
+	ret := _m.Called()
+
+	var r0 []persistence.CountByOriginator
+	if rf, ok := ret.Get(0).(func() []persistence.CountByOriginator); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]persistence.CountByOriginator)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CountExpiredClaimedEncryptionKeysByOriginator provides a mock function with given fields:
+func (_m *Conn) CountExpiredClaimedEncryptionKeysByOriginator() ([]persistence.CountByOriginator, error) {
+	ret := _m.Called()
+
+	var r0 []persistence.CountByOriginator
+	if rf, ok := ret.Get(0).(func() []persistence.CountByOriginator); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]persistence.CountByOriginator)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func() error); ok {
+		r1 = rf()
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CountUnclaimedEncryptionKeysByOriginator provides a mock function with given fields:
+func (_m *Conn) CountUnclaimedEncryptionKeysByOriginator() ([]persistence.CountByOriginator, error) {
 	ret := _m.Called()
 
 	var r0 []persistence.CountByOriginator
@@ -320,20 +366,20 @@ func (_m *Conn) GetServerEventsByType(eventType persistence.EventType) ([]persis
 	return r0, r1
 }
 
-// NewKeyClaim provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Conn) NewKeyClaim(_a0 string, _a1 string, _a2 string) (string, error) {
-	ret := _m.Called(_a0, _a1, _a2)
+// NewKeyClaim provides a mock function with given fields: _a0, _a1, _a2, _a3
+func (_m *Conn) NewKeyClaim(_a0 context.Context, _a1 string, _a2 string, _a3 string) (string, error) {
+	ret := _m.Called(_a0, _a1, _a2, _a3)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(string, string, string) string); ok {
-		r0 = rf(_a0, _a1, _a2)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) string); ok {
+		r0 = rf(_a0, _a1, _a2, _a3)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string, string) error); ok {
-		r1 = rf(_a0, _a1, _a2)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(_a0, _a1, _a2, _a3)
 	} else {
 		r1 = ret.Error(1)
 	}

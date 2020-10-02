@@ -24,43 +24,6 @@ func deleteOldDiagnosisKeys(db *sql.DB) (int64, error) {
 	return res.RowsAffected()
 }
 
-type CountByOriginator struct {
-	Originator string
-	Count int
-}
-
-func countOldEncryptionKeysByOriginator(db *sql.DB) ([]CountByOriginator, error) {
-
-	rows, err := db.Query(fmt.Sprintf(`
-			SELECT originator, count(*) FROM encryption_keys
-			WHERE  (created < (NOW() - INTERVAL %d DAY))
-			OR    ((created < (NOW() - INTERVAL %d MINUTE)) AND app_public_key IS NULL)
-			OR    remaining_keys = 0
-			GROUP BY encryption_keys.originator `, config.AppConstants.EncryptionKeyValidityDays, config.AppConstants.OneTimeCodeExpiryInMinutes))
-	if err != nil {
-		return nil, err
-	}
-
-	var counts []CountByOriginator
-	for rows.Next() {
-		var (
-			numberToDelete int
-			originator     string
-		)
-
-		if err := rows.Scan(&originator, &numberToDelete); err != nil {
-			return nil, err
-		}
-
-		counts = append(counts, CountByOriginator{
-			Originator: originator,
-			Count: numberToDelete,
-		})
-	}
-
-	return counts, nil
-}
-
 // Delete anything past our data retention threshold, AND any timed-out KeyClaims.
 func deleteOldEncryptionKeys(db *sql.DB) (int64, error) {
 	res, err := db.Exec(
