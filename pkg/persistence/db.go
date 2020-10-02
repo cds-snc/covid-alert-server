@@ -197,8 +197,8 @@ func (c *conn) NewKeyClaim(ctx context.Context, region, originator, hashID strin
 				Originator: originator,
 				DeviceType: Server,
 				Identifier: identifier,
-				Date:  time.Now(),
-				Count: 1,
+				Date:       time.Now(),
+				Count:      1,
 			}
 			if err := saveEvent(c.db, event); err != nil {
 				LogEvent(ctx, err, event)
