@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/Shopify/goose/srvutil"
-	"github.com/cds-snc/covid-alert-server/pkg/config"
 	"github.com/cds-snc/covid-alert-server/pkg/keyclaim"
 	"github.com/cds-snc/covid-alert-server/pkg/persistence"
 	"github.com/gorilla/mux"
@@ -28,8 +27,14 @@ type metricsServlet struct {
 func (m metricsServlet) RegisterRouting(r *mux.Router) {
 	log(nil, nil).Info("registering metrics route")
 	r.HandleFunc("/claimed-keys", m.claimedKeys)
+
 	r.HandleFunc("/generated-keys", m.generatedKeys)
+	r.HandleFunc("/regenerated-keys", m.regeneratedKeys)
+
 	r.HandleFunc("/expired-keys", m.expiredKeys)
+	r.HandleFunc("/exhausted-keys", m.exhaustedKeys)
+	r.HandleFunc("/unclaimed-keys", m.unclaimedKeys)
+
 }
 
 func authorizeRequest(r *http.Request) error {
@@ -63,8 +68,20 @@ func (m *metricsServlet) generatedKeys(w http.ResponseWriter, r *http.Request) {
 	m.handleEventRequest(w, r, persistence.OTKGenerated)
 }
 
+func (m *metricsServlet) regeneratedKeys(w http.ResponseWriter, r *http.Request) {
+	m.handleEventRequest(w, r, persistence.OTKRegenerated)
+}
+
 func (m *metricsServlet) expiredKeys(w http.ResponseWriter, r *http.Request) {
 	m.handleEventRequest(w, r, persistence.OTKExpired)
+}
+
+func (m *metricsServlet) exhaustedKeys(w http.ResponseWriter, r *http.Request) {
+	m.handleEventRequest(w, r, persistence.OTKExhausted)
+}
+
+func (m *metricsServlet) unclaimedKeys(w http.ResponseWriter, r *http.Request) {
+	m.handleEventRequest(w, r, persistence.OTKUnclaimed)
 }
 
 func (m *metricsServlet) handleEventRequest(w http.ResponseWriter, r *http.Request, eventType persistence.EventType) {
@@ -77,9 +94,6 @@ func (m *metricsServlet) handleEventRequest(w http.ResponseWriter, r *http.Reque
 
 	switch r.Method {
 
-	case http.MethodOptions:
-		handleOptions(ctx, w)
-		return
 	case "GET":
 		m.getEvents(ctx, eventType, w)
 		return
@@ -108,15 +122,5 @@ func (m *metricsServlet) getEvents(ctx context.Context, eventType persistence.Ev
 		return
 	}
 	w.Write(js)
-	return
-}
-
-func handleOptions(ctx context.Context, w http.ResponseWriter) {
-	w.Header().Add("Access-Control-Allow-Origin", config.AppConstants.CORSAccessControlAllowOrigin)
-	w.Header().Add("Access-Control-Allow-Methods", "GET")
-	w.Header().Add("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Referer, User-Agent")
-	if _, err := w.Write([]byte("")); err != nil {
-		log(ctx, err).Warn("error writing response")
-	}
 	return
 }
