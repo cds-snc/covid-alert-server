@@ -107,13 +107,6 @@ CREATE TABLE IF NOT EXISTS events (
 	UNIQUE KEY identifier_type_date (source, identifier,device_type,date)
 )`,
 		},
-	},{
-		id: "8",
-		statements: []string{`
-DELETE FROM events
-WHERE identifier in ("OTKGenerated", "OTKExpired")
-`,
-		},
 	},
 }
 
