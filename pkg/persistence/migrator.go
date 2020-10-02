@@ -119,8 +119,8 @@ WHERE identifier in ("OTKGenerated", "OTKExpired")
 		statements: []string{`
 DELETE FROM events
 WHERE identifier in ("OTKUnclaimed", "OTKExpired")
-		`}
-	}
+		`},
+	},
 }
 
 // MigrateDatabase creates the database and migrates it into the correct state.
