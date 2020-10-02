@@ -1,16 +1,14 @@
 package server
 
 import (
-	"io/ioutil"
-	"net/http"
-	"regexp"
-	"strings"
-	"time"
-
 	"github.com/cds-snc/covid-alert-server/pkg/config"
 	"github.com/cds-snc/covid-alert-server/pkg/keyclaim"
 	"github.com/cds-snc/covid-alert-server/pkg/persistence"
 	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
+	"io/ioutil"
+	"net/http"
+	"regexp"
+	"strings"
 
 	"github.com/Shopify/goose/srvutil"
 	"github.com/golang/protobuf/ptypes"
@@ -75,7 +73,7 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 
 	hashID := vars["hashID"]
 
-	keyClaim, err := s.db.NewKeyClaim(region, originator, hashID)
+	keyClaim, err := s.db.NewKeyClaim(ctx, region, originator, hashID)
 	if err == persistence.ErrHashIDClaimed {
 		log(ctx, err).Info("hashID used")
 		http.Error(w, "forbidden", http.StatusForbidden)
@@ -84,17 +82,6 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 		log(ctx, err).Error("error constructing new key claim")
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
-	}
-
-	event := persistence.Event{
-		Originator: originator,
-		DeviceType: persistence.Server,
-		Identifier: persistence.OTKGenerated,
-		Date:  time.Now(),
-		Count: 1,
-	}
-	if err := s.db.SaveEvent(event); err != nil {
-		persistence.LogEvent(ctx, err, event)
 	}
 
 	w.Header().Add("Access-Control-Allow-Origin", config.AppConstants.CORSAccessControlAllowOrigin)

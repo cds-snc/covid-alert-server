@@ -35,7 +35,7 @@ type Conn interface {
 	// less than 14 days ago.
 	FetchKeysForHours(string, uint32, uint32, int32) ([]*pb.TemporaryExposureKey, error)
 	StoreKeys(*[32]byte, []*pb.TemporaryExposureKey, context.Context) error
-	NewKeyClaim(string, string, string) (string, error)
+	NewKeyClaim(context.Context, string, string, string) (string, error)
 	ClaimKey(string, []byte, context.Context) ([]byte, error)
 	PrivForPub([]byte) ([]byte, error)
 
@@ -50,7 +50,10 @@ type Conn interface {
 	CountClaimedOneTimeCodes() (int64, error)
 	CountDiagnosisKeys() (int64, error)
 	CountUnclaimedOneTimeCodes() (int64, error)
-	CountOldEncryptionKeysByOriginator() ([]CountByOriginator, error)
+
+	CountUnclaimedEncryptionKeysByOriginator() ([]CountByOriginator, error)
+	CountExhaustedEncryptionKeysByOriginator() ([]CountByOriginator, error)
+	CountExpiredClaimedEncryptionKeysByOriginator() ([]CountByOriginator, error)
 
 	SaveEvent(event Event) error
 
@@ -118,8 +121,16 @@ func (c *conn) DeleteOldDiagnosisKeys() (int64, error) {
 	return deleteOldDiagnosisKeys(c.db)
 }
 
-func (c *conn) CountOldEncryptionKeysByOriginator() ([]CountByOriginator, error) {
-	return countOldEncryptionKeysByOriginator(c.db)
+func (c *conn) CountUnclaimedEncryptionKeysByOriginator() ([]CountByOriginator, error) {
+	return countUnclaimedEncryptionKeysByOriginator(c.db)
+}
+
+func (c *conn) CountExhaustedEncryptionKeysByOriginator() ([]CountByOriginator, error) {
+	return countExhaustedEncryptionKeysByOriginator(c.db)
+}
+
+func (c *conn) CountExpiredClaimedEncryptionKeysByOriginator() ([]CountByOriginator, error) {
+	return countExpiredClaimedEncryptionKeysByOriginator(c.db)
 }
 
 func (c *conn) DeleteOldEncryptionKeys() (int64, error) {
@@ -150,13 +161,15 @@ func (c *conn) ClaimKey(oneTimeCode string, appPublicKey []byte, ctx context.Con
 // HashID that has already used the code
 var ErrHashIDClaimed = errors.New("HashID claimed")
 
-func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
+func (c *conn) NewKeyClaim(ctx context.Context, region, originator, hashID string) (string, error) {
 	var err error
 
 	pub, priv, err := box.GenerateKey(rand.Reader)
 	if err != nil {
 		return "", err
 	}
+
+	regenerated := false
 
 	for tries := 5; tries > 0; tries-- {
 
@@ -171,21 +184,45 @@ func (c *conn) NewKeyClaim(region, originator, hashID string) (string, error) {
 		} else {
 			err = persistEncryptionKey(c.db, region, originator, pub, priv, oneTimeCode)
 		}
+
 		if err == nil {
-
-
+			c.saveNewKeyClaimEvent(ctx, originator, regenerated)
 			return oneTimeCode, nil
 		} else if strings.Contains(err.Error(), "used hashID found") {
 			return "", ErrHashIDClaimed
 		} else if strings.Contains(err.Error(), "regenerate OTC for hashID") {
+			regenerated = true
 			log(nil, err).Warn("regenerating OTC for hashID")
+			continue
 		} else if strings.Contains(err.Error(), "Duplicate entry") {
 			log(nil, err).Warn("duplicate one_time_code")
+			continue
 		} else {
 			return "", err
 		}
 	}
 	return "", err
+}
+
+func (c *conn) saveNewKeyClaimEvent(ctx context.Context, originator string, regenerated bool){
+
+	var identifier EventType
+	if regenerated {
+		identifier = OTKRegenerated
+	} else {
+		identifier = OTKGenerated
+	}
+
+	event := Event{
+		Originator: originator,
+		DeviceType: Server,
+		Identifier: identifier,
+		Date:       time.Now(),
+		Count:      1,
+	}
+	if err := saveEvent(c.db, event); err != nil {
+		LogEvent(ctx, err, event)
+	}
 }
 
 // Generate a random one time code in the format AAABBBCCCC where
