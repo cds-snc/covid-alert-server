@@ -107,19 +107,6 @@ CREATE TABLE IF NOT EXISTS events (
 	UNIQUE KEY identifier_type_date (source, identifier,device_type,date)
 )`,
 		},
-	},{ // This is for the granularity release
-		id: "8",
-		statements: []string{`
-DELETE FROM events
-WHERE identifier in ("OTKGenerated", "OTKExpired")
-`,
-		},
-	},{ // This is for the fix to the "Too many metrics for unclaimed incident"
-		id: "9",
-		statements: []string{`
-DELETE FROM events
-WHERE identifier in ("OTKUnclaimed", "OTKExpired")
-		`},
 	},
 }
 
