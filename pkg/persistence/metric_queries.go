@@ -17,6 +17,7 @@ func countExpiredClaimedEncryptionKeysByOriginator(db *sql.DB) ([]CountByOrigina
 	return countByOriginator(db, fmt.Sprintf(`
 			SELECT originator, COUNT(*) FROM encryption_keys
 			WHERE  ((created < (NOW() - INTERVAL %d MINUTE)) AND app_public_key IS NULL)
+			GROUP BY encryption_keys.originator
 		`, config.AppConstants.OneTimeCodeExpiryInMinutes))
 }
 
@@ -24,6 +25,7 @@ func countExhaustedEncryptionKeysByOriginator(db *sql.DB) ([]CountByOriginator, 
 	return countByOriginator(db, `
 			SELECT originator, COUNT(*) FROM encryption_keys
 			WHERE  remaining_keys = 0
+			GROUP BY encryption_keys.originator
 		`)
 }
 
