@@ -15,14 +15,14 @@ func countUnclaimedEncryptionKeysByOriginator(db *sql.DB) ([]CountByOriginator, 
 
 func countExpiredClaimedEncryptionKeysByOriginator(db *sql.DB) ([]CountByOriginator, error) {
 	return countByOriginator(db, fmt.Sprintf(`
-			DELETE FROM encryption_keys
+			SELECT originator, COUNT(*) FROM encryption_keys
 			WHERE  ((created < (NOW() - INTERVAL %d MINUTE)) AND app_public_key IS NULL)
 		`, config.AppConstants.OneTimeCodeExpiryInMinutes))
 }
 
 func countExhaustedEncryptionKeysByOriginator(db *sql.DB) ([]CountByOriginator, error) {
 	return countByOriginator(db, `
-			DELETE FROM encryption_keys
+			SELECT originator, COUNT(*) FROM encryption_keys
 			WHERE  remaining_keys = 0
 		`)
 }
