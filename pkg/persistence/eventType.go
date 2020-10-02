@@ -11,12 +11,12 @@ type EventType string
 // OTKExpired One Time Key Expired
 // OTKExhausted One Time Key exhausted all it's TEKs
 const (
-	OTKClaimed   EventType = "OTKClaimed"
-	OTKUnclaimed EventType = "OTKUnclaimed"
-	OTKGenerated EventType = "OTKGenerated"
-	OTKExpired   EventType = "OTKExpired"
-	OTKExhausted		 EventType = "OTKExhausted"
-	OTKRegenerated EventType ="OTKRegenerated"
+	OTKClaimed     EventType = "OTKClaimed"
+	OTKUnclaimed   EventType = "OTKUnclaimed"
+	OTKGenerated   EventType = "OTKGenerated"
+	OTKExpired     EventType = "OTKExpired"
+	OTKExhausted   EventType = "OTKExhausted"
+	OTKRegenerated EventType = "OTKRegenerated"
 )
 
 // IsValid validates the Event Type against a list of allowed strings
@@ -27,4 +27,3 @@ func (et EventType) IsValid() error {
 	}
 	return fmt.Errorf("invalid EventType: (%s)", et)
 }
-

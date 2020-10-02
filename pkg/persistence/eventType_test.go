@@ -8,16 +8,16 @@ func TestEventType_IsValid(t *testing.T) {
 		t.Errorf("Invalid Event Type Passed")
 	}
 
-	for _,et := range []EventType{
+	for _, et := range []EventType{
 		OTKClaimed,
 		OTKGenerated,
 		OTKExhausted,
 		OTKRegenerated,
 		OTKExpired,
 		OTKUnclaimed,
-	}{
+	} {
 		if err := et.IsValid(); err != nil {
-			t.Errorf("Valid EventType failed: %s",et)
+			t.Errorf("Valid EventType failed: %s", et)
 		}
 	}
 }
