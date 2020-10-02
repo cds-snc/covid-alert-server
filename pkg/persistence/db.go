@@ -184,39 +184,45 @@ func (c *conn) NewKeyClaim(ctx context.Context, region, originator, hashID strin
 		} else {
 			err = persistEncryptionKey(c.db, region, originator, pub, priv, oneTimeCode)
 		}
+
 		if err == nil {
-
-			var identifier EventType
-			if regenerated {
-				identifier = OTKRegenerated
-			} else {
-				identifier = OTKGenerated
-			}
-
-			event := Event{
-				Originator: originator,
-				DeviceType: Server,
-				Identifier: identifier,
-				Date:       time.Now(),
-				Count:      1,
-			}
-			if err := saveEvent(c.db, event); err != nil {
-				LogEvent(ctx, err, event)
-			}
-
+			c.saveNewKeyClaimEvent(ctx, originator, regenerated)
 			return oneTimeCode, nil
 		} else if strings.Contains(err.Error(), "used hashID found") {
 			return "", ErrHashIDClaimed
 		} else if strings.Contains(err.Error(), "regenerate OTC for hashID") {
 			regenerated = true
 			log(nil, err).Warn("regenerating OTC for hashID")
+			continue
 		} else if strings.Contains(err.Error(), "Duplicate entry") {
 			log(nil, err).Warn("duplicate one_time_code")
+			continue
 		} else {
 			return "", err
 		}
 	}
 	return "", err
+}
+
+func (c *conn) saveNewKeyClaimEvent(ctx context.Context, originator string, regenerated bool){
+
+	var identifier EventType
+	if regenerated {
+		identifier = OTKRegenerated
+	} else {
+		identifier = OTKGenerated
+	}
+
+	event := Event{
+		Originator: originator,
+		DeviceType: Server,
+		Identifier: identifier,
+		Date:       time.Now(),
+		Count:      1,
+	}
+	if err := saveEvent(c.db, event); err != nil {
+		LogEvent(ctx, err, event)
+	}
 }
 
 // Generate a random one time code in the format AAABBBCCCC where
