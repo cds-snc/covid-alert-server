@@ -169,6 +169,8 @@ func (c *conn) NewKeyClaim(ctx context.Context, region, originator, hashID strin
 		return "", err
 	}
 
+	regenerated := false
+
 	for tries := 5; tries > 0; tries-- {
 
 		oneTimeCode, err := generateOneTimeCode()
@@ -184,10 +186,17 @@ func (c *conn) NewKeyClaim(ctx context.Context, region, originator, hashID strin
 		}
 		if err == nil {
 
+			var identifier EventType
+			if regenerated {
+				identifier = OTKRegenerated
+			} else {
+				identifier = OTKGenerated
+			}
+
 			event := Event{
 				Originator: originator,
 				DeviceType: Server,
-				Identifier: OTKGenerated,
+				Identifier: identifier,
 				Date:  time.Now(),
 				Count: 1,
 			}
@@ -199,18 +208,7 @@ func (c *conn) NewKeyClaim(ctx context.Context, region, originator, hashID strin
 		} else if strings.Contains(err.Error(), "used hashID found") {
 			return "", ErrHashIDClaimed
 		} else if strings.Contains(err.Error(), "regenerate OTC for hashID") {
-
-			event := Event{
-				Originator: originator,
-				DeviceType: Server,
-				Identifier: OTKRegenerated,
-				Date:  time.Now(),
-				Count: 1,
-			}
-			if err := saveEvent(c.db, event); err != nil {
-				LogEvent(ctx, err, event)
-			}
-
+			regenerated = true
 			log(nil, err).Warn("regenerating OTC for hashID")
 		} else if strings.Contains(err.Error(), "Duplicate entry") {
 			log(nil, err).Warn("duplicate one_time_code")
