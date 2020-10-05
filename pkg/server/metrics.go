@@ -92,16 +92,14 @@ func (m *metricsServlet) handleEventRequest(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 	}
 
-	switch r.Method {
-
-	case "GET":
-		m.getEvents(ctx, eventType, w)
-		return
-	default:
+	if r.Method != "GET" {
 		log(ctx, nil).WithField("method", r.Method).Info("disallowed method")
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
+
+	m.getEvents(ctx, eventType, w)
+	return
 }
 
 func (m *metricsServlet) getEvents(ctx context.Context, eventType persistence.EventType, w http.ResponseWriter) {

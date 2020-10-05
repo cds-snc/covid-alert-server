@@ -124,7 +124,12 @@ func (c *conn) GetServerEventsByType(eventType EventType) ([]Events, error) {
 	return getServerEventsByType(c.db, eventType)
 }
 
-func getServerEventsByType(db *sql.DB, eventType EventType) ([]Events, error){
+func getServerEventsByType(db *sql.DB, eventType EventType, startDate string, endDate string) ([]Events, error){
+
+	var rows *Rows
+	if startDate == nil {
+		return nil, fmt.Errorf("start date is required for querying server dates")
+	}
 
 	rows, err := db.Query(`
 		SELECT source, date, count 
@@ -152,6 +157,9 @@ func getServerEventsByType(db *sql.DB, eventType EventType) ([]Events, error){
 		events = append(events, e)
 	}
 
+	if events == nil {
+		events = make([]Events,0)
+	}
 	return events, nil
 }
 
