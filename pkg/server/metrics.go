@@ -3,8 +3,10 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/cds-snc/covid-alert-server/pkg/config"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/Shopify/goose/srvutil"
 	"github.com/cds-snc/covid-alert-server/pkg/keyclaim"
@@ -13,6 +15,8 @@ import (
 
 	"context"
 )
+
+const ISODATE string = "2006-01-02"
 
 func NewMetricsServlet(db persistence.Conn, auth keyclaim.Authenticator) srvutil.Servlet {
 	log(nil, nil).Info("registering metrics servlet")
@@ -115,10 +119,33 @@ func (m *metricsServlet) handleEventRequest(w http.ResponseWriter, r *http.Reque
 func (m *metricsServlet) getEvents(ctx context.Context, eventType persistence.EventType, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	startDate := vars["startDate"]
-	endDate := vars["endDate"]
+	startDateVal := vars["startDate"]
+	startDate, err := time.Parse(ISODATE, startDateVal)
+	if err != nil {
+		log(ctx, err).Errorf("issue parsing %v", startDateVal)
+		http.Error(w, "error parsing start date", http.StatusBadRequest)
+		return
+	}
 
-	events, err := m.db.GetServerEventsByType(eventType, startDate, endDate)
+
+	endDateVal := vars["endDate"]
+	if endDateVal != "" {
+		endDate, err := time.Parse(ISODATE, endDateVal)
+		if  err != nil {
+			log(ctx, err).Errorf("issue parsing %v",endDateVal)
+			http.Error(w, "error parsing end date", http.StatusBadRequest)
+			return
+		}
+
+		if int(endDate.Sub(startDate).Hours() / 24) > config.AppConstants.EventQueryRangeDates  {
+			log(ctx,fmt.Errorf("date range too big")).Errorf("date range needs to be less than %v days", config.AppConstants.EventQueryRangeDates)
+			http.Error(w, "invalid date range", http.StatusBadRequest)
+			return
+		}
+	}
+
+
+	events, err := m.db.GetServerEventsByType(eventType, startDateVal, endDateVal)
 	if err != nil {
 		log(ctx, err).Errorf("issue getting events for %v", eventType)
 		http.Error(w, "error retrieving events by bearer token", http.StatusBadRequest)

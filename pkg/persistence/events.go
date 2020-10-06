@@ -150,8 +150,8 @@ func getServerEventsByType(db *sql.DB, eventType EventType, startDate string, en
 		FROM events 
 		WHERE events.identifier = ? 
 		  AND events.device_type = ? 
-		  AND events.Date >= ?
-		  AND events.Date <= ?`,
+		  AND events.date >= ?
+		  AND events.date <= ?`,
 			eventType, Server, startDate, endDate)
 
 		if err != nil {
