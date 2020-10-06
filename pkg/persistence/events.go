@@ -120,25 +120,43 @@ type Events struct {
 	Count      int64  `json:"count"`
 }
 
-func (c *conn) GetServerEventsByType(eventType EventType) ([]Events, error) {
-	return getServerEventsByType(c.db, eventType)
+func (c *conn) GetServerEventsByType(eventType EventType, startDate string, endDate string) ([]Events, error) {
+	return getServerEventsByType(c.db, eventType, startDate, endDate)
 }
 
 func getServerEventsByType(db *sql.DB, eventType EventType, startDate string, endDate string) ([]Events, error){
 
-	var rows *Rows
-	if startDate == nil {
+	if startDate == "" {
 		return nil, fmt.Errorf("start date is required for querying server dates")
 	}
 
-	rows, err := db.Query(`
+	var rows *sql.Rows
+	if endDate == "" {
+		var err error
+		rows, err = db.Query(`
 		SELECT source, date, count 
 		FROM events 
-		WHERE events.identifier = ? AND events.device_type = ?`,
-		eventType, Server)
+		WHERE events.identifier = ? AND events.device_type = ? AND events.date = ?`,
+			eventType, Server, startDate)
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+	} else {
+
+		var err error
+		rows, err = db.Query(`
+		SELECT source, date, count 
+		FROM events 
+		WHERE events.identifier = ? 
+		  AND events.device_type = ? 
+		  AND events.Date >= ?
+		  AND events.Date <= ?`,
+			eventType, Server, startDate, endDate)
+
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var events []Events

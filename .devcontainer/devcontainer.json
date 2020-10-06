@@ -12,11 +12,6 @@
 		"golang.go",
 		"rebornix.Ruby"
 	],
-	"containerEnv": { 
-
-      "METRICS_USERNAME": "foo",
-      "METRICS_PASSWORD": "bar"
-	}	,
 
 	"postCreateCommand": "bash /workspace/scripts/install_dev_tools.sh",
 }
