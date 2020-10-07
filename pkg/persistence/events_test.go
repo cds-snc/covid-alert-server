@@ -114,7 +114,7 @@ func TestConn_GetServerEventsByTypeNoStartDate(t *testing.T) {
 	db, _, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	defer db.Close()
 
-	_, err := getServerEventsByType(db, OTKGenerated, "")
+	_, err := getServerEventsByType(db, "")
 
 	assert.Equal(t, fmt.Errorf("a date is required for querying events"), err)
 }
@@ -125,21 +125,24 @@ func TestConn_GetServerEventsByTypeStartDateOnly(t *testing.T) {
 	defer db.Close()
 
 	d, _ := time.Parse("2006-01-02", "2020-01-01")
-	rows := sqlmock.NewRows([]string{"source", "date", "count"}).AddRow("foo", d, 1)
+	rows := sqlmock.NewRows([]string{"identifier", "source", "date", "count"}).AddRow("event", "foo", d, 1)
 	mock.ExpectQuery(`
-		SELECT source, date, count 
+		SELECT identifier, source, date, count 
 		FROM events 
-		WHERE events.identifier = ? 
-		  AND events.device_type = ? 
+		WHERE events.device_type = ? 
 		  AND events.date = ?`).
-		WithArgs(OTKGenerated, Server, "2020-01-01").
+		WithArgs(Server, "2020-01-01").
 		WillReturnRows(rows)
 
-	events, _ := getServerEventsByType(db, OTKGenerated, "2020-01-01")
+	events, err := getServerEventsByType(db, "2020-01-01")
+
+	if err != nil {
+		t.Errorf("%s", err)
+	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
 	}
 
-	assert.Equal(t, []Events{{"foo", "2020-01-01", 1}}, events)
+	assert.Equal(t, []Events{{"foo", "2020-01-01", 1, "event"}}, events)
 }

@@ -52,7 +52,7 @@ func translateTokenForLogs(token string) string {
 	region, ok := originatorLookup.Authenticate(token)
 
 	if region == "302" || ok == false {
-		return fmt.Sprintf("%v...%v", token[0:1], token[len(token)-1:len(token)])
+		return fmt.Sprintf("%s...%s", token[0:1], token[len(token)-1:])
 	}
 
 	return region
@@ -114,27 +114,34 @@ func saveEvent(db *sql.DB, e Event) error {
 	return nil
 }
 
+// Events the aggregate of events identified in Identifier by Source
+// Source the bearer token that generated these events
+// Date the date the events occurs
+// Count the number of times this event occurred
+// Identifier the event that occurred
 type Events struct {
-	Source string `json:"source"`
+	Source     string `json:"source"`
 	Date       string `json:"date"`
 	Count      int64  `json:"count"`
+	Identifier string `json:"identifier"`
 }
 
-func (c *conn) GetServerEventsByType(eventType EventType, startDate string) ([]Events, error) {
-	return getServerEventsByType(c.db, eventType, startDate)
+// GetServerEvents get all the events that occurred in a day
+func (c *conn) GetServerEvents(date string) ([]Events, error) {
+	return getServerEventsByType(c.db, date)
 }
 
-func getServerEventsByType(db *sql.DB, eventType EventType, startDate string) ([]Events, error){
+func getServerEventsByType(db *sql.DB, date string) ([]Events, error){
 
-	if startDate == "" {
+	if date == "" {
 		return nil, fmt.Errorf("a date is required for querying events")
 	}
 
 	rows, err := db.Query(`
-	SELECT source, date, count 
+	SELECT identifier, source, date, count 
 	FROM events 
-	WHERE events.identifier = ? AND events.device_type = ? AND events.date = ?`,
-		eventType, Server, startDate)
+	WHERE events.device_type = ? AND events.date = ?`,
+		Server, date)
 
 	if err != nil {
 		return nil, err
@@ -146,7 +153,7 @@ func getServerEventsByType(db *sql.DB, eventType EventType, startDate string) ([
 		e := Events{}
 		var t time.Time
 
-		err := rows.Scan(&e.Source, &t, &e.Count)
+		err := rows.Scan(&e.Identifier, &e.Source, &t, &e.Count)
 
 		if err != nil {
 			return nil, err

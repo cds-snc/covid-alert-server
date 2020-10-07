@@ -46,57 +46,31 @@ func TestRegisterRoutingMetrics(t *testing.T) {
 
 	expectedPaths := GetPaths(router)
 
-	assert.Contains(t, expectedPaths,fmt.Sprintf("/claimed-keys/{startDate:%s}", DATEFORMAT), "Should contain claimed-keys endpoint")
-	assert.Contains(t, expectedPaths,fmt.Sprintf("/generated-keys/{startDate:%s}", DATEFORMAT), "Should contain generated-keys endpoint")
-	assert.Contains(t, expectedPaths,fmt.Sprintf("/regenerated-keys/{startDate:%s}", DATEFORMAT), "Should contain regenerated-keys endpoint")
-	assert.Contains(t, expectedPaths,fmt.Sprintf("/expired-keys/{startDate:%s}", DATEFORMAT), "Should contain expired-keys endpoint")
-	assert.Contains(t, expectedPaths,fmt.Sprintf("/exhausted-keys/{startDate:%s}", DATEFORMAT), "Should contain exhausted-keys endpoint")
-	assert.Contains(t, expectedPaths,fmt.Sprintf("/unclaimed-keys/{startDate:%s}", DATEFORMAT), "Should contain unclaimed-keys endpoint")
-
+	assert.Contains(t, expectedPaths,fmt.Sprintf("/events/{startDate:%s}", DATEFORMAT), "Should contain claimed-keys endpoint")
 }
 
-
 func TestMetricsServlet_ClaimedKeys(t *testing.T) {
-	tests := []struct {
-		event persistence2.EventType
-		endPoint string
-	}{
-		{persistence2.OTKClaimed, "/claimed-keys"},
-		{persistence2.OTKGenerated, "/generated-keys"},
-		{persistence2.OTKRegenerated, "/regenerated-keys"},
-		{persistence2.OTKExhausted, "/exhausted-keys"},
-		{persistence2.OTKUnclaimed, "/unclaimed-keys"},
-		{persistence2.OTKExpired, "/expired-keys"},
-	}
 
 	db, auth := createMocks()
 	router := createRouter(db, auth)
 
-	for _, test := range tests {
-		db.On("GetServerEventsByType", test.event, "2020-01-01").
+		db.On("GetServerEvents",  "2020-01-01").
 			Return(
 				[]persistence2.Events{{
+					Identifier: "event",
 					Source: "foo",
 					Date: "bar",
 					Count: 1,
 				}},
 				nil,
 			)
-		resp := runTest(router, test.endPoint)
+
+		req, _ := http.NewRequest("GET", "/events/2020-01-01", nil)
+		req.Header.Set("Authorization", "Basic Zm9vOmJhcg==")
+
+		resp := httptest.NewRecorder()
+		router.ServeHTTP(resp, req)
+
 		assert.Equal(t, http.StatusOK, resp.Code)
-		assert.Equal(t, "[{\"source\":\"foo\",\"date\":\"bar\",\"count\":1}]",string(resp.Body.Bytes()))
-	}
-}
-
-func runTest(router *mux.Router, endpoint string) *httptest.ResponseRecorder {
-
-
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/2020-01-01", endpoint), nil)
-	req.Header.Set("Authorization", "Basic Zm9vOmJhcg==")
-
-	resp := httptest.NewRecorder()
-
-	router.ServeHTTP(resp, req)
-
-	return resp
+		assert.Equal(t, "[{\"source\":\"foo\",\"date\":\"bar\",\"count\":1,\"identifier\":\"event\"}]",string(resp.Body.Bytes()))
 }

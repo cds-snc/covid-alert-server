@@ -30,13 +30,8 @@ type metricsServlet struct {
 const DATEFORMAT string = "\\d{4,4}-\\d{2,2}-\\d{2,2}"
 func (m metricsServlet) RegisterRouting(r *mux.Router) {
 	log(nil, nil).Info("registering metrics route")
-	r.HandleFunc(fmt.Sprintf("/claimed-keys/{startDate:%v}", DATEFORMAT), m.claimedKeys)
+	r.HandleFunc(fmt.Sprintf("/events/{startDate:%s}", DATEFORMAT), m.handleEventRequest)
 
-	r.HandleFunc(fmt.Sprintf("/generated-keys/{startDate:%v}", DATEFORMAT), m.generatedKeys)
-	r.HandleFunc(fmt.Sprintf("/regenerated-keys/{startDate:%v}", DATEFORMAT), m.regeneratedKeys)
-	r.HandleFunc(fmt.Sprintf("/expired-keys/{startDate:%v}", DATEFORMAT), m.expiredKeys)
-	r.HandleFunc(fmt.Sprintf("/exhausted-keys/{startDate:%v}", DATEFORMAT), m.exhaustedKeys)
-	r.HandleFunc(fmt.Sprintf("/unclaimed-keys/{startDate:%v}", DATEFORMAT), m.unclaimedKeys)
 
 }
 
@@ -63,31 +58,8 @@ func authorizeRequest(r *http.Request) error {
 	return nil
 }
 
-func (m *metricsServlet) claimedKeys(w http.ResponseWriter, r *http.Request) {
-	m.handleEventRequest(w, r, persistence.OTKClaimed)
-}
 
-func (m *metricsServlet) generatedKeys(w http.ResponseWriter, r *http.Request) {
-	m.handleEventRequest(w, r, persistence.OTKGenerated)
-}
-
-func (m *metricsServlet) regeneratedKeys(w http.ResponseWriter, r *http.Request) {
-	m.handleEventRequest(w, r, persistence.OTKRegenerated)
-}
-
-func (m *metricsServlet) expiredKeys(w http.ResponseWriter, r *http.Request) {
-	m.handleEventRequest(w, r, persistence.OTKExpired)
-}
-
-func (m *metricsServlet) exhaustedKeys(w http.ResponseWriter, r *http.Request) {
-	m.handleEventRequest(w, r, persistence.OTKExhausted)
-}
-
-func (m *metricsServlet) unclaimedKeys(w http.ResponseWriter, r *http.Request) {
-	m.handleEventRequest(w, r, persistence.OTKUnclaimed)
-}
-
-func (m *metricsServlet) handleEventRequest(w http.ResponseWriter, r *http.Request, eventType persistence.EventType) {
+func (m *metricsServlet) handleEventRequest(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if err := authorizeRequest(r); err != nil {
@@ -101,32 +73,31 @@ func (m *metricsServlet) handleEventRequest(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	m.getEvents(ctx, eventType, w, r)
+	m.getEvents(ctx, w, r)
 	return
 }
 
-func (m *metricsServlet) getEvents(ctx context.Context, eventType persistence.EventType, w http.ResponseWriter, r *http.Request) {
+func (m *metricsServlet) getEvents(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	startDateVal := vars["startDate"]
 	_, err := time.Parse(ISODATE, startDateVal)
 	if err != nil {
-		log(ctx, err).Errorf("issue parsing %v", startDateVal)
+		log(ctx, err).Errorf("issue parsing %s", startDateVal)
 		http.Error(w, "error parsing start date", http.StatusBadRequest)
 		return
 	}
 
-	events, err := m.db.GetServerEventsByType(eventType, startDateVal)
+	events, err := m.db.GetServerEvents(startDateVal)
 	if err != nil {
-		log(ctx, err).Errorf("issue getting events for %v", eventType)
-		http.Error(w, "error retrieving events by bearer token", http.StatusBadRequest)
+		log(ctx, err).Errorf("issue getting events")
+		http.Error(w, "error retrieving events", http.StatusBadRequest)
 		return
 	}
 
 	w.Header().Add("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 
-	log(nil,nil).Infof("Events is %v", events)
 	js, err := json.Marshal(events)
 	if err != nil {
 		log(ctx, err).WithField("EventResults", events).Errorf("error marshaling events")
@@ -134,7 +105,10 @@ func (m *metricsServlet) getEvents(ctx context.Context, eventType persistence.Ev
 		return
 	}
 
-	log(nil,nil).Infof("JS is %v", js)
-	w.Write(js)
+	_, err = w.Write(js)
+	if err != nil {
+		log(ctx, err).Errorf("error writing json")
+		http.Error(w, "error retrieving results", http.StatusInternalServerError)
+	}
 	return
 }
