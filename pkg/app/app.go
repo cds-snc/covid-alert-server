@@ -47,12 +47,32 @@ func NewBuilder() *AppBuilder {
 	return builder
 }
 
+func checkEnvironmentVariable(key string) {
+
+	uname, ok := os.LookupEnv(key)
+
+	if  !ok {
+		panic(fmt.Sprintf("%s was not set", key))
+	}
+
+	if len(uname) < 10 {
+		panic(fmt.Sprintf("%s is too short needs to be >= 10 characters", key))
+	}
+}
+
 func (a *AppBuilder) WithSubmission() *AppBuilder {
+
+
 	a.defaultServerPort = config.AppConstants.DefaultSubmissionServerPort
 
 	a.servlets = append(a.servlets, server.NewUploadServlet(a.database))
 	a.servlets = append(a.servlets, server.NewKeyClaimServlet(a.database, lookup))
+
+	//Check Metric existence ENV Variables
+	checkEnvironmentVariable("METRICS_USERNAME")
+	checkEnvironmentVariable("METRICS_PASSWORD")
 	a.servlets = append(a.servlets, server.NewMetricsServlet(a.database, lookup))
+
 	return a
 }
 

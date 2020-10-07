@@ -18,6 +18,7 @@ import (
 const ISODATE string = "2006-01-02"
 
 func NewMetricsServlet(db persistence.Conn, auth keyclaim.Authenticator) srvutil.Servlet {
+
 	log(nil, nil).Info("registering metrics servlet")
 	return &metricsServlet{db: db, auth: auth}
 }
@@ -42,15 +43,9 @@ func authorizeRequest(r *http.Request) error {
 		return fmt.Errorf("basic auth required for access")
 	}
 
-	metricUsername, uok := os.LookupEnv("METRICS_USERNAME")
-	if !uok {
-		log(nil, nil).Panic("Metrics username not set")
-	}
+	metricUsername := os.Getenv("METRICS_USERNAME")
+	metricPassword := os.Getenv("METRICS_PASSWORD")
 
-	metricPassword, pok := os.LookupEnv("METRICS_PASSWORD")
-	if !pok {
-		log(nil, nil).Panic("Metrics username not set")
-	}
 	if uname != metricUsername || pword != metricPassword {
 		return fmt.Errorf("invalid username or password")
 	}

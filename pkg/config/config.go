@@ -26,7 +26,7 @@ type Constants struct {
 	DisableCurrentDateCheckFeatureFlag bool
 	EnableEntirePeriodBundle           bool
 	RegionCode                         string
-	EventQueryRangeDates int
+	EventQueryRangeDates               int
 }
 
 var AppConstants Constants
