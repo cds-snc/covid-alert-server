@@ -30,5 +30,7 @@ func TestMain(m *testing.M)  {
 
 	// We need to run init config before any of the server tests
 	config.InitConfig()
+	os.Setenv("METRICS_USERNAME", "foo")
+	os.Setenv("METRICS_PASSWORD", "bar")
 	os.Exit(m.Run())
 }
