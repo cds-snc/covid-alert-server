@@ -6,6 +6,7 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
@@ -13,12 +14,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Shopify/goose/logger"
 	keyclaim "github.com/cds-snc/covid-alert-server/mocks/pkg/keyclaim"
 	persistence "github.com/cds-snc/covid-alert-server/mocks/pkg/persistence"
 	"github.com/cds-snc/covid-alert-server/pkg/config"
 	err "github.com/cds-snc/covid-alert-server/pkg/persistence"
 	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
-	"github.com/Shopify/goose/logger"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
@@ -51,45 +52,16 @@ func TestRegisterRoutingKeyClaim(t *testing.T) {
 	assert.Contains(t, expectedPaths, "/claim-key", "should include a claim-key path")
 }
 
-func TestNewKeyClaim(t *testing.T) {
+func TestCORS(t *testing.T) {
+
 	db := &persistence.Conn{}
 	auth := &keyclaim.Authenticator{}
 
-	// Auth Mock
-	auth.On("Authenticate", "badtoken").Return("", false)
-	auth.On("Authenticate", "goodtoken").Return("302", true)
-	auth.On("Authenticate", "errortoken").Return("302", true)
+	router := buildRouter(db, auth)
 
-	auth.On("RegionFromAuthHeader", "").Return("302", "goodtoken",false)
-	auth.On("RegionFromAuthHeader", "Bear thisisaverylongtoken").Return("", "", false)
-	hashID := hex.EncodeToString(SHA512([]byte("abcd")))
-
-	// Until we get a mockable time library we'll have to be less picky about events here
-	db.On( "SaveEvent", mock.AnythingOfType("persistence.Event")).Return(nil)
-
-	// DB Mock
-	db.On("NewKeyClaim",mock.Anything, "302", "goodtoken", "").Return("AAABBBCCCC", nil)
-	db.On("NewKeyClaim",mock.Anything, "302", "goodtoken", hashID).Return("AAABBBCCCC", nil)
-
-	db.On("NewKeyClaim", mock.Anything, "302", "errortoken", "").Return("", fmt.Errorf("Random error"))
-	db.On("NewKeyClaim", mock.Anything, "302", "errortoken", hashID).Return("", err.ErrHashIDClaimed)
-
-	servlet := NewKeyClaimServlet(db, auth)
-	router := Router()
-	servlet.RegisterRouting(router)
-
-	// Capture logs
-	oldLog := log
+	_, oldLog := setupTestLogging()
 	defer func() { log = oldLog }()
 
-	nullLog, hook := test.NewNullLogger()
-	nullLog.ExitFunc = func(code int) {}
-
-	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
-		return logrus.NewEntry(nullLog)
-	}
-
-	// Return CORS options header
 	req, _ := http.NewRequest("OPTIONS", "/new-key-claim", nil)
 	resp := httptest.NewRecorder()
 	router.ServeHTTP(resp, req)

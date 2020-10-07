@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/cds-snc/covid-alert-server/pkg/config"
 	"net/http"
 	"os"
 	"time"
@@ -32,22 +31,12 @@ const DATEFORMAT string = "\\d{4,4}-\\d{2,2}-\\d{2,2}"
 func (m metricsServlet) RegisterRouting(r *mux.Router) {
 	log(nil, nil).Info("registering metrics route")
 	r.HandleFunc(fmt.Sprintf("/claimed-keys/{startDate:%v}", DATEFORMAT), m.claimedKeys)
-	r.HandleFunc(fmt.Sprintf("/claimed-keys/{startDate:%v}/{endDate:%v}", DATEFORMAT, DATEFORMAT), m.claimedKeys)
 
 	r.HandleFunc(fmt.Sprintf("/generated-keys/{startDate:%v}", DATEFORMAT), m.generatedKeys)
-	r.HandleFunc(fmt.Sprintf("/generated-keys/{startDate:%v}/{endDate:%v}", DATEFORMAT, DATEFORMAT), m.generatedKeys)
-
 	r.HandleFunc(fmt.Sprintf("/regenerated-keys/{startDate:%v}", DATEFORMAT), m.regeneratedKeys)
-	r.HandleFunc(fmt.Sprintf("/regenerated-keys/{startDate:%v}/{endDate:%v}", DATEFORMAT, DATEFORMAT), m.regeneratedKeys)
-
 	r.HandleFunc(fmt.Sprintf("/expired-keys/{startDate:%v}", DATEFORMAT), m.expiredKeys)
-	r.HandleFunc(fmt.Sprintf("/expired-keys/{startDate:%v}/{endDate:%v}", DATEFORMAT, DATEFORMAT), m.expiredKeys)
-
 	r.HandleFunc(fmt.Sprintf("/exhausted-keys/{startDate:%v}", DATEFORMAT), m.exhaustedKeys)
-	r.HandleFunc(fmt.Sprintf("/regenerated-keys/{startDate:%v}/{endDate:%v}", DATEFORMAT, DATEFORMAT), m.exhaustedKeys)
-
 	r.HandleFunc(fmt.Sprintf("/unclaimed-keys/{startDate:%v}", DATEFORMAT), m.unclaimedKeys)
-	r.HandleFunc(fmt.Sprintf("/unclaimed-keys/{startDate:%v}/{endDate:%v}", DATEFORMAT, DATEFORMAT), m.unclaimedKeys)
 
 }
 
@@ -120,32 +109,14 @@ func (m *metricsServlet) getEvents(ctx context.Context, eventType persistence.Ev
 	vars := mux.Vars(r)
 
 	startDateVal := vars["startDate"]
-	startDate, err := time.Parse(ISODATE, startDateVal)
+	_, err := time.Parse(ISODATE, startDateVal)
 	if err != nil {
 		log(ctx, err).Errorf("issue parsing %v", startDateVal)
 		http.Error(w, "error parsing start date", http.StatusBadRequest)
 		return
 	}
 
-
-	endDateVal := vars["endDate"]
-	if endDateVal != "" {
-		endDate, err := time.Parse(ISODATE, endDateVal)
-		if  err != nil {
-			log(ctx, err).Errorf("issue parsing %v",endDateVal)
-			http.Error(w, "error parsing end date", http.StatusBadRequest)
-			return
-		}
-
-		if int(endDate.Sub(startDate).Hours() / 24) > config.AppConstants.EventQueryRangeDates  {
-			log(ctx,fmt.Errorf("date range too big")).Errorf("date range needs to be less than %v days", config.AppConstants.EventQueryRangeDates)
-			http.Error(w, "invalid date range", http.StatusBadRequest)
-			return
-		}
-	}
-
-
-	events, err := m.db.GetServerEventsByType(eventType, startDateVal, endDateVal)
+	events, err := m.db.GetServerEventsByType(eventType, startDateVal)
 	if err != nil {
 		log(ctx, err).Errorf("issue getting events for %v", eventType)
 		http.Error(w, "error retrieving events by bearer token", http.StatusBadRequest)
