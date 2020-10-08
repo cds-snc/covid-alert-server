@@ -56,6 +56,7 @@ type Conn interface {
 	CountExpiredClaimedEncryptionKeysByOriginator() ([]CountByOriginator, error)
 
 	SaveEvent(event Event) error
+	GetServerEvents(startDate string) ([]Events, error)
 
 	Close() error
 }

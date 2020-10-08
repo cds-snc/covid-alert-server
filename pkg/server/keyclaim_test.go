@@ -6,6 +6,7 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
@@ -13,12 +14,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Shopify/goose/logger"
 	keyclaim "github.com/cds-snc/covid-alert-server/mocks/pkg/keyclaim"
 	persistence "github.com/cds-snc/covid-alert-server/mocks/pkg/persistence"
 	"github.com/cds-snc/covid-alert-server/pkg/config"
 	err "github.com/cds-snc/covid-alert-server/pkg/persistence"
 	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
-	"github.com/Shopify/goose/logger"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
@@ -51,43 +52,16 @@ func TestRegisterRoutingKeyClaim(t *testing.T) {
 	assert.Contains(t, expectedPaths, "/claim-key", "should include a claim-key path")
 }
 
-func TestNewKeyClaim(t *testing.T) {
+func TestCORS(t *testing.T) {
+
 	db := &persistence.Conn{}
 	auth := &keyclaim.Authenticator{}
 
-	// Auth Mock
-	auth.On("Authenticate", "badtoken").Return("", false)
-	auth.On("Authenticate", "goodtoken").Return("302", true)
-	auth.On("Authenticate", "errortoken").Return("302", true)
+	router := buildRouter(db, auth)
 
-	hashID := hex.EncodeToString(SHA512([]byte("abcd")))
-
-	// Until we get a mockable time library we'll have to be less picky about events here
-	db.On( "SaveEvent", mock.AnythingOfType("persistence.Event")).Return(nil)
-
-	// DB Mock
-	db.On("NewKeyClaim",mock.Anything, "302", "goodtoken", "").Return("AAABBBCCCC", nil)
-	db.On("NewKeyClaim",mock.Anything, "302", "goodtoken", hashID).Return("AAABBBCCCC", nil)
-
-	db.On("NewKeyClaim", mock.Anything, "302", "errortoken", "").Return("", fmt.Errorf("Random error"))
-	db.On("NewKeyClaim", mock.Anything, "302", "errortoken", hashID).Return("", err.ErrHashIDClaimed)
-
-	servlet := NewKeyClaimServlet(db, auth)
-	router := Router()
-	servlet.RegisterRouting(router)
-
-	// Capture logs
-	oldLog := log
+	_, oldLog := setupTestLogging()
 	defer func() { log = oldLog }()
 
-	nullLog, hook := test.NewNullLogger()
-	nullLog.ExitFunc = func(code int) {}
-
-	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
-		return logrus.NewEntry(nullLog)
-	}
-
-	// Return CORS options header
 	req, _ := http.NewRequest("OPTIONS", "/new-key-claim", nil)
 	resp := httptest.NewRecorder()
 	router.ServeHTTP(resp, req)
@@ -96,37 +70,22 @@ func TestNewKeyClaim(t *testing.T) {
 	assert.Contains(t, resp.Header()["Access-Control-Allow-Origin"], config.AppConstants.CORSAccessControlAllowOrigin, "Access-Control-Allow-Origin should be set to the config value")
 	assert.Contains(t, resp.Header()["Access-Control-Allow-Methods"], "POST", "Access-Control-Allow-Methods should be set to POST")
 	assert.Contains(t, resp.Header()["Access-Control-Allow-Headers"], "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Referer, User-Agent", "Access-Control-Allow-Headers should be set to Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Referer, User-Agent")
+}
 
-	// No a POST request
-	req, _ = http.NewRequest("GET", "/new-key-claim", nil)
-	resp = httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
+func TestMalformedAuthHeaderNoSpace(t *testing.T) {
 
-	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
-	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
+	db := &persistence.Conn{}
+	auth := &keyclaim.Authenticator{}
 
-	assertLog(t, hook, 1, logrus.InfoLevel, "disallowed method")
+	router := buildRouter(db, auth)
+	hook, oldLog := setupTestLogging()
+	defer func() { log = oldLog }()
+	// Auth Mock
 
-	// No auth header
-	req, _ = http.NewRequest("POST", "/new-key-claim", nil)
-	resp = httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
+	auth.On("RegionFromAuthHeader", "Bearerthisisaverylongtoken").Return("", "", false)
 
-	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
-	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
-
-	assertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
-
-	// Malformed auth header - Bear
-	req, _ = http.NewRequest("POST", "/new-key-claim", nil)
-	req.Header.Set("Authorization", "Bear thisisaverylongtoken")
-	resp = httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
-
-	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
-	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
-
-	assertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
+	var resp *httptest.ResponseRecorder
+	var req *http.Request
 
 	// Malformed auth header - No space
 	req, _ = http.NewRequest("POST", "/new-key-claim", nil)
@@ -138,40 +97,106 @@ func TestNewKeyClaim(t *testing.T) {
 	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
 
 	assertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
+}
+
+func TestBadAuthToken(t *testing.T) {
+
+	auth := &keyclaim.Authenticator{}
+	// Auth Mock
+	auth.On("Authenticate", "badtoken").Return("", false)
+	auth.On("RegionFromAuthHeader", "Bearer badtoken").Return("", "", false)
+
+	db := &persistence.Conn{}
+	router := buildRouter(db, auth)
+	hook, oldLog := setupTestLogging()
+	defer func() { log = oldLog }()
 
 	// Bad auth token
-	req, _ = http.NewRequest("POST", "/new-key-claim", nil)
+	req, _ := http.NewRequest("POST", "/new-key-claim", nil)
 	req.Header.Set("Authorization", "Bearer badtoken")
-	resp = httptest.NewRecorder()
+	resp := httptest.NewRecorder()
 	router.ServeHTTP(resp, req)
 
 	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
 	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
 
 	assertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
+}
+
+func TestGoodAuthToken_NoHashID(t *testing.T){
+
+
+	db := &persistence.Conn{}
+	auth := &keyclaim.Authenticator{}
+
+	// Auth Mock
+	auth.On("Authenticate", "goodtoken").Return("302", true)
+	auth.On("RegionFromAuthHeader", "Bearer goodtoken").Return("302", "goodtoken", true)
+
+	// DB Mock
+	db.On("NewKeyClaim", mock.Anything, "302", "goodtoken", "").Return("AAABBBCCCC", nil)
+
+
+	router := buildRouter(db, auth)
+	_, oldLog := setupTestLogging()
+	defer func() { log = oldLog }()
 
 	// Good auth token - no HashID
-	req, _ = http.NewRequest("POST", "/new-key-claim", nil)
+	req, _ := http.NewRequest("POST", "/new-key-claim", nil)
 	req.Header.Set("Authorization", "Bearer goodtoken")
-	resp = httptest.NewRecorder()
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 200, resp.Code, "Success response is expected")
+	assert.Equal(t, "AAABBBCCCC\n", string(resp.Body.Bytes()), "Correct response is expected")
+}
+
+func TestGoodAuthToken_HashID(t *testing.T) {
+
+	db := &persistence.Conn{}
+	auth := &keyclaim.Authenticator{}
+
+	// Auth Mock
+	auth.On("Authenticate", "goodtoken").Return("302", true)
+	auth.On("RegionFromAuthHeader", "Bearer goodtoken").Return("302", "goodtoken", true)
+
+	hashID := hex.EncodeToString(SHA512([]byte("abcd")))
+	// DB Mock
+	db.On("NewKeyClaim", mock.Anything, "302", "goodtoken", hashID).Return("AAABBBCCCC", nil)
+
+	router := buildRouter(db, auth)
+	_, oldLog := setupTestLogging()
+	defer func() { log = oldLog }()
+
+	req, _ := http.NewRequest("POST", "/new-key-claim/"+hashID, nil)
+	req.Header.Set("Authorization", "Bearer goodtoken")
+
+	resp := httptest.NewRecorder()
 	router.ServeHTTP(resp, req)
 
 	assert.Equal(t, 200, resp.Code, "Success response is expected")
 	assert.Equal(t, "AAABBBCCCC\n", string(resp.Body.Bytes()), "Correct response is expected")
 
-	// Good auth token -  HashID
-	req, _ = http.NewRequest("POST", "/new-key-claim/"+hashID, nil)
-	req.Header.Set("Authorization", "Bearer goodtoken")
-	resp = httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
+}
 
-	assert.Equal(t, 200, resp.Code, "Success response is expected")
-	assert.Equal(t, "AAABBBCCCC\n", string(resp.Body.Bytes()), "Correct response is expected")
+func Test_ErrorSavingNoHashID(t *testing.T) {
+
+	auth := &keyclaim.Authenticator{}
+	auth.On("Authenticate", "errortoken").Return("302", true)
+	auth.On("RegionFromAuthHeader", "Bearer errortoken").Return("302", "errortoken", true)
+
+	db := &persistence.Conn{}
+	db.On("NewKeyClaim", mock.Anything, "302", "errortoken", "").Return("", fmt.Errorf("Random error"))
+
+	router := buildRouter(db, auth)
+
+	hook, oldLog := setupTestLogging()
+	defer func() { log = oldLog }()
 
 	// Error saving - no HashID
-	req, _ = http.NewRequest("POST", "/new-key-claim", nil)
+	req, _ := http.NewRequest("POST", "/new-key-claim", nil)
 	req.Header.Set("Authorization", "Bearer errortoken")
-	resp = httptest.NewRecorder()
+	resp := httptest.NewRecorder()
 	router.ServeHTTP(resp, req)
 
 	assert.Equal(t, 500, resp.Code, "Server error response is expected")
@@ -179,16 +204,94 @@ func TestNewKeyClaim(t *testing.T) {
 
 	assertLog(t, hook, 1, logrus.ErrorLevel, "error constructing new key claim")
 
+}
+
+func TestNewKeyClaimErrorSavingDuplicateHashID(t *testing.T) {
+
+	auth := &keyclaim.Authenticator{}
+	auth.On("Authenticate", "errortoken").Return("302", true)
+	auth.On("RegionFromAuthHeader", "Bearer errortoken").Return("302", "errortoken", true)
+
+	hashID := hex.EncodeToString(SHA512([]byte("abcd")))
+	db := &persistence.Conn{}
+	db.On("NewKeyClaim", mock.Anything, "302", "errortoken", hashID).Return("", err.ErrHashIDClaimed)
+
+	router := buildRouter(db, auth)
+	hook, oldLog := setupTestLogging()
+	defer func() { log = oldLog }()
+
+
 	// Error saving - duplicate HashID
-	req, _ = http.NewRequest("POST", "/new-key-claim/"+hashID, nil)
+	req, _ := http.NewRequest("POST", "/new-key-claim/"+hashID, nil)
 	req.Header.Set("Authorization", "Bearer errortoken")
-	resp = httptest.NewRecorder()
+	resp := httptest.NewRecorder()
 	router.ServeHTTP(resp, req)
 
 	assert.Equal(t, 403, resp.Code, "forbidden response is expected")
 	assert.Equal(t, "forbidden\n", string(resp.Body.Bytes()), "forbidden response is expected")
 
 	assertLog(t, hook, 1, logrus.InfoLevel, "hashID used")
+}
+
+func TestMalformedAuthHeader_Bear(t *testing.T)  {
+
+	db := &persistence.Conn{}
+	auth := &keyclaim.Authenticator{}
+
+	// Auth Mock
+	auth.On("RegionFromAuthHeader", "Bear thisisaverylongtoken").Return("", "", false)
+
+	router := buildRouter(db, auth)
+	hook, oldLog := setupTestLogging()
+	defer func() { log = oldLog }()
+
+	req, _ := http.NewRequest("POST", "/new-key-claim", nil)
+	req.Header.Set("Authorization", "Bear thisisaverylongtoken")
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
+	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
+
+	assertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
+}
+
+func TestNoAuthHeader(t *testing.T) {
+	db := &persistence.Conn{}
+	auth := &keyclaim.Authenticator{}
+
+	auth.On("RegionFromAuthHeader", "").Return("", "", false)
+
+	router := buildRouter(db, auth)
+	hook, oldLog := setupTestLogging()
+	defer func() { log = oldLog }()
+
+	req, _ := http.NewRequest("POST", "/new-key-claim", nil)
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
+	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
+
+	assertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
+}
+
+func TestNoPost(t *testing.T)  {
+	db := &persistence.Conn{}
+	auth := &keyclaim.Authenticator{}
+
+	router := buildRouter(db, auth)
+	hook, oldLog := setupTestLogging()
+	defer func() { log = oldLog }()
+
+	req, _ := http.NewRequest("GET", "/new-key-claim", nil)
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
+	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
+
+	assertLog(t, hook, 1, logrus.InfoLevel, "disallowed method")
 }
 
 func TestClaimKey(t *testing.T) {
@@ -436,6 +539,27 @@ func TestClaimKey(t *testing.T) {
 	assertLog(t, hook, 1, logrus.WarnLevel, "error recording claim-key success")
 }
 
+func assertLog(t *testing.T, hook *test.Hook, length int, level logrus.Level, msg string) {
+	assert.Equal(t, length, len(hook.Entries))
+	assert.Equal(t, level, hook.LastEntry().Level)
+	assert.Equal(t, msg, hook.LastEntry().Message)
+	hook.Reset()
+}
+
+func buildKeyClaimRequest(oneTimeCode *string, appPublicKey []byte) *pb.KeyClaimRequest {
+	return &pb.KeyClaimRequest{
+		OneTimeCode:  oneTimeCode,
+		AppPublicKey: appPublicKey,
+	}
+}
+
+func buildRouter(db *persistence.Conn, auth *keyclaim.Authenticator) *mux.Router {
+	servlet := NewKeyClaimServlet(db, auth)
+	router := Router()
+	servlet.RegisterRouting(router)
+	return router
+}
+
 func checkClaimKeyResponseDuration(data []byte, duration *durationpb.Duration) bool {
 	var response pb.KeyClaimResponse
 	proto.Unmarshal(data, &response)
@@ -454,22 +578,22 @@ func checkClaimKeyResponseTriesRemaining(data []byte, triesRemaining uint32) boo
 	return response.GetTriesRemaining() == triesRemaining
 }
 
-func buildKeyClaimRequest(oneTimeCode *string, appPublicKey []byte) *pb.KeyClaimRequest {
-	return &pb.KeyClaimRequest{
-		OneTimeCode:  oneTimeCode,
-		AppPublicKey: appPublicKey,
-	}
-}
-
-func assertLog(t *testing.T, hook *test.Hook, length int, level logrus.Level, msg string) {
-	assert.Equal(t, length, len(hook.Entries))
-	assert.Equal(t, level, hook.LastEntry().Level)
-	assert.Equal(t, msg, hook.LastEntry().Message)
-	hook.Reset()
-}
-
 func SHA512(message []byte) []byte {
 	c := sha512.New()
 	c.Write(message)
 	return c.Sum(nil)
 }
+
+func setupTestLogging() (*test.Hook, logger.Logger) {
+	// Capture logs
+	oldLog := log
+
+	nullLog, hook := test.NewNullLogger()
+	nullLog.ExitFunc = func(code int) {}
+
+	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
+		return logrus.NewEntry(nullLog)
+	}
+	return hook, oldLog
+}
+

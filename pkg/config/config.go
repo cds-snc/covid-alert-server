@@ -26,6 +26,7 @@ type Constants struct {
 	DisableCurrentDateCheckFeatureFlag bool
 	EnableEntirePeriodBundle           bool
 	RegionCode                         string
+	EventQueryRangeDates               int
 }
 
 var AppConstants Constants
@@ -65,4 +66,5 @@ func setDefaults() {
 	viper.SetDefault("enableEntirePeriodBundle", false)
 	/// The MCC Region Code for Canada
 	viper.SetDefault("regionCode", "302")
+	viper.SetDefault("eventQueryRangeDates", 10)
 }

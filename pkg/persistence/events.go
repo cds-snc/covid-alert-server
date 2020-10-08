@@ -52,7 +52,7 @@ func translateTokenForLogs(token string) string {
 	region, ok := originatorLookup.Authenticate(token)
 
 	if region == "302" || ok == false {
-		return fmt.Sprintf("%v...%v", token[0:1], token[len(token)-1:len(token)])
+		return fmt.Sprintf("%s...%s", token[0:1], token[len(token)-1:])
 	}
 
 	return region
@@ -113,3 +113,59 @@ func saveEvent(db *sql.DB, e Event) error {
 
 	return nil
 }
+
+// Events the aggregate of events identified in Identifier by Source
+// Source the bearer token that generated these events
+// Date the date the events occurs
+// Count the number of times this event occurred
+// Identifier the event that occurred
+type Events struct {
+	Source     string `json:"source"`
+	Date       string `json:"date"`
+	Count      int64  `json:"count"`
+	Identifier string `json:"identifier"`
+}
+
+// GetServerEvents get all the events that occurred in a day
+func (c *conn) GetServerEvents(date string) ([]Events, error) {
+	return getServerEventsByType(c.db, date)
+}
+
+func getServerEventsByType(db *sql.DB, date string) ([]Events, error){
+
+	if date == "" {
+		return nil, fmt.Errorf("a date is required for querying events")
+	}
+
+	rows, err := db.Query(`
+	SELECT identifier, source, date, count 
+	FROM events 
+	WHERE events.device_type = ? AND events.date = ?`,
+		Server, date)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var events []Events
+
+	for rows.Next() {
+		e := Events{}
+		var t time.Time
+
+		err := rows.Scan(&e.Identifier, &e.Source, &t, &e.Count)
+
+		if err != nil {
+			return nil, err
+		}
+
+		e.Date = t.Format("2006-01-02")
+		events = append(events, e)
+	}
+
+	if events == nil {
+		events = make([]Events,0)
+	}
+	return events, nil
+}
+

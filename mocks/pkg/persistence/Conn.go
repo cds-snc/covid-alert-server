@@ -343,6 +343,29 @@ func (_m *Conn) FetchKeysForHours(_a0 string, _a1 uint32, _a2 uint32, _a3 int32)
 	return r0, r1
 }
 
+// GetServerEvents provides a mock function with given fields: startDate
+func (_m *Conn) GetServerEvents(startDate string) ([]persistence.Events, error) {
+	ret := _m.Called(startDate)
+
+	var r0 []persistence.Events
+	if rf, ok := ret.Get(0).(func(string) []persistence.Events); ok {
+		r0 = rf(startDate)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]persistence.Events)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string) error); ok {
+		r1 = rf(startDate)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // NewKeyClaim provides a mock function with given fields: _a0, _a1, _a2, _a3
 func (_m *Conn) NewKeyClaim(_a0 context.Context, _a1 string, _a2 string, _a3 string) (string, error) {
 	ret := _m.Called(_a0, _a1, _a2, _a3)
