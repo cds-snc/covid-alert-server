@@ -31,6 +31,7 @@ services:
       RETRIEVE_HMAC_KEY: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
       METRIC_PROVIDER: stdout
       TRACER_PROVIDER: 
+      KEY_CLAIM_TOKEN: thisisaverylongtoken=TestProvince
   key-submission:
     build:
       context: .
@@ -54,3 +55,5 @@ services:
       KEY_CLAIM_TOKEN: thisisaverylongtoken=TestProvince
       METRIC_PROVIDER: ""
       TRACER_PROVIDER: ""
+      METRICS_USERNAME: 1234567890
+      METRICS_PASSWORD: 1234567890
