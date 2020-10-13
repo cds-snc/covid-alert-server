@@ -51,7 +51,7 @@ func checkEnvironmentVariable(key string) {
 
 	uname, ok := os.LookupEnv(key)
 
-	if  !ok {
+	if !ok {
 		panic(fmt.Sprintf("%s was not set", key))
 	}
 
@@ -62,16 +62,10 @@ func checkEnvironmentVariable(key string) {
 
 func (a *AppBuilder) WithSubmission() *AppBuilder {
 
-
 	a.defaultServerPort = config.AppConstants.DefaultSubmissionServerPort
 
 	a.servlets = append(a.servlets, server.NewUploadServlet(a.database))
 	a.servlets = append(a.servlets, server.NewKeyClaimServlet(a.database, lookup))
-
-	//Check Metric existence ENV Variables
-	checkEnvironmentVariable("METRICS_USERNAME")
-	checkEnvironmentVariable("METRICS_PASSWORD")
-	a.servlets = append(a.servlets, server.NewMetricsServlet(a.database, lookup))
 
 	return a
 }
@@ -84,6 +78,11 @@ func (a *AppBuilder) WithRetrieval() *AppBuilder {
 	a.components = append(a.components, newExpirationWorker(a.database))
 
 	a.servlets = append(a.servlets, server.NewRetrieveServlet(a.database, retrieval.NewAuthenticator(), retrieval.NewSigner()))
+
+	//Check Metric existence ENV Variables
+	checkEnvironmentVariable("METRICS_USERNAME")
+	checkEnvironmentVariable("METRICS_PASSWORD")
+	a.servlets = append(a.servlets, server.NewMetricsServlet(a.database, lookup))
 
 	return a
 }
