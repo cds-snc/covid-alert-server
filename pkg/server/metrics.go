@@ -60,6 +60,7 @@ func (m *metricsServlet) handleEventRequest(w http.ResponseWriter, r *http.Reque
 	if err := authorizeRequest(r); err != nil {
 		log(ctx, err).Info("Unauthorized BasicAuth")
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
 	}
 
 	if r.Method != "GET" {
@@ -79,7 +80,7 @@ func (m *metricsServlet) getEvents(ctx context.Context, w http.ResponseWriter, r
 	_, err := time.Parse(ISODATE, startDateVal)
 	if err != nil {
 		log(ctx, err).Errorf("issue parsing %s", startDateVal)
-		http.Error(w, "error parsing start date", http.StatusBadRequest)
+		http.Error(w, "error parsing date", http.StatusBadRequest)
 		return
 	}
 
