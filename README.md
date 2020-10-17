@@ -5,7 +5,7 @@
 Adapted from <https://github.com/CovidShield/server>
 
 This repository implements a diagnosis server to use as a server for Apple/Google's [Exposure
-Notification](https://www.apple.com/covid19/contacttracing) framework, informed by the [guidance
+Notification](https://covid19.apple.com/contacttracing) framework, informed by the [guidance
 provided by Canada's Privacy
 Commissioners](https://priv.gc.ca/en/opc-news/speeches/2020/s-d_20200507/).
 
@@ -29,7 +29,7 @@ In this document:
 
 ## Overview
 
-_[Apple/Google's Exposure Notification](https://www.apple.com/covid19/contacttracing) specifications
+_[Apple/Google's Exposure Notification](https://covid19.apple.com/contacttracing) specifications
 provide important information to contextualize the rest of this document._
 
 There are two fundamental operations conceptually:
@@ -53,8 +53,7 @@ by the Exposure Notification API in addition to the time at which the data was r
 server. This submission timestamp is rounded to the nearest hour for privacy preservation (to
 prevent correlation of multiple keys to the same user).
 
-The hour of submission is used to group keys into buckets, in order to prevent clients (the
-soon-to-be-released _COVID Alert_ mobile app) from having to download a given set of key data
+The hour of submission is used to group keys into buckets, in order to prevent clients ([COVID Alert mobile app](https://github.com/cds-snc/covid-alert-app)) from having to download a given set of key data
 multiple times in order to repeatedly check for exposure.
 
 The published diagnosis keys are fetched—with some best-effort authentication—from a Content
@@ -76,9 +75,9 @@ $ curl https://retrieval.covidshield.app/exposure-configuration/ON.json
 ### Submitting diagnosis keys
 
 In brief, upon receiving a positive diagnosis, a health care professional will generate a _One Time
-Code_ through a web application frontend (a reference implementation will be open-sourced soon), which
+Code_ through a web application frontend ([COVID Alert Portal](https://github.com/cds-snc/covid-alert-portal)), which
 communicates with `key-submission`. This code is sent to the patient, who enters the code into their
-(soon-to-be-released) _COVID Alert_ App. This code is used to authenticate the
+[COVID Alert mobile app](https://github.com/cds-snc/covid-alert-app). This code is used to authenticate the
 Application (once) to the diagnosis server. Encryption keypairs are exchanged by the Application
 and the `key-submission` server to be stored for fourteen days, and the One Time Code is immediately
 purged from the database.
@@ -233,7 +232,7 @@ ____
 
 Adapté à partir de <https://github.com/CovidShield/server> ([voir les modifications](https://github.com/cds-snc/covid-shield-server/blob/master/FORK.md))
 
-Ce dépôt implémente un serveur de diagnostic à utiliser comme serveur pour le [cadriciel de notification d’exposition](https://www.apple.com/covid19/contacttracing) d’Apple et de Google, suivant les [directives fournies par les commissaires à la protection de la vie privée du Canada](https://priv.gc.ca/fr/nouvelles-du-commissariat/allocutions/2020/s-d_20200507/).
+Ce dépôt implémente un serveur de diagnostic à utiliser comme serveur pour le [cadriciel de notification d’exposition](https://covid19.apple.com/contacttracing) d’Apple et de Google, suivant les [directives fournies par les commissaires à la protection de la vie privée du Canada](https://priv.gc.ca/fr/nouvelles-du-commissariat/allocutions/2020/s-d_20200507/).
 
 Les choix faits dans l’implémentation visent à maximiser la confidentialité, la sécurité et le rendement. Les renseignements identificatoires ne sont jamais stockés, et il n’y a que l’adresse IP qui est accessible au serveur. Aucune donnée n’est conservée après 21 jours. Ce serveur est conçu pour gérer jusqu’à 38 millions d’utilisateurs canadiens, même s’il peut être étendu à n’importe quelle taille de population.
 
@@ -253,7 +252,7 @@ Dans la présente documentation :
 
 ## Aperçu
 
-_Les [spécifications de la notification d’exposition d’Apple et de Google](https://www.apple.com/covid19/contacttracing) fournissent des renseignements importants pour contextualiser le reste de ce document._
+_Les [spécifications de la notification d’exposition d’Apple et de Google](https://covid19.apple.com/contacttracing) fournissent des renseignements importants pour contextualiser le reste de ce document._
 
 Il y a deux opérations fondamentales sur le plan conceptuel :
 
@@ -268,7 +267,7 @@ Pour une vue d’ensemble technique du code de base, particulièrement du protoc
 
 Au moment du téléversement des clés de diagnostic, le serveur `key-submission` stocke les données définies et requises par l’interface de programmation d’applications (API) de notification d’exposition en plus de la date à laquelle les données ont été reçues par le serveur. L’horodatage de cet envoi est arrondi à l’heure la plus proche pour la protection de la vie privée (pour empêcher la corrélation de plusieurs clés avec le même utilisateur).
 
-L’heure d’envoi est utilisée pour regrouper les clés en compartiments, afin d’empêcher que les clients (la sortie prochaine de l’application mobile _COVID Alert_) aient à télécharger un certain ensemble de données de clés plusieurs fois pour pouvoir vérifier l’exposition de manière répétée.
+L’heure d’envoi est utilisée pour regrouper les clés en compartiments, afin d’empêcher que les clients ([l’application mobile _COVID Alert_](https://github.com/cds-snc/covid-alert-app)) aient à télécharger un certain ensemble de données de clés plusieurs fois pour pouvoir vérifier l’exposition de manière répétée.
 
 Les clés de diagnostic publiées sont extraites (avec une authentification optimisée) à partir d’un réseau de distribution du contenu (RDC), soutenu par `key-retrieval`. Cela permet un nombre fonctionnellement arbitraire d’utilisateurs simultanés.
 
@@ -283,7 +282,7 @@ $ curl https://retrieval.covidshield.app/exposure-configuration/ON.json
 
 ### Envoyer les clés de diagnostic
 
-En bref, lorsque qu’un diagnostic positif est établi, le professionnel de la santé générera un _code à usage unique_ avec une application Web frontale (une implémentation de référence sera bientôt disponible en code source libre) qui communique avec `key-submission`. Ce code est envoyé au patient, qui entre le code dans son application _COVID Alert_ (bientôt disponible). Ce code est utilisé pour authentifier l’application (une fois) vis-à-vis le serveur de diagnostic. Les paires de clés de chiffrement sont échangées par l’application et le serveur `key-submission` et sont stockée pendant quatorze jours, et la base de données est immédiatement purgée du code à usage unique.
+En bref, lorsque qu’un diagnostic positif est établi, le professionnel de la santé générera un _code à usage unique_ avec une application Web frontale ([COVID Alert Portal](https://github.com/cds-snc/covid-alert-portal)) qui communique avec `key-submission`. Ce code est envoyé au patient, qui entre le code dans son [application mobile _COVID Alert_](https://github.com/cds-snc/covid-alert-app). Ce code est utilisé pour authentifier l’application (une fois) vis-à-vis le serveur de diagnostic. Les paires de clés de chiffrement sont échangées par l’application et le serveur `key-submission` et sont stockée pendant quatorze jours, et la base de données est immédiatement purgée du code à usage unique.
 
 Ces paires de clés sont utilisées pour chiffrer et autoriser les téléversements de _clé de diagnostic_ pendant les quatorze jours qui suivent, après quoi elles sont enlevées de la base de données.
 
