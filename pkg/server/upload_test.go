@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Shopify/goose/logger"
 	persistence "github.com/cds-snc/covid-alert-server/mocks/pkg/persistence"
 	persistenceErrors "github.com/cds-snc/covid-alert-server/pkg/persistence"
 	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
-	"github.com/Shopify/goose/logger"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"golang.org/x/crypto/nacl/box"
@@ -79,7 +79,7 @@ func TestUpload(t *testing.T) {
 	db.On("PrivForPub", goodServerPubBadPriv[:]).Return(make([]byte, 16), nil)
 
 	db.On("StoreKeys", goodAppPubKeyUsed, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(persistenceErrors.ErrKeyConsumed)
-	db.On("StoreKeys", goodAppPubNoKeysRemaining, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything ).Return(persistenceErrors.ErrTooManyKeys)
+	db.On("StoreKeys", goodAppPubNoKeysRemaining, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(persistenceErrors.ErrTooManyKeys)
 	db.On("StoreKeys", goodAppPubDBError, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(fmt.Errorf("generic DB error"))
 	db.On("StoreKeys", goodAppPub, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(nil)
 
@@ -302,7 +302,7 @@ func TestUpload(t *testing.T) {
 
 	assertLog(t, hook, 1, logrus.ErrorLevel, "failed to store diagnosis keys")
 
-	// Good reponse
+	// Good response
 	io.ReadFull(rand.Reader, nonce[:])
 	ts = time.Now()
 	pbts = timestamppb.Timestamp{
@@ -463,7 +463,7 @@ func TestValidateKeys(t *testing.T) {
 	result := validateKeys(req.Context(), resp, []*pb.TemporaryExposureKey{&key})
 	assert.False(t, result)
 
-	// Retuns false on keys where rsin is more than 15 days apart
+	// Returns false on keys where rsin is more than 15 days apart
 	keyOne := buildKey(token, int32(2), int32(2651450), int32(144))
 	keyTwo := buildKey(token, int32(2), int32(2651450-(144*15)), int32(144))
 
@@ -475,7 +475,7 @@ func TestValidateKeys(t *testing.T) {
 
 	assertLog(t, hook, 2, logrus.WarnLevel, "sequence of rollingStartIntervalNumbers exceeds 15 days")
 
-	// Retuns true on good key
+	// Returns true on good key
 	key = buildKey(token, int32(2), int32(2651450), int32(144))
 
 	result = validateKeys(req.Context(), resp, []*pb.TemporaryExposureKey{&key})
