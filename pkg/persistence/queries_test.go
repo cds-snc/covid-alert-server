@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/cds-snc/covid-alert-server/pkg/config"
 	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
 	"github.com/cds-snc/covid-alert-server/pkg/timemath"
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/nacl/box"
 )
@@ -92,7 +92,7 @@ func TestClaimKey(t *testing.T) {
 	rows = sqlmock.NewRows([]string{"count"}).AddRow(0)
 	mock.ExpectQuery(`SELECT COUNT(*) FROM encryption_keys WHERE app_public_key = ?`).WithArgs(pub[:]).WillReturnRows(rows)
 
-	setupSelectOneTimeCode(mock, oneTimeCode,"1950-01-01 00:00:00" )
+	setupSelectOneTimeCode(mock, oneTimeCode, "1950-01-01 00:00:00")
 
 	mock.ExpectRollback()
 	_, receivedErr = claimKey(db, oneTimeCode, pub[:], nil)
@@ -779,7 +779,7 @@ func TestCheckClaimKeyBan(t *testing.T) {
 	assert.Equal(t, expectedTriesRemaining, receivedTriesRemaining, "Expected maxConsecutiveClaimKeyFailures as tries remaining")
 	assert.Equal(t, expectedBanDuration, receivedBanDuration, "Expected 0 as ban duration")
 
-	// Queries and fails if an unkown error is returned
+	// Queries and fails if an unknown error is returned
 	mock.ExpectQuery(`SELECT failures, last_failure FROM failed_key_claim_attempts WHERE identifier = ?`).WithArgs(identifier).WillReturnError(fmt.Errorf("error"))
 
 	expectedTriesRemaining = 0
@@ -794,7 +794,7 @@ func TestCheckClaimKeyBan(t *testing.T) {
 
 	assert.Equal(t, expectedTriesRemaining, receivedTriesRemaining, "Expected maxConsecutiveClaimKeyFailures as tries remaining")
 	assert.Equal(t, expectedBanDuration, receivedBanDuration, "Expected 0 as ban duration")
-	assert.Equal(t, expectedErr, receivedErr, "Expected error if unkown error occures")
+	assert.Equal(t, expectedErr, receivedErr, "Expected error if unknown error occures")
 
 	// Returns correct tries remaining if not banned
 	attempts := 1
