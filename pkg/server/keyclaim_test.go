@@ -57,7 +57,7 @@ func TestCORS(t *testing.T) {
 	db := &persistence.Conn{}
 	auth := &keyclaim.Authenticator{}
 
-	router := buildRouter(db, auth)
+	router := buildNewKeyClaimServletRouter(db, auth)
 
 	_, oldLog := setupTestLogging()
 	defer func() { log = oldLog }()
@@ -77,7 +77,7 @@ func TestMalformedAuthHeaderNoSpace(t *testing.T) {
 	db := &persistence.Conn{}
 	auth := &keyclaim.Authenticator{}
 
-	router := buildRouter(db, auth)
+	router := buildNewKeyClaimServletRouter(db, auth)
 	hook, oldLog := setupTestLogging()
 	defer func() { log = oldLog }()
 	// Auth Mock
@@ -107,7 +107,7 @@ func TestBadAuthToken(t *testing.T) {
 	auth.On("RegionFromAuthHeader", "Bearer badtoken").Return("", "", false)
 
 	db := &persistence.Conn{}
-	router := buildRouter(db, auth)
+	router := buildNewKeyClaimServletRouter(db, auth)
 	hook, oldLog := setupTestLogging()
 	defer func() { log = oldLog }()
 
@@ -137,7 +137,7 @@ func TestGoodAuthToken_NoHashID(t *testing.T){
 	db.On("NewKeyClaim", mock.Anything, "302", "goodtoken", "").Return("AAABBBCCCC", nil)
 
 
-	router := buildRouter(db, auth)
+	router := buildNewKeyClaimServletRouter(db, auth)
 	_, oldLog := setupTestLogging()
 	defer func() { log = oldLog }()
 
@@ -164,7 +164,7 @@ func TestGoodAuthToken_HashID(t *testing.T) {
 	// DB Mock
 	db.On("NewKeyClaim", mock.Anything, "302", "goodtoken", hashID).Return("AAABBBCCCC", nil)
 
-	router := buildRouter(db, auth)
+	router := buildNewKeyClaimServletRouter(db, auth)
 	_, oldLog := setupTestLogging()
 	defer func() { log = oldLog }()
 
@@ -188,7 +188,7 @@ func Test_ErrorSavingNoHashID(t *testing.T) {
 	db := &persistence.Conn{}
 	db.On("NewKeyClaim", mock.Anything, "302", "errortoken", "").Return("", fmt.Errorf("Random error"))
 
-	router := buildRouter(db, auth)
+	router := buildNewKeyClaimServletRouter(db, auth)
 
 	hook, oldLog := setupTestLogging()
 	defer func() { log = oldLog }()
@@ -216,7 +216,7 @@ func TestNewKeyClaimErrorSavingDuplicateHashID(t *testing.T) {
 	db := &persistence.Conn{}
 	db.On("NewKeyClaim", mock.Anything, "302", "errortoken", hashID).Return("", err.ErrHashIDClaimed)
 
-	router := buildRouter(db, auth)
+	router := buildNewKeyClaimServletRouter(db, auth)
 	hook, oldLog := setupTestLogging()
 	defer func() { log = oldLog }()
 
@@ -241,7 +241,7 @@ func TestMalformedAuthHeader_Bear(t *testing.T)  {
 	// Auth Mock
 	auth.On("RegionFromAuthHeader", "Bear thisisaverylongtoken").Return("", "", false)
 
-	router := buildRouter(db, auth)
+	router := buildNewKeyClaimServletRouter(db, auth)
 	hook, oldLog := setupTestLogging()
 	defer func() { log = oldLog }()
 
@@ -262,7 +262,7 @@ func TestNoAuthHeader(t *testing.T) {
 
 	auth.On("RegionFromAuthHeader", "").Return("", "", false)
 
-	router := buildRouter(db, auth)
+	router := buildNewKeyClaimServletRouter(db, auth)
 	hook, oldLog := setupTestLogging()
 	defer func() { log = oldLog }()
 
@@ -280,7 +280,7 @@ func TestNoPost(t *testing.T)  {
 	db := &persistence.Conn{}
 	auth := &keyclaim.Authenticator{}
 
-	router := buildRouter(db, auth)
+	router := buildNewKeyClaimServletRouter(db, auth)
 	hook, oldLog := setupTestLogging()
 	defer func() { log = oldLog }()
 
@@ -553,7 +553,7 @@ func buildKeyClaimRequest(oneTimeCode *string, appPublicKey []byte) *pb.KeyClaim
 	}
 }
 
-func buildRouter(db *persistence.Conn, auth *keyclaim.Authenticator) *mux.Router {
+func buildNewKeyClaimServletRouter(db *persistence.Conn, auth *keyclaim.Authenticator) *mux.Router {
 	servlet := NewKeyClaimServlet(db, auth)
 	router := Router()
 	servlet.RegisterRouting(router)
