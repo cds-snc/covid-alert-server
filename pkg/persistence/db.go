@@ -58,6 +58,8 @@ type Conn interface {
 	SaveEvent(event Event) error
 	GetServerEvents(startDate string) ([]Events, error)
 
+	ClearDiagnosisKeys(context.Context) error
+
 	Close() error
 }
 

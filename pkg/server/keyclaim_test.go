@@ -6,6 +6,7 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
+	"github.com/cds-snc/covid-alert-server/pkg/testhelpers"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/mock"
 	"net/http"
@@ -23,11 +24,10 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/nacl/box"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNewKeyClaimServlet(t *testing.T) {
@@ -57,10 +57,10 @@ func TestCORS(t *testing.T) {
 	db := &persistence.Conn{}
 	auth := &keyclaim.Authenticator{}
 
-	router := buildRouter(db, auth)
+	router := buildNewKeyClaimServletRouter(db, auth)
 
-	_, oldLog := setupTestLogging()
-	defer func() { log = oldLog }()
+	_, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
 
 	req, _ := http.NewRequest("OPTIONS", "/new-key-claim", nil)
 	resp := httptest.NewRecorder()
@@ -77,9 +77,9 @@ func TestMalformedAuthHeaderNoSpace(t *testing.T) {
 	db := &persistence.Conn{}
 	auth := &keyclaim.Authenticator{}
 
-	router := buildRouter(db, auth)
-	hook, oldLog := setupTestLogging()
-	defer func() { log = oldLog }()
+	router := buildNewKeyClaimServletRouter(db, auth)
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
 	// Auth Mock
 
 	auth.On("RegionFromAuthHeader", "Bearerthisisaverylongtoken").Return("", "", false)
@@ -96,7 +96,7 @@ func TestMalformedAuthHeaderNoSpace(t *testing.T) {
 	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
 	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
 
-	assertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
+	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
 }
 
 func TestBadAuthToken(t *testing.T) {
@@ -107,9 +107,9 @@ func TestBadAuthToken(t *testing.T) {
 	auth.On("RegionFromAuthHeader", "Bearer badtoken").Return("", "", false)
 
 	db := &persistence.Conn{}
-	router := buildRouter(db, auth)
-	hook, oldLog := setupTestLogging()
-	defer func() { log = oldLog }()
+	router := buildNewKeyClaimServletRouter(db, auth)
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
 
 	// Bad auth token
 	req, _ := http.NewRequest("POST", "/new-key-claim", nil)
@@ -120,7 +120,7 @@ func TestBadAuthToken(t *testing.T) {
 	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
 	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
 
-	assertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
+	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
 }
 
 func TestGoodAuthToken_NoHashID(t *testing.T){
@@ -137,9 +137,9 @@ func TestGoodAuthToken_NoHashID(t *testing.T){
 	db.On("NewKeyClaim", mock.Anything, "302", "goodtoken", "").Return("AAABBBCCCC", nil)
 
 
-	router := buildRouter(db, auth)
-	_, oldLog := setupTestLogging()
-	defer func() { log = oldLog }()
+	router := buildNewKeyClaimServletRouter(db, auth)
+	_, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
 
 	// Good auth token - no HashID
 	req, _ := http.NewRequest("POST", "/new-key-claim", nil)
@@ -164,9 +164,9 @@ func TestGoodAuthToken_HashID(t *testing.T) {
 	// DB Mock
 	db.On("NewKeyClaim", mock.Anything, "302", "goodtoken", hashID).Return("AAABBBCCCC", nil)
 
-	router := buildRouter(db, auth)
-	_, oldLog := setupTestLogging()
-	defer func() { log = oldLog }()
+	router := buildNewKeyClaimServletRouter(db, auth)
+	_, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
 
 	req, _ := http.NewRequest("POST", "/new-key-claim/"+hashID, nil)
 	req.Header.Set("Authorization", "Bearer goodtoken")
@@ -188,10 +188,10 @@ func Test_ErrorSavingNoHashID(t *testing.T) {
 	db := &persistence.Conn{}
 	db.On("NewKeyClaim", mock.Anything, "302", "errortoken", "").Return("", fmt.Errorf("Random error"))
 
-	router := buildRouter(db, auth)
+	router := buildNewKeyClaimServletRouter(db, auth)
 
-	hook, oldLog := setupTestLogging()
-	defer func() { log = oldLog }()
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
 
 	// Error saving - no HashID
 	req, _ := http.NewRequest("POST", "/new-key-claim", nil)
@@ -202,7 +202,7 @@ func Test_ErrorSavingNoHashID(t *testing.T) {
 	assert.Equal(t, 500, resp.Code, "Server error response is expected")
 	assert.Equal(t, "server error\n", string(resp.Body.Bytes()), "server error response is expected")
 
-	assertLog(t, hook, 1, logrus.ErrorLevel, "error constructing new key claim")
+	testhelpers.AssertLog(t, hook, 1, logrus.ErrorLevel, "error constructing new key claim")
 
 }
 
@@ -216,9 +216,9 @@ func TestNewKeyClaimErrorSavingDuplicateHashID(t *testing.T) {
 	db := &persistence.Conn{}
 	db.On("NewKeyClaim", mock.Anything, "302", "errortoken", hashID).Return("", err.ErrHashIDClaimed)
 
-	router := buildRouter(db, auth)
-	hook, oldLog := setupTestLogging()
-	defer func() { log = oldLog }()
+	router := buildNewKeyClaimServletRouter(db, auth)
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
 
 
 	// Error saving - duplicate HashID
@@ -230,7 +230,7 @@ func TestNewKeyClaimErrorSavingDuplicateHashID(t *testing.T) {
 	assert.Equal(t, 403, resp.Code, "forbidden response is expected")
 	assert.Equal(t, "forbidden\n", string(resp.Body.Bytes()), "forbidden response is expected")
 
-	assertLog(t, hook, 1, logrus.InfoLevel, "hashID used")
+	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "hashID used")
 }
 
 func TestMalformedAuthHeader_Bear(t *testing.T)  {
@@ -241,9 +241,9 @@ func TestMalformedAuthHeader_Bear(t *testing.T)  {
 	// Auth Mock
 	auth.On("RegionFromAuthHeader", "Bear thisisaverylongtoken").Return("", "", false)
 
-	router := buildRouter(db, auth)
-	hook, oldLog := setupTestLogging()
-	defer func() { log = oldLog }()
+	router := buildNewKeyClaimServletRouter(db, auth)
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
 
 	req, _ := http.NewRequest("POST", "/new-key-claim", nil)
 	req.Header.Set("Authorization", "Bear thisisaverylongtoken")
@@ -253,7 +253,7 @@ func TestMalformedAuthHeader_Bear(t *testing.T)  {
 	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
 	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
 
-	assertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
+	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
 }
 
 func TestNoAuthHeader(t *testing.T) {
@@ -262,9 +262,9 @@ func TestNoAuthHeader(t *testing.T) {
 
 	auth.On("RegionFromAuthHeader", "").Return("", "", false)
 
-	router := buildRouter(db, auth)
-	hook, oldLog := setupTestLogging()
-	defer func() { log = oldLog }()
+	router := buildNewKeyClaimServletRouter(db, auth)
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
 
 	req, _ := http.NewRequest("POST", "/new-key-claim", nil)
 	resp := httptest.NewRecorder()
@@ -273,16 +273,16 @@ func TestNoAuthHeader(t *testing.T) {
 	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
 	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
 
-	assertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
+	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
 }
 
 func TestNoPost(t *testing.T)  {
 	db := &persistence.Conn{}
 	auth := &keyclaim.Authenticator{}
 
-	router := buildRouter(db, auth)
-	hook, oldLog := setupTestLogging()
-	defer func() { log = oldLog }()
+	router := buildNewKeyClaimServletRouter(db, auth)
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
 
 	req, _ := http.NewRequest("GET", "/new-key-claim", nil)
 	resp := httptest.NewRecorder()
@@ -291,7 +291,7 @@ func TestNoPost(t *testing.T)  {
 	assert.Equal(t, 401, resp.Code, "Unauthorized response is expected")
 	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
 
-	assertLog(t, hook, 1, logrus.InfoLevel, "disallowed method")
+	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "disallowed method")
 }
 
 func TestClaimKey(t *testing.T) {
@@ -352,7 +352,7 @@ func TestClaimKey(t *testing.T) {
 	assert.Equal(t, 500, resp.Code, "Server error response is expected")
 	assert.True(t, checkClaimKeyResponseError(resp.Body.Bytes(), pb.KeyClaimResponse_SERVER_ERROR))
 
-	assertLog(t, hook, 1, logrus.ErrorLevel, "database error checking claim-key ban")
+	testhelpers.AssertLog(t, hook, 1, logrus.ErrorLevel, "database error checking claim-key ban")
 
 	// IP is banned
 	req, _ = http.NewRequest("POST", "/claim-key", nil)
@@ -363,7 +363,7 @@ func TestClaimKey(t *testing.T) {
 	assert.Equal(t, 429, resp.Code, "Too many requests response is expected")
 	assert.True(t, checkClaimKeyResponseDuration(resp.Body.Bytes(), ptypes.DurationProto(banDuration)))
 
-	assertLog(t, hook, 1, logrus.WarnLevel, "error reading request")
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "error reading request")
 
 	// IP is banned - RemoteAddr
 	req, _ = http.NewRequest("POST", "/claim-key", nil)
@@ -374,7 +374,7 @@ func TestClaimKey(t *testing.T) {
 	assert.Equal(t, 429, resp.Code, "Too many requests response is expected")
 	assert.True(t, checkClaimKeyResponseDuration(resp.Body.Bytes(), ptypes.DurationProto(banDuration)))
 
-	assertLog(t, hook, 1, logrus.WarnLevel, "error reading request")
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "error reading request")
 
 	// IP is banned - RemoteAddr with port
 	req, _ = http.NewRequest("POST", "/claim-key", nil)
@@ -385,7 +385,7 @@ func TestClaimKey(t *testing.T) {
 	assert.Equal(t, 429, resp.Code, "Too many requests response is expected")
 	assert.True(t, checkClaimKeyResponseDuration(resp.Body.Bytes(), ptypes.DurationProto(banDuration)))
 
-	assertLog(t, hook, 1, logrus.WarnLevel, "error reading request")
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "error reading request")
 
 	// Bad, non-protobuff payload
 	req, _ = http.NewRequest("POST", "/claim-key", strings.NewReader("sd"))
@@ -397,7 +397,7 @@ func TestClaimKey(t *testing.T) {
 	assert.True(t, checkClaimKeyResponseError(resp.Body.Bytes(), pb.KeyClaimResponse_UNKNOWN))
 	assert.True(t, checkClaimKeyResponseTriesRemaining(resp.Body.Bytes(), uint32(triesRemaining)))
 
-	assertLog(t, hook, 1, logrus.WarnLevel, "error unmarshalling request")
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "error unmarshalling request")
 
 	// Invalid app key format
 	code := "BBBBBBBBBB"
@@ -413,7 +413,7 @@ func TestClaimKey(t *testing.T) {
 	assert.True(t, checkClaimKeyResponseError(resp.Body.Bytes(), pb.KeyClaimResponse_INVALID_KEY))
 	assert.True(t, checkClaimKeyResponseTriesRemaining(resp.Body.Bytes(), uint32(triesRemaining)))
 
-	assertLog(t, hook, 1, logrus.WarnLevel, "invalid key format")
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "invalid key format")
 
 	// Duplicate app key
 	code = "CCCCCCCCCC"
@@ -429,7 +429,7 @@ func TestClaimKey(t *testing.T) {
 	assert.True(t, checkClaimKeyResponseError(resp.Body.Bytes(), pb.KeyClaimResponse_INVALID_KEY))
 	assert.True(t, checkClaimKeyResponseTriesRemaining(resp.Body.Bytes(), uint32(triesRemaining)))
 
-	assertLog(t, hook, 1, logrus.WarnLevel, "duplicate key")
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "duplicate key")
 
 	// Invalid one time code
 	code = "DDDDDDDDDD"
@@ -446,7 +446,7 @@ func TestClaimKey(t *testing.T) {
 	assert.True(t, checkClaimKeyResponseTriesRemaining(resp.Body.Bytes(), uint32(triesRemaining)-1))
 	assert.True(t, checkClaimKeyResponseDuration(resp.Body.Bytes(), ptypes.DurationProto(banDuration)))
 
-	assertLog(t, hook, 1, logrus.WarnLevel, "invalid one time code")
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "invalid one time code")
 
 	// Invalid one time code - DB failure on IP ban check
 	code = "DDDDDDDDDD"
@@ -462,7 +462,7 @@ func TestClaimKey(t *testing.T) {
 	assert.True(t, checkClaimKeyResponseError(resp.Body.Bytes(), pb.KeyClaimResponse_SERVER_ERROR))
 	assert.True(t, checkClaimKeyResponseTriesRemaining(resp.Body.Bytes(), uint32(triesRemaining)))
 
-	assertLog(t, hook, 1, logrus.ErrorLevel, "database error recording claim-key failure")
+	testhelpers.AssertLog(t, hook, 1, logrus.ErrorLevel, "database error recording claim-key failure")
 
 	// Generic error
 	code = "EEEEEEEEEE"
@@ -478,7 +478,7 @@ func TestClaimKey(t *testing.T) {
 	assert.True(t, checkClaimKeyResponseError(resp.Body.Bytes(), pb.KeyClaimResponse_SERVER_ERROR))
 	assert.True(t, checkClaimKeyResponseTriesRemaining(resp.Body.Bytes(), uint32(triesRemaining)))
 
-	assertLog(t, hook, 1, logrus.ErrorLevel, "failure to claim key using OneTimeCode")
+	testhelpers.AssertLog(t, hook, 1, logrus.ErrorLevel, "failure to claim key using OneTimeCode")
 
 	// Success with normal code
 	code = "AAAAAAAAAA"
@@ -536,15 +536,9 @@ func TestClaimKey(t *testing.T) {
 	assert.True(t, checkClaimKeyResponseError(resp.Body.Bytes(), pb.KeyClaimResponse_NONE))
 	assert.True(t, checkClaimKeyResponseTriesRemaining(resp.Body.Bytes(), uint32(triesRemaining)))
 
-	assertLog(t, hook, 1, logrus.WarnLevel, "error recording claim-key success")
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "error recording claim-key success")
 }
 
-func assertLog(t *testing.T, hook *test.Hook, length int, level logrus.Level, msg string) {
-	assert.Equal(t, length, len(hook.Entries))
-	assert.Equal(t, level, hook.LastEntry().Level)
-	assert.Equal(t, msg, hook.LastEntry().Message)
-	hook.Reset()
-}
 
 func buildKeyClaimRequest(oneTimeCode *string, appPublicKey []byte) *pb.KeyClaimRequest {
 	return &pb.KeyClaimRequest{
@@ -553,7 +547,7 @@ func buildKeyClaimRequest(oneTimeCode *string, appPublicKey []byte) *pb.KeyClaim
 	}
 }
 
-func buildRouter(db *persistence.Conn, auth *keyclaim.Authenticator) *mux.Router {
+func buildNewKeyClaimServletRouter(db *persistence.Conn, auth *keyclaim.Authenticator) *mux.Router {
 	servlet := NewKeyClaimServlet(db, auth)
 	router := Router()
 	servlet.RegisterRouting(router)
@@ -584,16 +578,4 @@ func SHA512(message []byte) []byte {
 	return c.Sum(nil)
 }
 
-func setupTestLogging() (*test.Hook, logger.Logger) {
-	// Capture logs
-	oldLog := log
-
-	nullLog, hook := test.NewNullLogger()
-	nullLog.ExitFunc = func(code int) {}
-
-	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
-		return logrus.NewEntry(nullLog)
-	}
-	return hook, oldLog
-}
 

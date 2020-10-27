@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	log = logger.New("app")
+	log    = logger.New("app")
 	lookup keyclaim.Authenticator
 )
 
@@ -84,6 +84,11 @@ func (a *AppBuilder) WithRetrieval() *AppBuilder {
 	checkEnvironmentVariable("METRICS_PASSWORD")
 	a.servlets = append(a.servlets, server.NewMetricsServlet(a.database, lookup))
 
+	return a
+}
+
+func (a *AppBuilder) WithDefaultPort() *AppBuilder {
+	a.defaultServerPort = 8000
 	return a
 }
 
