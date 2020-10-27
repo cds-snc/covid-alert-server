@@ -3,8 +3,8 @@ package persistence
 import (
 	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/cds-snc/covid-alert-server/pkg/testhelpers"
 	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
@@ -78,7 +78,8 @@ func Test_SaveEvent(t *testing.T) {
 
 func Test_LogEvent(t *testing.T) {
 
-	hook := test.NewGlobal()
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
 
 	now := time.Now()
 	event := Event{

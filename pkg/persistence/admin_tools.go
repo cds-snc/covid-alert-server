@@ -20,6 +20,6 @@ func clearDiagnosisKeys(ctx context.Context, db *sql.DB) error {
 	if _, err := db.Exec(`TRUNCATE TABLE diagnosis_keys`); err != nil {
 		return err
 	}
-	log(ctx,nil).Info("Diagnosis keys was truncated")
+	log(ctx,nil).Info("diagnosis_keys was truncated")
 	return nil
 }
