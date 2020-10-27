@@ -1,15 +1,18 @@
 package server
 
 import (
-	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
 	keyclaim "github.com/cds-snc/covid-alert-server/mocks/pkg/keyclaim"
 	persistence "github.com/cds-snc/covid-alert-server/mocks/pkg/persistence"
+	"github.com/cds-snc/covid-alert-server/pkg/testhelpers"
+	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func buildAdminToolsServletRouter(db *persistence.Conn, auth *keyclaim.Authenticator) *mux.Router {
@@ -25,7 +28,7 @@ func TestNewAdminToolsServlet(t *testing.T) {
 	auth := &keyclaim.Authenticator{}
 
 	expected := &adminToolsServlet{
-		db: db,
+		db:   db,
 		auth: auth,
 	}
 
@@ -51,8 +54,8 @@ func TestAdminToolsServlet_BadAuthToken(t *testing.T) {
 
 	db := &persistence.Conn{}
 	router := buildAdminToolsServletRouter(db, auth)
-	hook, oldLog := setupTestLogging()
-	defer func() { log = oldLog }()
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
 
 	// Bad auth token
 	req, _ := http.NewRequest("POST", "/cleanDiagnosisKeys", nil)
@@ -64,19 +67,20 @@ func TestAdminToolsServlet_BadAuthToken(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, resp.Code, "Unauthorized response is expected")
 	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
 
-	assertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
+	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
 }
 
 func TestAdminToolsServlet_NoAuthHeader(t *testing.T) {
 	os.Setenv("ENABLE_TEST_TOOLS", "true")
-	db := &persistence.Conn{}
-	auth := &keyclaim.Authenticator{}
 
+	db := &persistence.Conn{}
+
+	auth := &keyclaim.Authenticator{}
 	auth.On("RegionFromAuthHeader", "").Return("", "", false)
 
 	router := buildAdminToolsServletRouter(db, auth)
-	hook, oldLog := setupTestLogging()
-	defer func() { log = oldLog }()
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
 
 	req, _ := http.NewRequest("POST", "/cleanDiagnosisKeys", nil)
 	resp := httptest.NewRecorder()
@@ -85,7 +89,7 @@ func TestAdminToolsServlet_NoAuthHeader(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, resp.Code, "Unauthorized response is expected")
 	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
 
-	assertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
+	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
 }
 
 func TestAdminToolsServlet_GET(t *testing.T) {
@@ -95,8 +99,8 @@ func TestAdminToolsServlet_GET(t *testing.T) {
 	auth := &keyclaim.Authenticator{}
 
 	router := buildAdminToolsServletRouter(db, auth)
-	hook, oldLog := setupTestLogging()
-	defer func() { log = oldLog }()
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
 
 	req, _ := http.NewRequest("GET", "/cleanDiagnosisKeys", nil)
 	resp := httptest.NewRecorder()
@@ -105,5 +109,30 @@ func TestAdminToolsServlet_GET(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, resp.Code, "Unauthorized response is expected")
 	assert.Equal(t, "unauthorized\n", string(resp.Body.Bytes()), "Correct response is expected")
 
-	assertLog(t, hook, 1, logrus.InfoLevel, "disallowed method")
+	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "disallowed method")
+}
+
+func TestAdminToolsServlet_CleanDiagnosisKeys(t *testing.T) {
+	os.Setenv("ENABLE_TEST_TOOLS", "true")
+
+	db := &persistence.Conn{}
+	db.On("ClearDiagnosisKeys", mock.Anything).Return(nil)
+
+	auth := &keyclaim.Authenticator{}
+	auth.On("RegionFromAuthHeader", "Bearer goodtoken").Return("", "", true)
+
+	router := buildAdminToolsServletRouter(db, auth)
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	req, _ := http.NewRequest("POST", "/cleanDiagnosisKeys", nil)
+	req.Header.Set("Authorization", "Bearer goodtoken")
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, http.StatusOK, resp.Code, "OK status expected")
+	assert.Equal(t, "cleared diagnosis_keys", string(resp.Body.Bytes()), "Correct response is expected")
+
+	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "cleared diagnosis_keys")
+
 }

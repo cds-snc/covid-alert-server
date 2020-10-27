@@ -4,12 +4,17 @@ import (
 	"github.com/Shopify/goose/srvutil"
 	"github.com/cds-snc/covid-alert-server/pkg/config"
 	"github.com/cds-snc/covid-alert-server/pkg/server"
+	"github.com/cds-snc/covid-alert-server/pkg/testhelpers"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 )
 
 func TestAppBuilder_WithTestTools_EnableTestToolsIsDisabled(t *testing.T) {
+
+	_, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
 	app := AppBuilder{
 		defaultServerPort: 0,
 		components:        nil,
@@ -24,6 +29,10 @@ func TestAppBuilder_WithTestTools_EnableTestToolsIsDisabled(t *testing.T) {
 }
 
 func TestAppBuilder_WithTestTools_EnableTestToolsIsEnabled(t *testing.T) {
+
+	_, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func () { log = *oldLog }()
+
 	app := AppBuilder{
 		defaultServerPort: 0,
 		components:        nil,

@@ -52,11 +52,13 @@ func (a *adminToolsServlet) clearDiagnosisKeys(w http.ResponseWriter, r *http.Re
 	}
 
 	if err := a.db.ClearDiagnosisKeys(ctx); err != nil {
+		log(ctx, err).Info("unable to clean diagnosis_keys")
 		http.Error(w, fmt.Sprintf("unable to clearDiagnosisKeys: %v", err), http.StatusInternalServerError)
 		return
 	}
 
+	log(ctx, nil).Info("cleared diagnosis_keys")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Cleared Database"))
+	w.Write([]byte("cleared diagnosis_keys"))
 
 }

@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"github.com/cds-snc/covid-alert-server/pkg/testhelpers"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -66,7 +67,7 @@ func TestRequestError(t *testing.T) {
 	receivedResponse := requestError(ctx, resp, err, logMessage, code, msg)
 	assert.Equal(t, expectedResponse, receivedResponse, "should return a result{} struct")
 
-	assertLog(t, hook, 1, logrus.ErrorLevel, "This is a message")
+	testhelpers.AssertLog(t, hook, 1, logrus.ErrorLevel, "This is a message")
 
 	// Test Warn
 	code = 400
@@ -75,7 +76,7 @@ func TestRequestError(t *testing.T) {
 	receivedResponse = requestError(ctx, resp, err, logMessage, code, msg)
 	assert.Equal(t, expectedResponse, receivedResponse, "should return a result{} struct")
 
-	assertLog(t, hook, 1, logrus.WarnLevel, "This is a message")
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "This is a message")
 
 	// Test Headers
 	code = 500
@@ -88,5 +89,5 @@ func TestRequestError(t *testing.T) {
 	assert.Contains(t, resp.Header()["X-Content-Type-Options"], "nosniff", "Content-Type should be set to nosniff")
 	assert.Equal(t, resp.Code, code, "status code should be set correctly")
 
-	assertLog(t, hook, 1, logrus.ErrorLevel, "This is a message")
+	testhelpers.AssertLog(t, hook, 1, logrus.ErrorLevel, "This is a message")
 }
