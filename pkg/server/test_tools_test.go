@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -43,7 +44,7 @@ func TestAdminToolsServlet_RegisterRouting(t *testing.T) {
 
 	expectedPaths := GetPaths(router)
 
-	assert.Contains(t, expectedPaths, "/cleanDiagnosisKeys", "should include a /cleanDiagnosisKeys path")
+	assert.Contains(t, expectedPaths, "/clear-diagnosis-keys", "should include a /clear-diagnosis-keys path")
 }
 
 func TestAdminToolsServlet_BadAuthToken(t *testing.T) {
@@ -58,7 +59,7 @@ func TestAdminToolsServlet_BadAuthToken(t *testing.T) {
 	defer func() { log = *oldLog }()
 
 	// Bad auth token
-	req, _ := http.NewRequest("POST", "/cleanDiagnosisKeys", nil)
+	req, _ := http.NewRequest("POST", "/clear-diagnosis-keys", nil)
 	req.Header.Set("Authorization", "Bearer badtoken")
 
 	resp := httptest.NewRecorder()
@@ -82,7 +83,7 @@ func TestAdminToolsServlet_NoAuthHeader(t *testing.T) {
 	hook, oldLog := testhelpers.SetupTestLogging(&log)
 	defer func() { log = *oldLog }()
 
-	req, _ := http.NewRequest("POST", "/cleanDiagnosisKeys", nil)
+	req, _ := http.NewRequest("POST", "/clear-diagnosis-keys", nil)
 	resp := httptest.NewRecorder()
 	router.ServeHTTP(resp, req)
 
@@ -102,7 +103,7 @@ func TestAdminToolsServlet_GET(t *testing.T) {
 	hook, oldLog := testhelpers.SetupTestLogging(&log)
 	defer func() { log = *oldLog }()
 
-	req, _ := http.NewRequest("GET", "/cleanDiagnosisKeys", nil)
+	req, _ := http.NewRequest("GET", "/clear-diagnosis-keys", nil)
 	resp := httptest.NewRecorder()
 	router.ServeHTTP(resp, req)
 
@@ -112,7 +113,7 @@ func TestAdminToolsServlet_GET(t *testing.T) {
 	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "disallowed method")
 }
 
-func TestAdminToolsServlet_CleanDiagnosisKeys(t *testing.T) {
+func TestAdminToolsServlet_ClearDiagnosisKeys(t *testing.T) {
 	os.Setenv("ENABLE_TEST_TOOLS", "true")
 
 	db := &persistence.Conn{}
@@ -125,7 +126,7 @@ func TestAdminToolsServlet_CleanDiagnosisKeys(t *testing.T) {
 	hook, oldLog := testhelpers.SetupTestLogging(&log)
 	defer func() { log = *oldLog }()
 
-	req, _ := http.NewRequest("POST", "/cleanDiagnosisKeys", nil)
+	req, _ := http.NewRequest("POST", "/clear-diagnosis-keys", nil)
 	req.Header.Set("Authorization", "Bearer goodtoken")
 	resp := httptest.NewRecorder()
 	router.ServeHTTP(resp, req)
@@ -134,5 +135,30 @@ func TestAdminToolsServlet_CleanDiagnosisKeys(t *testing.T) {
 	assert.Equal(t, "cleared diagnosis_keys", string(resp.Body.Bytes()), "Correct response is expected")
 
 	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "cleared diagnosis_keys")
+
+}
+
+func TestAdminToolsServlet_ClearDiagnosisKeysFailed(t *testing.T) {
+	os.Setenv("ENABLE_TEST_TOOLS", "true")
+
+	db := &persistence.Conn{}
+	db.On("ClearDiagnosisKeys", mock.Anything).Return(fmt.Errorf("oh no"))
+
+	auth := &keyclaim.Authenticator{}
+	auth.On("RegionFromAuthHeader", "Bearer goodtoken").Return("", "", true)
+
+	router := buildAdminToolsServletRouter(db, auth)
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	req, _ := http.NewRequest("POST", "/clear-diagnosis-keys", nil)
+	req.Header.Set("Authorization", "Bearer goodtoken")
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, http.StatusInternalServerError, resp.Code, "Internal Server Error Expected")
+	assert.Equal(t, "unable to clear diagnosis_keys\n", string(resp.Body.Bytes()), "Correct response is expected")
+
+	testhelpers.AssertLog(t, hook, 1, logrus.ErrorLevel, "unable to clear diagnosis_keys")
 
 }

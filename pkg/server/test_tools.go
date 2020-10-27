@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 
@@ -25,7 +24,7 @@ func (a adminToolsServlet) RegisterRouting(r *mux.Router) {
 	}
 
 	log(nil, nil).Info("registering admin routes")
-	r.HandleFunc("/cleanDiagnosisKeys", a.clearDiagnosisKeys)
+	r.HandleFunc("/clear-diagnosis-keys", a.clearDiagnosisKeys)
 
 }
 
@@ -52,8 +51,8 @@ func (a *adminToolsServlet) clearDiagnosisKeys(w http.ResponseWriter, r *http.Re
 	}
 
 	if err := a.db.ClearDiagnosisKeys(ctx); err != nil {
-		log(ctx, err).Info("unable to clean diagnosis_keys")
-		http.Error(w, fmt.Sprintf("unable to clearDiagnosisKeys: %v", err), http.StatusInternalServerError)
+		log(ctx, err).Error("unable to clear diagnosis_keys")
+		http.Error(w, "unable to clear diagnosis_keys", http.StatusInternalServerError)
 		return
 	}
 
