@@ -11,21 +11,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAdminTools_EnableTestToolsIsDisabled(t *testing.T) {
+func TestTestTools_EnableTestToolsIsDisabled(t *testing.T) {
 	assert.Panics(t, func() { clearDiagnosisKeys(nil,nil) }, "Should panic if ENABLE_TEST_TOOLS is not enabled")
 }
 
-func TestAdminTools_EnableTestToolsIsFalse(t *testing.T) {
+func TestTestTools_EnableTestToolsIsFalse(t *testing.T) {
 	os.Setenv("ENABLE_TEST_TOOLS", "false")
 	assert.Panics(t, func() { clearDiagnosisKeys(nil,nil) }, "Should panic if ENABLE_TEST_TOOLS is set to false")
 }
 
-func TestAdminTools_EnableTestToolsIsSetToSomethingOtherThanFalse(t *testing.T) {
+func TestTestTools_EnableTestToolsIsSetToSomethingOtherThanFalse(t *testing.T) {
 	os.Setenv("ENABLE_TEST_TOOLS", "foo")
 	assert.Panics(t, func() { clearDiagnosisKeys(nil,nil) }, "Should panic if ENABLE_TEST_TOOLS is not true")
 }
 
-func TestAdminTools_EnableTestToolsIsEnabled(t *testing.T) {
+func TestTestTools_EnableTestToolsIsEnabled(t *testing.T) {
 	os.Setenv("ENABLE_TEST_TOOLS", "true")
 
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
@@ -45,7 +45,7 @@ func TestAdminTools_EnableTestToolsIsEnabled(t *testing.T) {
 	assertLog(t, hook, 1, logrus.InfoLevel, "diagnosis_keys was truncated")
 }
 
-func TestAdminTools_TruncFailed(t *testing.T) {
+func TestTestTools_TruncFailed(t *testing.T) {
 	os.Setenv("ENABLE_TEST_TOOLS", "true")
 
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))

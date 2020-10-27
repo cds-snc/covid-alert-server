@@ -12,7 +12,6 @@ var log = logger.New("config")
 type Constants struct {
 	DefaultSubmissionServerPort        uint32
 	DefaultRetrievalServerPort         uint32
-	DefaultTestToolsServerPort         uint32
 	DefaultServerPort                  uint32
 	WorkerExpirationInterval           uint32
 	MaxConsecutiveClaimKeyFailures     int
@@ -52,7 +51,6 @@ func InitConfig() {
 func setDefaults() {
 	viper.SetDefault("defaultSubmissionServerPort", 8000)
 	viper.SetDefault("defaultRetrievalServerPort", 8001)
-	viper.SetDefault("defaultTestToolsServerPort", 8002)
 	viper.SetDefault("defaultServerPort", 8010)
 	viper.SetDefault("workerExpirationInterval", 30)
 	viper.SetDefault("maxConsecutiveClaimKeyFailures", 50)

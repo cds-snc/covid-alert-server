@@ -18,27 +18,27 @@ import (
 
 func buildAdminToolsServletRouter(db *persistence.Conn, auth *keyclaim.Authenticator) *mux.Router {
 
-	servlet := NewAdminToolsServlet(db, auth)
+	servlet := NewTestToolsServlet(db, auth)
 	router := Router()
 	servlet.RegisterRouting(router)
 	return router
 }
 
-func TestNewAdminToolsServlet(t *testing.T) {
+func TestNewTestToolsServlet(t *testing.T) {
 	db := &persistence.Conn{}
 	auth := &keyclaim.Authenticator{}
 
-	expected := &adminToolsServlet{
+	expected := &testToolsServlet{
 		db:   db,
 		auth: auth,
 	}
 
-	assert.Equal(t, expected, NewAdminToolsServlet(db, auth), "should return a new adminToolsServlet struct")
+	assert.Equal(t, expected, NewTestToolsServlet(db, auth), "should return a new testToolsServlet struct")
 }
 
-func TestAdminToolsServlet_RegisterRouting(t *testing.T) {
+func TestTestToolsServlet_RegisterRouting(t *testing.T) {
 	os.Setenv("ENABLE_TEST_TOOLS", "true")
-	servlet := NewAdminToolsServlet(&persistence.Conn{}, &keyclaim.Authenticator{})
+	servlet := NewTestToolsServlet(&persistence.Conn{}, &keyclaim.Authenticator{})
 	router := Router()
 	servlet.RegisterRouting(router)
 
@@ -47,7 +47,25 @@ func TestAdminToolsServlet_RegisterRouting(t *testing.T) {
 	assert.Contains(t, expectedPaths, "/clear-diagnosis-keys", "should include a /clear-diagnosis-keys path")
 }
 
-func TestAdminToolsServlet_BadAuthToken(t *testing.T) {
+func TestTestToolsServlet_RegisterRoutingDisabled(t *testing.T) {
+	os.Setenv("ENABLE_TEST_TOOLS", "false")
+	servlet := NewTestToolsServlet(&persistence.Conn{}, &keyclaim.Authenticator{})
+	router := Router()
+	assert.Panics(t, func () { servlet.RegisterRouting(router) }, "should panic if called while ENABLE_TEST_TOOLS is false")
+
+}
+
+func TestTestToolsServlet_RegisterRoutingProduction(t *testing.T) {
+	os.Setenv("ENABLE_TEST_TOOLS", "true")
+	os.Setenv("ENV", "production")
+
+	servlet := NewTestToolsServlet(&persistence.Conn{}, &keyclaim.Authenticator{})
+	router := Router()
+	assert.Panics(t, func () { servlet.RegisterRouting(router) }, "should panic if ENV is production")
+	os.Setenv("ENV", "")
+}
+
+func TestTestToolsServlet_BadAuthToken(t *testing.T) {
 	os.Setenv("ENABLE_TEST_TOOLS", "true")
 	auth := &keyclaim.Authenticator{}
 	// Auth Mock
@@ -71,7 +89,7 @@ func TestAdminToolsServlet_BadAuthToken(t *testing.T) {
 	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
 }
 
-func TestAdminToolsServlet_NoAuthHeader(t *testing.T) {
+func TestTestToolsServlet_NoAuthHeader(t *testing.T) {
 	os.Setenv("ENABLE_TEST_TOOLS", "true")
 
 	db := &persistence.Conn{}
@@ -93,7 +111,7 @@ func TestAdminToolsServlet_NoAuthHeader(t *testing.T) {
 	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
 }
 
-func TestAdminToolsServlet_GET(t *testing.T) {
+func TestTestToolsServlet_GET(t *testing.T) {
 
 	os.Setenv("ENABLE_TEST_TOOLS", "true")
 	db := &persistence.Conn{}
@@ -113,7 +131,7 @@ func TestAdminToolsServlet_GET(t *testing.T) {
 	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "disallowed method")
 }
 
-func TestAdminToolsServlet_ClearDiagnosisKeys(t *testing.T) {
+func TestTestToolsServlet_ClearDiagnosisKeys(t *testing.T) {
 	os.Setenv("ENABLE_TEST_TOOLS", "true")
 
 	db := &persistence.Conn{}
@@ -138,7 +156,7 @@ func TestAdminToolsServlet_ClearDiagnosisKeys(t *testing.T) {
 
 }
 
-func TestAdminToolsServlet_ClearDiagnosisKeysFailed(t *testing.T) {
+func TestTestToolsServlet_ClearDiagnosisKeysFailed(t *testing.T) {
 	os.Setenv("ENABLE_TEST_TOOLS", "true")
 
 	db := &persistence.Conn{}

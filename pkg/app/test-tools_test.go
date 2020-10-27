@@ -2,7 +2,6 @@ package app
 
 import (
 	"github.com/Shopify/goose/srvutil"
-	"github.com/cds-snc/covid-alert-server/pkg/config"
 	"github.com/cds-snc/covid-alert-server/pkg/server"
 	"github.com/cds-snc/covid-alert-server/pkg/testhelpers"
 	"github.com/stretchr/testify/assert"
@@ -43,8 +42,6 @@ func TestAppBuilder_WithTestTools_EnableTestToolsIsEnabled(t *testing.T) {
 	os.Setenv("ENABLE_TEST_TOOLS","true")
 	app.WithTestTools()
 
-	expected := append([]srvutil.Servlet{server.NewAdminToolsServlet(nil, nil)})
+	expected := append([]srvutil.Servlet{server.NewTestToolsServlet(nil, nil)})
 	assert.ElementsMatch(t, expected, app.servlets, "should register the adminToolsServlet if ENABLE_TEST_TOOLS is true")
-	assert.Equal(t, app.defaultServerPort, config.AppConstants.DefaultTestToolsServerPort, "should set default port")
 }
-
