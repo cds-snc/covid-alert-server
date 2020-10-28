@@ -29,11 +29,11 @@ type metricsServlet struct {
 }
 
 const DATEFORMAT string = "\\d{4,4}-\\d{2,2}-\\d{2,2}"
+
 func (m metricsServlet) RegisterRouting(r *mux.Router) {
 	log(nil, nil).Info("registering metrics route")
 	r.HandleFunc(fmt.Sprintf("/events/{startDate:%s}", DATEFORMAT), m.handleEventRequest)
-
-
+	r.HandleFunc(fmt.Sprintf("/events/uploads/{startDate:%s}", DATEFORMAT), m.handleTEKUploadsRequest)
 }
 
 func authorizeRequest(r *http.Request) error {
@@ -52,7 +52,6 @@ func authorizeRequest(r *http.Request) error {
 
 	return nil
 }
-
 
 func (m *metricsServlet) handleEventRequest(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -97,6 +96,61 @@ func (m *metricsServlet) getEvents(ctx context.Context, w http.ResponseWriter, r
 	js, err := json.Marshal(events)
 	if err != nil {
 		log(ctx, err).WithField("EventResults", events).Errorf("error marshaling events")
+		http.Error(w, "error building json object", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = w.Write(js)
+	if err != nil {
+		log(ctx, err).Errorf("error writing json")
+		http.Error(w, "error retrieving results", http.StatusInternalServerError)
+	}
+	return
+}
+
+func (m *metricsServlet) handleTEKUploadsRequest(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	if err := authorizeRequest(r); err != nil {
+		log(ctx, err).Info("Unauthorized BasicAuth")
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if r.Method != "GET" {
+		log(ctx, nil).WithField("method", r.Method).Info("disallowed method")
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	m.getTEKUploadsData(ctx, w, r)
+	return
+}
+
+func (m *metricsServlet) getTEKUploadsData(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	startDateVal := vars["startDate"]
+	_, err := time.Parse(ISODATE, startDateVal)
+	if err != nil {
+		log(ctx, err).Errorf("issue parsing %s", startDateVal)
+		http.Error(w, "error parsing date", http.StatusBadRequest)
+		return
+	}
+
+	uploads, err := m.db.GetTEKUploads(startDateVal)
+	if err != nil {
+		log(ctx, err).Errorf("issue getting upload events")
+		http.Error(w, "error retrieving upload events", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+
+	js, err := json.Marshal(uploads)
+	if err != nil {
+		log(ctx, err).WithField("EventUploadResults", uploads).Errorf("error marshaling events")
 		http.Error(w, "error building json object", http.StatusInternalServerError)
 		return
 	}

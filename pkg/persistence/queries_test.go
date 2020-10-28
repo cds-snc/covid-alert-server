@@ -683,6 +683,17 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	}
 
 	mock.ExpectExec(
+		`INSERT INTO tek_upload_count
+		(originator, date, count, first_upload)
+		VALUES (?, ?, ?, ?)`,
+	).WithArgs(
+		"randomOrigin",
+		time.Now().Format("2006-01-02"),
+		len(keys),
+		false,
+	).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	mock.ExpectExec(
 		`UPDATE encryption_keys
 	SET remaining_keys = remaining_keys - ?
 	WHERE remaining_keys >= ?
@@ -711,7 +722,7 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 	hourOfSubmission = timemath.HourNumber(time.Now())
 
 	mock.ExpectBegin()
-	row = sqlmock.NewRows([]string{"region", "originator", "remaining_keys"}).AddRow("302", "randomOrigin", 3)
+	row = sqlmock.NewRows([]string{"region", "originator", "remaining_keys"}).AddRow("302", "randomOrigin", config.AppConstants.InitialRemainingKeys)
 	mock.ExpectQuery(`SELECT region, originator, remaining_keys FROM encryption_keys WHERE app_public_key = ? FOR UPDATE`).WillReturnRows(row)
 
 	mock.ExpectPrepare(
@@ -733,6 +744,17 @@ func TestRegisterDiagnosisKeys(t *testing.T) {
 			hourOfSubmission,
 		).WillReturnResult(sqlmock.NewResult(1, 1))
 	}
+
+	mock.ExpectExec(
+		`INSERT INTO tek_upload_count
+		(originator, date, count, first_upload)
+		VALUES (?, ?, ?, ?)`,
+	).WithArgs(
+		"randomOrigin",
+		time.Now().Format("2006-01-02"),
+		len(keys),
+		true,
+	).WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectExec(
 		`UPDATE encryption_keys

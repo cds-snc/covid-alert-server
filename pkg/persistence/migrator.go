@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS failed_key_claim_attempts (
 			`UPDATE encryption_keys SET hash_id = NULL WHERE hash_id = ''`,
 			`ALTER TABLE encryption_keys ADD UNIQUE (hash_id)`,
 		},
-	},{
+	}, {
 		id: "7",
 		statements: []string{
 			`
@@ -105,6 +105,19 @@ CREATE TABLE IF NOT EXISTS events (
 	INDEX (device_type),
 	INDEX (date),
 	UNIQUE KEY identifier_type_date (source, identifier,device_type,date)
+)`,
+		},
+	}, {
+		id: "8",
+		statements: []string{
+			`
+CREATE TABLE IF NOT EXISTS tek_upload_count (
+	originator			VARCHAR(32)     NOT NULL,
+	date            DATE            NOT NULL,
+	count           INT             UNSIGNED NOT NULL DEFAULT 0,
+	first_upload		BOOLEAN					NOT NULL DEFAULT FALSE,
+	INDEX (originator),
+	INDEX (date)
 )`,
 		},
 	},

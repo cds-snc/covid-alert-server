@@ -2,13 +2,14 @@ package persistence
 
 import (
 	"fmt"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/cds-snc/covid-alert-server/pkg/testhelpers"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"strings"
-	"testing"
-	"time"
 )
 
 func Test_translateToken(t *testing.T) {
@@ -146,4 +147,41 @@ func TestConn_GetServerEventsByTypeStartDateOnly(t *testing.T) {
 	}
 
 	assert.Equal(t, []Events{{"foo", "2020-01-01", 1, "event"}}, events)
+}
+
+func TestConn_GetTEKUploadsByDayNoStartDate(t *testing.T) {
+
+	db, _, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	defer db.Close()
+
+	_, err := getTEKUploadsByDay(db, "")
+
+	assert.Equal(t, fmt.Errorf("a date is required for querying events"), err)
+}
+
+func TestConn_GetTEKUploadsByDayStartDateOnly(t *testing.T) {
+
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	defer db.Close()
+
+	d, _ := time.Parse("2006-01-02", "2020-01-01")
+	rows := sqlmock.NewRows([]string{"originator", "date", "count", "first_upload"}).AddRow("foo", d, 5, true)
+	mock.ExpectQuery(`
+		SELECT originator, date, count, first_upload 
+		FROM tek_upload_count 
+		WHERE tek_upload_count.date = ?`).
+		WithArgs("2020-01-01").
+		WillReturnRows(rows)
+
+	uploads, err := getTEKUploadsByDay(db, "2020-01-01")
+
+	if err != nil {
+		t.Errorf("%s", err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Equal(t, []Uploads{{"foo", "2020-01-01", 5, true}}, uploads)
 }

@@ -291,6 +291,23 @@ func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.Temporary
 	}
 
 	_, err = tx.Exec(`
+		INSERT INTO tek_upload_count
+		(originator, date, count, first_upload)
+		VALUES (?, ?, ?, ?)`,
+		translateToken(originator),
+		time.Now().Format("2006-01-02"),
+		keysInserted,
+		remainingKeys == int64(config.AppConstants.InitialRemainingKeys),
+	)
+
+	if err != nil {
+		if err := tx.Rollback(); err != nil {
+			return err
+		}
+		return err
+	}
+
+	_, err = tx.Exec(`
 		UPDATE encryption_keys
 		SET remaining_keys = remaining_keys - ?
 		WHERE remaining_keys >= ?

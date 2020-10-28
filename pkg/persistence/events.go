@@ -4,8 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/cds-snc/covid-alert-server/pkg/keyclaim"
 )
@@ -131,7 +132,7 @@ func (c *conn) GetServerEvents(date string) ([]Events, error) {
 	return getServerEventsByType(c.db, date)
 }
 
-func getServerEventsByType(db *sql.DB, date string) ([]Events, error){
+func getServerEventsByType(db *sql.DB, date string) ([]Events, error) {
 
 	if date == "" {
 		return nil, fmt.Errorf("a date is required for querying events")
@@ -164,8 +165,61 @@ func getServerEventsByType(db *sql.DB, date string) ([]Events, error){
 	}
 
 	if events == nil {
-		events = make([]Events,0)
+		events = make([]Events, 0)
 	}
 	return events, nil
 }
 
+// Uploads the aggregate of uploads identified in orignator by Source
+// Source the bearer token that generated these uploads
+// Date the date the upload occurs
+// Count the number of keys uploaded
+// FirstUpload if this was the first upload by a user
+type Uploads struct {
+	Source      string `json:"source"`
+	Date        string `json:"date"`
+	Count       int64  `json:"count"`
+	FirstUpload bool   `json:"first_upload"`
+}
+
+// GetTEKUploads get all the events that occurred in a day
+func (c *conn) GetTEKUploads(date string) ([]Uploads, error) {
+	return getTEKUploadsByDay(c.db, date)
+}
+
+func getTEKUploadsByDay(db *sql.DB, date string) ([]Uploads, error) {
+
+	if date == "" {
+		return nil, fmt.Errorf("a date is required for querying events")
+	}
+
+	rows, err := db.Query(`
+	SELECT originator, date, count, first_upload 
+	FROM tek_upload_count 
+	WHERE tek_upload_count.date = ?`, date)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var uploads []Uploads
+
+	for rows.Next() {
+		u := Uploads{}
+		var t time.Time
+
+		err := rows.Scan(&u.Source, &t, &u.Count, &u.FirstUpload)
+
+		if err != nil {
+			return nil, err
+		}
+
+		u.Date = t.Format("2006-01-02")
+		uploads = append(uploads, u)
+	}
+
+	if uploads == nil {
+		uploads = make([]Uploads, 0)
+	}
+	return uploads, nil
+}
