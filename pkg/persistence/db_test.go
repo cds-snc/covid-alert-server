@@ -119,7 +119,7 @@ func TestDBClaimKey(t *testing.T) {
 }
 
 const (
-	region string = "302"
+	region     string = "302"
 	originator string = "randomOrigin"
 )
 
@@ -134,7 +134,6 @@ func TestSuccessWithNoHashID(t *testing.T) {
 	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
 		return logrus.NewEntry(nullLog)
 	}
-
 
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
 	defer db.Close()
@@ -186,7 +185,6 @@ func TestErrorGeneric(t *testing.T) {
 		return logrus.NewEntry(nullLog)
 	}
 
-
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
 	defer db.Close()
 
@@ -228,7 +226,6 @@ func TestErrorExistingCode(t *testing.T) {
 	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
 		return logrus.NewEntry(nullLog)
 	}
-
 
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
 	defer db.Close()
@@ -294,7 +291,6 @@ func TestNeverSucceedsWithDuplicateCodes(t *testing.T) {
 		return logrus.NewEntry(nullLog)
 	}
 
-
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
 	defer db.Close()
 
@@ -341,14 +337,12 @@ func TestUnclaimedHashIDEventualSuccess(t *testing.T) {
 		return logrus.NewEntry(nullLog)
 	}
 
-
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
 	defer db.Close()
 
 	conn := conn{
 		db: db,
 	}
-
 
 	hashID := hex.EncodeToString(SHA512([]byte("abcd")))
 
@@ -391,7 +385,6 @@ func TestUnclaimedHashIDEventualSuccess(t *testing.T) {
 		Originator: "randomOrigin",
 	})
 
-
 	receivedResult, receivedError := conn.NewKeyClaim(context.TODO(), region, originator, hashID)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -415,7 +408,6 @@ func TestClaimedHashID(t *testing.T) {
 	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
 		return logrus.NewEntry(nullLog)
 	}
-
 
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
 	defer db.Close()
@@ -442,7 +434,6 @@ func TestClaimedHashID(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"one_time_code"}).AddRow(nil)
 	mock.ExpectQuery(
 		`SELECT one_time_code FROM encryption_keys WHERE hash_id = ? FOR UPDATE`).WithArgs(hashID).WillReturnRows(rows)
-
 
 	receivedResult, receivedError := conn.NewKeyClaim(context.TODO(), region, originator, hashID)
 
@@ -537,6 +528,17 @@ func TestDBStoreKeys(t *testing.T) {
 			hourOfSubmission,
 		).WillReturnResult(sqlmock.NewResult(1, 1))
 	}
+
+	mock.ExpectExec(
+		`INSERT INTO tek_upload_count
+		(originator, date, count, first_upload)
+		VALUES (?, ?, ?, ?)`,
+	).WithArgs(
+		"randomOrigin",
+		time.Now().Format("2006-01-02"),
+		len(keys),
+		false,
+	).WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectExec(
 		`UPDATE encryption_keys

@@ -54,9 +54,11 @@ type Conn interface {
 	CountUnclaimedEncryptionKeysByOriginator() ([]CountByOriginator, error)
 	CountExhaustedEncryptionKeysByOriginator() ([]CountByOriginator, error)
 	CountExpiredClaimedEncryptionKeysByOriginator() ([]CountByOriginator, error)
+	CountExpiredClaimedEncryptionKeysWithNoUploadsByOriginator() ([]CountByOriginator, error)
 
 	SaveEvent(event Event) error
 	GetServerEvents(startDate string) ([]Events, error)
+	GetTEKUploads(startDate string) ([]Uploads, error)
 
 	ClearDiagnosisKeys(context.Context) error
 
@@ -136,6 +138,10 @@ func (c *conn) CountExpiredClaimedEncryptionKeysByOriginator() ([]CountByOrigina
 	return countExpiredClaimedEncryptionKeysByOriginator(c.db)
 }
 
+func (c *conn) CountExpiredClaimedEncryptionKeysWithNoUploadsByOriginator() ([]CountByOriginator, error) {
+	return countExpiredClaimedEncryptionKeysWithNoUploadsByOriginator(c.db)
+}
+
 func (c *conn) DeleteOldEncryptionKeys() (int64, error) {
 	return deleteOldEncryptionKeys(c.db)
 }
@@ -207,7 +213,7 @@ func (c *conn) NewKeyClaim(ctx context.Context, region, originator, hashID strin
 	return "", err
 }
 
-func (c *conn) saveNewKeyClaimEvent(ctx context.Context, originator string, regenerated bool){
+func (c *conn) saveNewKeyClaimEvent(ctx context.Context, originator string, regenerated bool) {
 
 	var identifier EventType
 	if regenerated {

@@ -14,6 +14,7 @@ func TestEventType_IsValid(t *testing.T) {
 		OTKExhausted,
 		OTKRegenerated,
 		OTKExpired,
+		OTKExpiredNoUploads,
 		OTKUnclaimed,
 	} {
 		if err := et.IsValid(); err != nil {

@@ -25,10 +25,11 @@ var expirationRunner = func(w *worker, ctx context.Context) error {
 
 	// Count the keys we are going to delete
 	var (
-		unclaimedCounts []persistence.CountByOriginator
-		expiredCounts []persistence.CountByOriginator
-		exhaustedCounts []persistence.CountByOriginator
-		countErr        error
+		unclaimedCounts        []persistence.CountByOriginator
+		expiredCounts          []persistence.CountByOriginator
+		expiredCountsNoUploads []persistence.CountByOriginator
+		exhaustedCounts        []persistence.CountByOriginator
+		countErr               error
 	)
 
 	if unclaimedCounts, countErr = w.db.CountUnclaimedEncryptionKeysByOriginator(); countErr != nil {
@@ -37,6 +38,10 @@ var expirationRunner = func(w *worker, ctx context.Context) error {
 
 	if expiredCounts, countErr = w.db.CountExpiredClaimedEncryptionKeysByOriginator(); countErr != nil {
 		log(ctx, countErr).Info("Unable to count expired encryption keys")
+	}
+
+	if expiredCountsNoUploads, countErr = w.db.CountExpiredClaimedEncryptionKeysWithNoUploadsByOriginator(); countErr != nil {
+		log(ctx, countErr).Info("Unable to count expired encryption keys with no uploads")
 	}
 
 	if exhaustedCounts, countErr = w.db.CountExhaustedEncryptionKeysByOriginator(); countErr != nil {
@@ -49,6 +54,7 @@ var expirationRunner = func(w *worker, ctx context.Context) error {
 	} else {
 		saveCountEvents(ctx, w, persistence.OTKUnclaimed, unclaimedCounts)
 		saveCountEvents(ctx, w, persistence.OTKExpired, expiredCounts)
+		saveCountEvents(ctx, w, persistence.OTKExpiredNoUploads, expiredCountsNoUploads)
 		saveCountEvents(ctx, w, persistence.OTKExhausted, exhaustedCounts)
 		log(ctx, nil).WithField("count", nDeleted).Info("deleted old encryption keys")
 	}
@@ -69,8 +75,8 @@ func saveCountEvents(ctx context.Context, w *worker, identifier persistence.Even
 		event := persistence.Event{
 			Identifier: identifier,
 			DeviceType: persistence.Server,
-			Date: time.Now(),
-			Count : count.Count,
+			Date:       time.Now(),
+			Count:      count.Count,
 			Originator: count.Originator,
 		}
 		if err := w.db.SaveEvent(event); err != nil {

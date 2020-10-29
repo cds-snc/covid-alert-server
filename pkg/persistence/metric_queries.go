@@ -3,6 +3,7 @@ package persistence
 import (
 	"database/sql"
 	"fmt"
+
 	"github.com/cds-snc/covid-alert-server/pkg/config"
 )
 
@@ -19,6 +20,14 @@ func countExpiredClaimedEncryptionKeysByOriginator(db *sql.DB) ([]CountByOrigina
 			WHERE  (created < (NOW() - INTERVAL %d DAY))
 			GROUP BY encryption_keys.originator
 		`, config.AppConstants.EncryptionKeyValidityDays))
+}
+
+func countExpiredClaimedEncryptionKeysWithNoUploadsByOriginator(db *sql.DB) ([]CountByOriginator, error) {
+	return countByOriginator(db, fmt.Sprintf(`
+			SELECT originator, COUNT(*) FROM encryption_keys
+			WHERE  (created < (NOW() - INTERVAL %d DAY)) AND remaining_keys = %d
+			GROUP BY encryption_keys.originator
+		`, config.AppConstants.EncryptionKeyValidityDays, config.AppConstants.InitialRemainingKeys))
 }
 
 func countExhaustedEncryptionKeysByOriginator(db *sql.DB) ([]CountByOriginator, error) {
