@@ -8,5 +8,6 @@ import (
 func main() {
 	cmd.RunAndWait(
 		app.NewBuilder().
+			WithTestTools().
 			WithSubmission())
 }
