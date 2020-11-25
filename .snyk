@@ -1,0 +1,10 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.version: v1.14.0
+
+version: v1.14.0
+language-settings:
+ignore: 
+  snyk-vulnid:
+    - path to library using > seperator :
+      reason: 'text string'
+      expires: 'datetime string'
+patch: 
