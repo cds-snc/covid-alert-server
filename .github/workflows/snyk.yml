@@ -11,5 +11,4 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           command: monitor
-          args: --file=go.mod --org=exposurenotification
-            --project-name=covid-alert-server
+          args: --file=go.mod --org=exposurenotification --project-name=covid-alert-server
