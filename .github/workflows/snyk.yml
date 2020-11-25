@@ -12,4 +12,4 @@ jobs:
         with:
           command: monitor
           args: --file=go.mod --org=exposurenotification
-            --project-name=covid-shield-server
+            --project-name=covid-alert-server
