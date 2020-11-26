@@ -4,10 +4,10 @@ version: v1.14.1
 ignore:
   'snyk:lic:golang:github.com:go-sql-driver:mysql:MPL-2.0':
     - '*':
-        reason: 'We don't modify any files in this dependency, and we don't distribute a binary'
+        reason: We don't modify any files in this dependency, and we do not distribute a binary
         expires: 2021-12-25T20:07:37.670Z
   'snyk:lic:golang:github.com:hashicorp:hcl:MPL-2.0':
     - '*':
-        reason: 'We don't modify any files in this dependency, and we don't distribute a binary'
+        reason: We don't modify any files in this dependency, and we do not distribute a binary
         expires: 2021-12-25T20:07:58.978Z
 patch: {}
