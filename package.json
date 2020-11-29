@@ -1,0 +1,13 @@
+{
+  "name": "covid-shield-server",
+  "dependencies": {},
+  "devDependencies": {
+    "@commitlint/cli": "^11.0.0",
+    "@commitlint/config-conventional": "^11.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cds-snc/covid-shield-server.git"
+  },
+  "license": "MIT"
+}

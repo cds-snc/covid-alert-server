@@ -30,7 +30,7 @@ REVISION=`git rev-parse HEAD`
 GOLDFLAGS="-X $(MODULE)/pkg/server.branch=$(BRANCH) -X $(MODULE)/pkg/server.revision=$(REVISION)"
 
 init:
-	git config core.hooksPath .githooks
+	./bin/init-repo.sh
 default:  release
 release:  $(PROTO_GO) $(RELEASE_BUILDS)
 debug:    $(PROTO_GO) $(DEBUG_BUILDS)

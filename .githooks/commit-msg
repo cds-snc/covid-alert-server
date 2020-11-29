@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "Linting commit"
+npx commitlint -e
