@@ -5,4 +5,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Shellcheck
-      run: ./bin/run-shellcheck.sh
+      run: | 
+        ls -al
+        ./bin/run-shellcheck.sh
