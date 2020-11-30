@@ -6,4 +6,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Shellcheck
-      run: ./bin/run-shellcheck.sh
+      run: |
+        shellcheck --version
+        ./bin/run-shellcheck.sh
