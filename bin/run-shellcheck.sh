@@ -1,3 +1,3 @@
 #!/bin/bash
 
-shellcheck -P ./bin/ -x ./**/*.sh
+docker run --rm -v "$PWD:/mnt" koalaman/shellcheck:v0.7.1 -P ./bin/ -x ./**/*.sh
