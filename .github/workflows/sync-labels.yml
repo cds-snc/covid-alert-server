@@ -1,0 +1,15 @@
+name: Sync Labels
+on: 
+  push:
+    paths:
+      - "labels.yml"
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: sync labels
+      with: 
+        GH_TOKEN: ${{ secrets.LABEL_TOKEN }}
+      run: |
+        ./bin/sync-labels.sh
