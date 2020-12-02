@@ -11,6 +11,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: sync labels
-      with: 
+      env:
         GH_TOKEN: ${{ secrets.LABEL_TOKEN }}
       run: ./bin/sync-labels.sh apply
