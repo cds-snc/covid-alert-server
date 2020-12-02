@@ -12,4 +12,4 @@ jobs:
       with: 
         GH_TOKEN: ${{ secrets.LABEL_TOKEN }}
       run: |
-        ./bin/sync-labels.sh
+        ./bin/sync-labels.sh apply
