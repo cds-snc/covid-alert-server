@@ -1,0 +1,17 @@
+name: Sync Labels
+on: 
+  push:
+    branches: [master]
+    paths:
+      - "labels.yml"
+jobs:
+  sync-labels:
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: sync labels
+      with: 
+        GH_TOKEN: ${{ secrets.LABEL_TOKEN }}
+      run: |
+        ./bin/sync-labels.sh apply
