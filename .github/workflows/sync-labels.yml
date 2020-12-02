@@ -13,4 +13,6 @@ jobs:
     - name: sync labels
       env:
         GH_TOKEN: ${{ secrets.LABEL_TOKEN }}
-      run: ./bin/sync-labels.sh apply
+      run: |
+        npm i -g github-label-sync
+        ./bin/sync-labels.sh apply
