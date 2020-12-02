@@ -13,5 +13,4 @@ jobs:
     - name: sync labels
       with: 
         GH_TOKEN: ${{ secrets.LABEL_TOKEN }}
-      run: |
-        ./bin/sync-labels.sh apply
+      run: ./bin/sync-labels.sh apply
