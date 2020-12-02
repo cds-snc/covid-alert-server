@@ -103,7 +103,7 @@
   alias: []
   color: "19b3c1"
 
-- name: test label
+- name: test-label
   description: testing CI
   alias: []
   color: "19b3c1"
