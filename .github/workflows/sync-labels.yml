@@ -1,18 +1,9 @@
-name: Sync Labels
-on: 
-  push:
-    branches: [master]
-    paths:
-      - "labels.yml"
+on: [issues, pull_request]
 jobs:
   sync-labels:
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    name: Sync repository labels
     steps:
-    - uses: actions/checkout@v2
-    - name: sync labels
-      env:
-        GH_TOKEN: ${{ secrets.LABEL_TOKEN }}
-      run: |
-        npm i -g github-label-sync
-        ./bin/sync-labels.sh apply
+      - uses: cds-snc/covid-alert-server-labels@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
