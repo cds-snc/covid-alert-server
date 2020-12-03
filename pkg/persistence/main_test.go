@@ -1,6 +1,8 @@
 package persistence
 
 import (
+	"database/sql"
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/cds-snc/covid-alert-server/pkg/config"
 	"github.com/cds-snc/covid-alert-server/pkg/keyclaim"
 	"os"
@@ -25,4 +27,9 @@ func TestMain(m *testing.M)  {
 	SetupLookup(keyclaim.NewAuthenticator())
 
 	os.Exit(m.Run())
+}
+
+func createNewSqlMock() (*sql.DB, sqlmock.Sqlmock) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	return db, mock
 }

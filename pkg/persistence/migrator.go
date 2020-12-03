@@ -120,6 +120,20 @@ CREATE TABLE IF NOT EXISTS tek_upload_count (
 	INDEX (date)
 )`,
 		},
+	},{
+		id: "9",
+		statements: []string{
+			`
+CREATE TABLE IF NOT EXISTS otk_life_duration (
+	originator	VARCHAR(32) 	NOT NULL,
+	hours		INT				NOT NULL,
+	date		DATE			NOT NULL,
+	count		INT				UNSIGNED NOT NULL DEFAULT 0,
+	INDEX (originator),
+	INDEX (date),
+	UNIQUE KEY originator_date(originator, date)
+)`,
+		},
 	},
 }
 
