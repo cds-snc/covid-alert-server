@@ -9,7 +9,6 @@ require (
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/golang/protobuf v1.4.2
-	github.com/google/jsonapi v0.0.0-20200825183604-3e3da1210d0c
 	github.com/gorilla/mux v1.7.4
 	github.com/shirou/gopsutil v2.20.4+incompatible
 	github.com/sirupsen/logrus v1.6.0
