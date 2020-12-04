@@ -34,6 +34,8 @@ func (m metricsServlet) RegisterRouting(r *mux.Router) {
 	log(nil, nil).Info("registering metrics route")
 	r.HandleFunc(fmt.Sprintf("/events/{startDate:%s}", DATEFORMAT), m.handleEventRequest)
 	r.HandleFunc(fmt.Sprintf("/events/uploads/{startDate:%s}", DATEFORMAT), m.handleTEKUploadsRequest)
+	log(nil, nil).Info("registering otkdurations")
+	r.HandleFunc(fmt.Sprintf("/events/otkdurations/{startDate:%s}", DATEFORMAT), m.handleOtkDurationsRequest)
 }
 
 func authorizeRequest(r *http.Request) error {
@@ -151,6 +153,62 @@ func (m *metricsServlet) getTEKUploadsData(ctx context.Context, w http.ResponseW
 	js, err := json.Marshal(uploads)
 	if err != nil {
 		log(ctx, err).WithField("EventUploadResults", uploads).Errorf("error marshaling events")
+		http.Error(w, "error building json object", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = w.Write(js)
+	if err != nil {
+		log(ctx, err).Errorf("error writing json")
+		http.Error(w, "error retrieving results", http.StatusInternalServerError)
+	}
+	return
+}
+
+func (m *metricsServlet) handleOtkDurationsRequest(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	if err := authorizeRequest(r); err != nil {
+		log(ctx, err).Info("Unauthorized BasicAuth")
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if r.Method != "GET" {
+		log(ctx, nil).WithField("method", r.Method).Info("disallowed method")
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	m.getDurationData(ctx, w, r)
+	return
+}
+
+func (m *metricsServlet) getDurationData(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+
+	startDateVal := vars["startDate"]
+	_, err := time.Parse(ISODATE, startDateVal)
+	if err != nil {
+		log(ctx, err).Errorf("issue parsing %s", startDateVal)
+		http.Error(w, "error parsing date", http.StatusBadRequest)
+		return
+	}
+
+	durations, err := m.db.GetAggregateOtkDurationsByDate(startDateVal)
+	if err != nil {
+		log(ctx, err).Errorf("issue getting duration events")
+		http.Error(w, "error retrieving duration events", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+
+	js, err := json.Marshal(durations)
+	if err != nil {
+		log(ctx, err).WithField("EventDurationResults",durations).Errorf("error marshaling events")
 		http.Error(w, "error building json object", http.StatusInternalServerError)
 		return
 	}

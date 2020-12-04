@@ -59,6 +59,7 @@ type Conn interface {
 	SaveEvent(event Event) error
 	GetServerEvents(startDate string) ([]Events, error)
 	GetTEKUploads(startDate string) ([]Uploads, error)
+	GetAggregateOtkDurationsByDate(startDate string) ([]AggregateOtkDuration, error)
 
 	ClearDiagnosisKeys(context.Context) error
 

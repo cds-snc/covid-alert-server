@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	"testing"
 	"time"
@@ -43,4 +44,23 @@ func Test_roundToNearestHourSixHours(t *testing.T){
 	}
 
 	saveOtkDuration(db, od)
+}
+
+func TestConn_GetAggregateOtkDurationsByDate(t *testing.T){
+
+	db, mock := createNewSqlMock()
+
+	date := "2001-01-01"
+	query := `
+	SELECT originator, hours, date, count
+	FROM otk_life_duration
+	WHERE otk_life_duration.date = ?`
+	mock.ExpectQuery(query).WithArgs(date).WillReturnError(fmt.Errorf("foo"))
+
+
+	getAggregateOtkDurationsByDate(db, date)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
 }
