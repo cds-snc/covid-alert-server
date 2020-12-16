@@ -29,7 +29,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_ECR_PUBLIC_SECRET_KEY }}
         run: |
           aws ecr-public get-login-password --region us-east-1 > /tmp/aws
-          cat /tmp/aws | docker login --username AWS --password-stdin $DOCKER_ORG
+          cat /tmp/aws | docker login --username AWS --password-stdin $DOCKER_SLUG
           rm /tmp/aws
 
       - name: Build monolith
