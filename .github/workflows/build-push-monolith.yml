@@ -25,8 +25,8 @@ jobs:
 
       - name: AWS auth with ECR
         env:
-          aws-access-key-id: ${{ secrets.AWS_PUBLIC_ECR_ACCESS_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_ECR_PUBLIC_SECRET_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.aws_public_ecr_access_id }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_ECR_PUBLIC_SECRET_KEY }}
         run: |
           aws ecr-public get-login-password --region us-east-1 > /tmp/aws
           cat /tmp/aws | docker login --username AWS --password-stdin $DOCKER_ORG
