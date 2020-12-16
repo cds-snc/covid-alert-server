@@ -1,0 +1,48 @@
+name: Build and Push monolith to Google Cloud
+
+on:
+  push:
+    branches: [master]
+
+env:
+  GITHUB_SHA: ${{ github.sha }}
+  BRANCH: ${{ github.ref }}
+  DOCKER_SLUG: public.ecr.aws/cds-snc
+
+jobs:
+  build-and-push-gcr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install AWS CLI
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip -q awscliv2.zip
+          sudo ./aws/install
+          aws --version
+
+      - name: AWS auth with ECR
+        env:
+          aws-access-key-id: ${{ secrets.AWS_PUBLIC_ECR_ACCESS_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ECR_PUBLIC_SECRET_KEY }}
+        run: |
+          aws ecr-public get-login-password --region us-east-1 > /tmp/aws
+          cat /tmp/aws | docker login --username AWS --password-stdin $DOCKER_ORG
+          rm /tmp/aws
+
+      - name: Build monolith
+        run: |
+          docker build --build-arg branch=$BRANCH --build-arg revision=$GITHUB_SHA --build-arg component=monolith \
+          -t $DOCKER_SLUG/covid-alert-server-monolith:$GITHUB_SHA \
+          -t $DOCKER_SLUG/covid-alert-server-monolith:latest .
+
+      - name: Push containers to GCR
+        run: |
+          docker push $DOCKER_SLUG/covid-alert-server-monolith:$GITHUB_SHA
+          docker push $DOCKER_SLUG/covid-alert-server-monolith:latest
+
+      - name: Logout of Production Amazon ECR
+        if: always()
+        run: docker logout ${{ steps.login-ecr.outputs.registry }}
