@@ -29,13 +29,13 @@ BRANCH=`git rev-parse --abbrev-ref HEAD`
 REVISION=`git rev-parse HEAD`
 GOLDFLAGS="-X $(MODULE)/pkg/server.branch=$(BRANCH) -X $(MODULE)/pkg/server.revision=$(REVISION)"
 
-init:
-	./bin/init-repo.sh
 default:  release
 release:  $(PROTO_GO) $(RELEASE_BUILDS)
 debug:    $(PROTO_GO) $(DEBUG_BUILDS)
 all:      release debug $(PROTO_RB) $(RPC_RB)
 proto:    $(PROTO_GO) $(PROTO_RB) $(RPC_RB)
+init:
+	./bin/init-repo.sh
 
 build/debug/%: $(GOFILES) $(PROTO_GO)
 	@mkdir -p "$(@D)"
