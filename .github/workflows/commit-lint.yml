@@ -1,0 +1,21 @@
+name: Lint Commit Messages
+on: [pull_request]
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '10.x'
+      - run: npm install
+      # Run the commitlint action, considering its own dependencies and yours as well 🚀
+      # `github.workspace` is the path to your repository.
+      - uses: wagoid/commitlint-github-action@1788ebdc06fd21e83bfd5e93c8e486a837cf401d
+        id: commit-lint
+        env:
+          NODE_PATH: ${{ github.workspace }}/node_modules
+          firstParent: true
