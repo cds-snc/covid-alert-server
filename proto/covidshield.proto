@@ -142,6 +142,7 @@ message TemporaryExposureKeyExport {
 
   // The temporary exposure keys themselves.
   repeated TemporaryExposureKey keys = 7;
+
 }
 
 message SignatureInfo {
@@ -180,6 +181,7 @@ message TemporaryExposureKey {
 
   // Number of intervals in a period.
   optional int32 rolling_period = 4 [default = 144];
+
 }
 
 message TEKSignatureList {

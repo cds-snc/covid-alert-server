@@ -27,6 +27,7 @@ type Constants struct {
 	EnableEntirePeriodBundle           bool
 	RegionCode                         string
 	EventQueryRangeDates               int
+	EnableEnV2                         bool
 }
 
 var AppConstants Constants
@@ -67,4 +68,5 @@ func setDefaults() {
 	/// The MCC Region Code for Canada
 	viper.SetDefault("regionCode", "302")
 	viper.SetDefault("eventQueryRangeDates", 10)
+	viper.SetDefault("enableEnV2", false)
 }

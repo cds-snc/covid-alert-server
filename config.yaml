@@ -30,5 +30,6 @@ corsAccessControlAllowOrigin: "*"
 # Feature flags
 disableCurrentDateCheckFeatureFlag: true
 enableEntirePeriodBundle: true
+enableEnV2: true
 
 regionCode: "302"

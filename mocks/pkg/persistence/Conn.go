@@ -6,6 +6,8 @@ import (
 	context "context"
 
 	covidshield "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
+	covidshieldv1 "github.com/cds-snc/covid-alert-server/pkg/proto/covidshieldv1"
+
 	mock "github.com/stretchr/testify/mock"
 
 	persistence "github.com/cds-snc/covid-alert-server/pkg/persistence"
@@ -367,6 +369,29 @@ func (_m *Conn) FetchKeysForHours(_a0 string, _a1 uint32, _a2 uint32, _a3 int32)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*covidshield.TemporaryExposureKey)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(string, uint32, uint32, int32) error); ok {
+		r1 = rf(_a0, _a1, _a2, _a3)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// FetchKeysForHoursV1 provides a mock function with given fields: _a0, _a1, _a2, _a3
+func (_m *Conn) FetchKeysForHoursV1(_a0 string, _a1 uint32, _a2 uint32, _a3 int32) ([]*covidshieldv1.TemporaryExposureKey, error) {
+	ret := _m.Called(_a0, _a1, _a2, _a3)
+
+	var r0 []*covidshieldv1.TemporaryExposureKey
+	if rf, ok := ret.Get(0).(func(string, uint32, uint32, int32) []*covidshieldv1.TemporaryExposureKey); ok {
+		r0 = rf(_a0, _a1, _a2, _a3)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*covidshieldv1.TemporaryExposureKey)
 		}
 	}
 

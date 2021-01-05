@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/cds-snc/covid-alert-server/pkg/config"
+
 	"github.com/Shopify/goose/srvutil"
 	"github.com/gorilla/mux"
 )
@@ -22,10 +24,17 @@ type version struct {
 	Revision string `json:"revision"`
 }
 
+type featureFlags struct {
+	EnableEnV2                         bool `json:"enableEnV2"`
+	EnableEntirePeriodBundle           bool `json:"enableEntirePeriodBundle"`
+	DisableCurrentDateCheckFeatureFlag bool `json:"disableCurrentDateCheckFeatureFlag"`
+}
+
 func (s *servicesServlet) RegisterRouting(r *mux.Router) {
 	r.HandleFunc("/ping", s.ping)
 	r.HandleFunc("/present", s.exposurePresence)
 	r.HandleFunc("/version.json", s.version)
+	r.HandleFunc("/featureFlags.json", s.featureFlags)
 }
 
 func (s *servicesServlet) exposurePresence(w http.ResponseWriter, r *http.Request) {
@@ -38,6 +47,29 @@ func (s *servicesServlet) ping(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Cache-Control", "no-store")
 	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	if _, err := w.Write([]byte("OK\n")); err != nil {
+		log(ctx, err).Info("error writing response")
+	}
+}
+
+func (s *servicesServlet) featureFlags(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	w.Header().Add("Cache-Control", "no-store")
+	w.Header().Add("Content-Type", "application/json; charset=utf-8")
+
+	featureFlags := featureFlags{
+		EnableEnV2:                         config.AppConstants.EnableEnV2,
+		DisableCurrentDateCheckFeatureFlag: config.AppConstants.DisableCurrentDateCheckFeatureFlag,
+		EnableEntirePeriodBundle:           config.AppConstants.EnableEntirePeriodBundle,
+	}
+
+	js, err := json.Marshal(featureFlags)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if _, err := w.Write(js); err != nil {
 		log(ctx, err).Info("error writing response")
 	}
 }
