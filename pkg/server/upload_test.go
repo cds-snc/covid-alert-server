@@ -4,7 +4,18 @@ import (
 	"bytes"
 	"crypto/rand"
 	"fmt"
+	"github.com/Shopify/goose/logger"
+	persistence "github.com/cds-snc/covid-alert-server/mocks/pkg/persistence"
+	persistenceErrors "github.com/cds-snc/covid-alert-server/pkg/persistence"
+	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
 	"github.com/cds-snc/covid-alert-server/pkg/testhelpers"
+	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/mock"
+	"golang.org/x/crypto/nacl/box"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,19 +23,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Shopify/goose/logger"
-	persistence "github.com/cds-snc/covid-alert-server/mocks/pkg/persistence"
-	persistenceErrors "github.com/cds-snc/covid-alert-server/pkg/persistence"
-	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
-	"golang.org/x/crypto/nacl/box"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
+
+func setupUploadRouter(db *persistence.Conn) *mux.Router {
+
+	servlet := NewUploadServlet(db)
+	router := Router()
+	servlet.RegisterRouting(router)
+
+	return router
+}
 
 func TestNewUploadServlet(t *testing.T) {
 	db := &persistence.Conn{}
@@ -50,29 +59,446 @@ func TestUploadError(t *testing.T) {
 	assert.Equal(t, expected, uploadError(err), "should wrap the upload error code in an upload error response")
 }
 
-func TestUpload(t *testing.T) {
-	// Capture logs
-	oldLog := log
-	defer func() { log = oldLog }()
-
-	nullLog, hook := test.NewNullLogger()
-	nullLog.ExitFunc = func(code int) {}
-
-	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
-		return logrus.NewEntry(nullLog)
-	}
+func TestUpload_NonProtoBufPayload (t *testing.T) {
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
 
 	db := &persistence.Conn{}
+	router := setupUploadRouter(db)
+
+	// Bad, non-protobuff payload
+	req, _ := http.NewRequest("POST", "/upload", strings.NewReader("sd"))
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 400, resp.Code, "400 response is expected")
+	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_UNKNOWN))
+
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "error unmarshalling request")
+}
+
+func TestUpload_PublicCertTooShort(t *testing.T) {
+
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	router := setupUploadRouter(db)
+
+	// Server Public cert too short
+	payload, _ := proto.Marshal(buildUploadRequest(make([]byte, 16), nil, nil, nil))
+	req, _ := http.NewRequest("POST", "/upload", bytes.NewReader(payload))
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 400, resp.Code, "400 response is expected")
+	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_CRYPTO_PARAMETERS))
+
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "server public key was not expected length")
+}
+
+func TestUpload_PublicCertNotFound(t *testing.T) {
+
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	router := setupUploadRouter(db)
+
+	badServerPub, _, _ := box.GenerateKey(rand.Reader)
+	db.On("PrivForPub", badServerPub[:]).Return(nil, fmt.Errorf("No priv cert"))
+
+	// Public cert not found
+	payload, _ := proto.Marshal(buildUploadRequest(badServerPub[:], nil, nil, nil))
+	req, _ := http.NewRequest("POST", "/upload", bytes.NewReader(payload))
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 401, resp.Code, "401 response is expected")
+	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_KEYPAIR))
+
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "failure to resolve client keypair")
+}
+
+func TestUpload_IncorrectNonceLength(t *testing.T) {
+
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	router := setupUploadRouter(db)
+
+	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
+	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
+
+	// Nonce incorrect length
+	payload, _ := proto.Marshal(buildUploadRequest(goodServerPub[:], make([]byte, 16), nil, nil))
+	req, _ := http.NewRequest("POST", "/upload", bytes.NewReader(payload))
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 400, resp.Code, "400 response is expected")
+	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_CRYPTO_PARAMETERS))
+
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "nonce was not expected length")
+}
+
+func TestUpload_AppPublicCertTooShort(t *testing.T) {
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	router := setupUploadRouter(db)
+
+	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
+	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
+
+	// App Public cert too short
+	payload, _ := proto.Marshal(buildUploadRequest(goodServerPub[:], make([]byte, 24), make([]byte, 16), nil))
+	req, _ := http.NewRequest("POST", "/upload", bytes.NewReader(payload))
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 400, resp.Code, "400 response is expected")
+	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_CRYPTO_PARAMETERS))
+
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "app public key key was not expected length")
+}
+
+func TestUpload_ServerPrivateCertTooShort(t *testing.T) {
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	router := setupUploadRouter(db)
+
+	goodServerPubBadPriv, _, _ := box.GenerateKey(rand.Reader)
+	db.On("PrivForPub", goodServerPubBadPriv[:]).Return(make([]byte, 16), nil)
+
+	// Server private cert too short
+	payload, _ := proto.Marshal(buildUploadRequest(goodServerPubBadPriv[:], make([]byte, 24), make([]byte, 32), nil))
+	req, _ := http.NewRequest("POST", "/upload", bytes.NewReader(payload))
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 500, resp.Code, "500 response is expected")
+	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_SERVER_ERROR))
+
+	testhelpers.AssertLog(t, hook, 1, logrus.ErrorLevel, "server private key was not expected length")
+}
+
+func TestUpload_FailsToDecryptPayload(t *testing.T) {
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	router := setupUploadRouter(db)
+
+	goodAppPub, _, _ := box.GenerateKey(rand.Reader)
+	badServerPub, _, _ := box.GenerateKey(rand.Reader)
+	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
+
+	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
+	db.On("PrivForPub", badServerPub[:]).Return(nil, fmt.Errorf("No priv cert"))
+
+	// Fails to decrypt payload
+	var nonce [24]byte
+	var msg []byte
+	io.ReadFull(rand.Reader, nonce[:])
+	encrypted := box.Seal(msg[:], []byte("hello world"), &nonce, goodAppPub, badServerPub)
+
+	payload, _ := proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPub[:], encrypted))
+	req, _ := http.NewRequest("POST", "/upload", bytes.NewReader(payload))
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 400, resp.Code, "400 response is expected")
+	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_DECRYPTION_FAILED))
+
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "failure to decrypt payload")
+}
+
+func TestUpload_FailsUnmarshalIntoUpload(t *testing.T) {
+
+
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	router := setupUploadRouter(db)
+
+	goodAppPub, _, _ := box.GenerateKey(rand.Reader)
+	badServerPub, _, _ := box.GenerateKey(rand.Reader)
+	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
+
+	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
+	db.On("PrivForPub", badServerPub[:]).Return(nil, fmt.Errorf("No priv cert"))
+
+	// Fails unmarshall into Upload
+	var nonce [24]byte
+	var msg []byte
+	io.ReadFull(rand.Reader, nonce[:])
+	encrypted := box.Seal(msg[:], []byte("hello world"), &nonce, goodAppPub, goodServerPriv)
+
+	payload, _ := proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPub[:], encrypted))
+	req, _ := http.NewRequest("POST", "/upload", bytes.NewReader(payload))
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 400, resp.Code, "400 response is expected")
+	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_PAYLOAD))
+
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "error unmarshalling request payload")
+}
+
+func TestUpload_NoKeysInPayload(t *testing.T) {
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	router := setupUploadRouter(db)
+
+	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
+	goodAppPub, goodAppPriv, _ := box.GenerateKey(rand.Reader)
+
+	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
+	db.On("StoreKeys", goodAppPub, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(nil)
+
+	var nonce [24]byte
+	var msg []byte
+
+	// No keys in payload
+	io.ReadFull(rand.Reader, nonce[:])
+	ts := time.Now()
+	pbts := timestamppb.Timestamp{
+		Seconds: ts.Unix(),
+	}
+	upload := buildUpload(0, pbts)
+	marshalledUpload, _ := proto.Marshal(upload)
+	encrypted := box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPriv)
+
+	payload, _ := proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPub[:], encrypted))
+	req, _ := http.NewRequest("POST", "/upload", bytes.NewReader(payload))
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 400, resp.Code, "400 response is expected")
+	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_NO_KEYS_IN_PAYLOAD))
+
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "no keys provided")
+}
+
+func TestUpload_TooManyKeys(t *testing.T) {
+
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	router := setupUploadRouter(db)
+
+	// Set up PrivForPub
+	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
+	goodAppPub, goodAppPriv, _ := box.GenerateKey(rand.Reader)
+
+	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
+	db.On("StoreKeys", goodAppPub, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(nil)
+	var nonce [24]byte
+	var msg []byte
+
+	// Too many keys in payload
+
+	io.ReadFull(rand.Reader, nonce[:])
+	ts := time.Now()
+	pbts := timestamppb.Timestamp{
+		Seconds: ts.Unix(),
+	}
+	upload := buildUpload(pb.MaxKeysInUpload+1, pbts)
+	marshalledUpload, _ := proto.Marshal(upload)
+	encrypted := box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPriv)
+
+	payload, _ := proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPub[:], encrypted))
+	req, _ := http.NewRequest("POST", "/upload", bytes.NewReader(payload))
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 400, resp.Code, "400 response is expected")
+	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_TOO_MANY_KEYS))
+
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "too many keys provided")
+}
+
+func TestUpload_InvalidTimestamp(t *testing.T) {
+
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	router := setupUploadRouter(db)
+
+	// Set up PrivForPub
+	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
+	goodAppPub, goodAppPriv, _ := box.GenerateKey(rand.Reader)
+
+	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
+	db.On("StoreKeys", goodAppPub, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(nil)
+
+	var nonce [24]byte
+	var msg []byte
+	// Invalid timestamp
+	io.ReadFull(rand.Reader, nonce[:])
+	ts := time.Now()
+	pbts := timestamppb.Timestamp{
+		Seconds: ts.Unix() - 4000,
+	}
+	upload := buildUpload(pb.MaxKeysInUpload, pbts)
+	marshalledUpload, _ := proto.Marshal(upload)
+	encrypted := box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPriv)
+
+	payload, _ := proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPub[:], encrypted))
+	req, _ := http.NewRequest("POST", "/upload", bytes.NewReader(payload))
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 400, resp.Code, "400 response is expected")
+	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_TIMESTAMP))
+
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "invalid timestamp")
+}
+
+func TestUpload_ExpiredKey(t *testing.T) {
+
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	router := setupUploadRouter(db)
+
+	// Set up PrivForPub
+	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
+	goodAppPubKeyUsed, goodAppPrivKeyUsed, _ := box.GenerateKey(rand.Reader)
+
+	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
+	db.On("StoreKeys", goodAppPubKeyUsed, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(persistenceErrors.ErrKeyConsumed)
+
+	var nonce [24]byte
+	var msg []byte
+
+	// Expired Key
+	io.ReadFull(rand.Reader, nonce[:])
+	ts := time.Now()
+	pbts := timestamppb.Timestamp{
+		Seconds: ts.Unix(),
+	}
+	upload := buildUpload(1, pbts)
+	marshalledUpload, _ := proto.Marshal(upload)
+	encrypted := box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPrivKeyUsed)
+
+	payload, _ := proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPubKeyUsed[:], encrypted))
+	req, _ := http.NewRequest("POST", "/upload", bytes.NewReader(payload))
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 400, resp.Code, "400 response is expected")
+	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_KEYPAIR))
+
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "key is used up")
+}
+
+func TestUpload_GenericDBError(t *testing.T) {
+
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	router := setupUploadRouter(db)
+
+	// Set up PrivForPub
+	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
+	goodAppPubDBError, goodAppPrivDBError, _ := box.GenerateKey(rand.Reader)
+
+	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
+	db.On("StoreKeys", goodAppPubDBError, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(fmt.Errorf("generic DB error"))
+
+	var nonce [24]byte
+	var msg []byte
+
+	// Generic DB Error
+	io.ReadFull(rand.Reader, nonce[:])
+	ts := time.Now()
+	pbts := timestamppb.Timestamp{
+		Seconds: ts.Unix(),
+	}
+	upload := buildUpload(1, pbts)
+	marshalledUpload, _ := proto.Marshal(upload)
+	encrypted := box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPrivDBError)
+
+	payload, _ := proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPubDBError[:], encrypted))
+	req, _ := http.NewRequest("POST", "/upload", bytes.NewReader(payload))
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 500, resp.Code, "500 response is expected")
+	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_SERVER_ERROR))
+
+	testhelpers.AssertLog(t, hook, 1, logrus.ErrorLevel, "failed to store diagnosis keys")
+
+}
+
+func TestUpload_NotEnoughKeysRemaining(t *testing.T) {
+
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	router := setupUploadRouter(db)
+	// Set up PrivForPub
+	goodAppPubNoKeysRemaining, goodAppPrivNoKeysRemaining, _ := box.GenerateKey(rand.Reader)
+	goodServerPubNoKeysRemaining, goodServerPrivNoKeysRemaining, _ := box.GenerateKey(rand.Reader)
+
+	db.On("PrivForPub", goodServerPubNoKeysRemaining[:]).Return(goodServerPrivNoKeysRemaining[:], nil)
+	db.On("StoreKeys", goodAppPubNoKeysRemaining, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(persistenceErrors.ErrTooManyKeys)
+
+	var nonce [24]byte
+	var msg []byte
+
+	// Not enough keys remaining
+	io.ReadFull(rand.Reader, nonce[:])
+	ts := time.Now()
+	pbts := timestamppb.Timestamp{
+		Seconds: ts.Unix(),
+	}
+	upload := buildUpload(1, pbts)
+	marshalledUpload, _ := proto.Marshal(upload)
+	encrypted := box.Seal(msg[:], marshalledUpload, &nonce, goodServerPubNoKeysRemaining, goodAppPrivNoKeysRemaining)
+
+	payload, _ := proto.Marshal(buildUploadRequest(goodServerPubNoKeysRemaining[:], nonce[:], goodAppPubNoKeysRemaining[:], encrypted))
+	req, _ := http.NewRequest("POST", "/upload", bytes.NewReader(payload))
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+
+	assert.Equal(t, 400, resp.Code, "400 response is expected")
+	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_TOO_MANY_KEYS))
+
+	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "not enough keys remaining")
+}
+
+func TestUpload(t *testing.T) {
+
+	_, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	router := setupUploadRouter(db)
 
 	// Set up PrivForPub
 	badServerPub, _, _ := box.GenerateKey(rand.Reader)
 	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
 	goodServerPubBadPriv, _, _ := box.GenerateKey(rand.Reader)
 	goodAppPub, goodAppPriv, _ := box.GenerateKey(rand.Reader)
-	goodAppPubKeyUsed, goodAppPrivKeyUsed, _ := box.GenerateKey(rand.Reader)
-	goodAppPubNoKeysRemaining, goodAppPrivNoKeysRemaining, _ := box.GenerateKey(rand.Reader)
+	goodAppPubKeyUsed, _, _ := box.GenerateKey(rand.Reader)
+	goodAppPubNoKeysRemaining, _, _ := box.GenerateKey(rand.Reader)
 	goodServerPubNoKeysRemaining, goodServerPrivNoKeysRemaining, _ := box.GenerateKey(rand.Reader)
-	goodAppPubDBError, goodAppPrivDBError, _ := box.GenerateKey(rand.Reader)
+	goodAppPubDBError, _, _ := box.GenerateKey(rand.Reader)
 
 	db.On("PrivForPub", badServerPub[:]).Return(nil, fmt.Errorf("No priv cert"))
 	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
@@ -84,238 +510,22 @@ func TestUpload(t *testing.T) {
 	db.On("StoreKeys", goodAppPubDBError, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(fmt.Errorf("generic DB error"))
 	db.On("StoreKeys", goodAppPub, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(nil)
 
-	servlet := NewUploadServlet(db)
-	router := Router()
-	servlet.RegisterRouting(router)
-
-	// Bad, non-protobuff payload
-	req, _ := http.NewRequest("POST", "/upload", strings.NewReader("sd"))
-	resp := httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
-
-	assert.Equal(t, 400, resp.Code, "400 response is expected")
-	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_UNKNOWN))
-
-	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "error unmarshalling request")
-
-	// Server Public cert too short
-	payload, _ := proto.Marshal(buildUploadRequest(make([]byte, 16), nil, nil, nil))
-	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
-	resp = httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
-
-	assert.Equal(t, 400, resp.Code, "400 response is expected")
-	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_CRYPTO_PARAMETERS))
-
-	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "server public key was not expected length")
-
-	// Public cert not found
-	payload, _ = proto.Marshal(buildUploadRequest(badServerPub[:], nil, nil, nil))
-	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
-	resp = httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
-
-	assert.Equal(t, 401, resp.Code, "401 response is expected")
-	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_KEYPAIR))
-
-	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "failure to resolve client keypair")
-
-	// Nonce incorrect length
-	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], make([]byte, 16), nil, nil))
-	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
-	resp = httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
-
-	assert.Equal(t, 400, resp.Code, "400 response is expected")
-	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_CRYPTO_PARAMETERS))
-
-	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "nonce was not expected length")
-
-	// App Public cert too short
-	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], make([]byte, 24), make([]byte, 16), nil))
-	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
-	resp = httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
-
-	assert.Equal(t, 400, resp.Code, "400 response is expected")
-	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_CRYPTO_PARAMETERS))
-
-	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "app public key key was not expected length")
-
-	// Server private cert too short
-	payload, _ = proto.Marshal(buildUploadRequest(goodServerPubBadPriv[:], make([]byte, 24), make([]byte, 32), nil))
-	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
-	resp = httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
-
-	assert.Equal(t, 500, resp.Code, "500 response is expected")
-	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_SERVER_ERROR))
-
-	testhelpers.AssertLog(t, hook, 1, logrus.ErrorLevel, "server private key was not expected length")
-
-	// Fails to decrypt payload
 	var nonce [24]byte
 	var msg []byte
-	io.ReadFull(rand.Reader, nonce[:])
-	encrypted := box.Seal(msg[:], []byte("hello world"), &nonce, goodAppPub, badServerPub)
 
-	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPub[:], encrypted))
-	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
-	resp = httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
-
-	assert.Equal(t, 400, resp.Code, "400 response is expected")
-	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_DECRYPTION_FAILED))
-
-	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "failure to decrypt payload")
-
-	// Fails unmarshall into Upload
-	io.ReadFull(rand.Reader, nonce[:])
-	encrypted = box.Seal(msg[:], []byte("hello world"), &nonce, goodAppPub, goodServerPriv)
-
-	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPub[:], encrypted))
-	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
-	resp = httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
-
-	assert.Equal(t, 400, resp.Code, "400 response is expected")
-	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_PAYLOAD))
-
-	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "error unmarshalling request payload")
-
-	// No keys in payload
+	// Good response
 	io.ReadFull(rand.Reader, nonce[:])
 	ts := time.Now()
 	pbts := timestamppb.Timestamp{
 		Seconds: ts.Unix(),
 	}
-	upload := buildUpload(0, pbts)
+	upload := buildUpload(1, pbts)
 	marshalledUpload, _ := proto.Marshal(upload)
-	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPriv)
+	encrypted := box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPriv)
 
-	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPub[:], encrypted))
-	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
-	resp = httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
-
-	assert.Equal(t, 400, resp.Code, "400 response is expected")
-	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_NO_KEYS_IN_PAYLOAD))
-
-	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "no keys provided")
-
-	// Too many keys in payload
-	io.ReadFull(rand.Reader, nonce[:])
-	ts = time.Now()
-	pbts = timestamppb.Timestamp{
-		Seconds: ts.Unix(),
-	}
-	upload = buildUpload(pb.MaxKeysInUpload+1, pbts)
-	marshalledUpload, _ = proto.Marshal(upload)
-	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPriv)
-
-	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPub[:], encrypted))
-	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
-	resp = httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
-
-	assert.Equal(t, 400, resp.Code, "400 response is expected")
-	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_TOO_MANY_KEYS))
-
-	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "too many keys provided")
-
-	// Invalid timestamp
-	io.ReadFull(rand.Reader, nonce[:])
-	ts = time.Now()
-	pbts = timestamppb.Timestamp{
-		Seconds: ts.Unix() - 4000,
-	}
-	upload = buildUpload(pb.MaxKeysInUpload, pbts)
-	marshalledUpload, _ = proto.Marshal(upload)
-	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPriv)
-
-	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPub[:], encrypted))
-	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
-	resp = httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
-
-	assert.Equal(t, 400, resp.Code, "400 response is expected")
-	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_TIMESTAMP))
-
-	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "invalid timestamp")
-
-	// Expired Key
-	io.ReadFull(rand.Reader, nonce[:])
-	ts = time.Now()
-	pbts = timestamppb.Timestamp{
-		Seconds: ts.Unix(),
-	}
-	upload = buildUpload(1, pbts)
-	marshalledUpload, _ = proto.Marshal(upload)
-	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPrivKeyUsed)
-
-	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPubKeyUsed[:], encrypted))
-	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
-	resp = httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
-
-	assert.Equal(t, 400, resp.Code, "400 response is expected")
-	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_KEYPAIR))
-
-	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "key is used up")
-
-	// Not enough keys remaining
-	io.ReadFull(rand.Reader, nonce[:])
-	ts = time.Now()
-	pbts = timestamppb.Timestamp{
-		Seconds: ts.Unix(),
-	}
-	upload = buildUpload(1, pbts)
-	marshalledUpload, _ = proto.Marshal(upload)
-	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodServerPubNoKeysRemaining, goodAppPrivNoKeysRemaining)
-
-	payload, _ = proto.Marshal(buildUploadRequest(goodServerPubNoKeysRemaining[:], nonce[:], goodAppPubNoKeysRemaining[:], encrypted))
-	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
-	resp = httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
-
-	assert.Equal(t, 400, resp.Code, "400 response is expected")
-	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_TOO_MANY_KEYS))
-
-	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "not enough keys remaining")
-
-	// Generic DB Error
-	io.ReadFull(rand.Reader, nonce[:])
-	ts = time.Now()
-	pbts = timestamppb.Timestamp{
-		Seconds: ts.Unix(),
-	}
-	upload = buildUpload(1, pbts)
-	marshalledUpload, _ = proto.Marshal(upload)
-	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPrivDBError)
-
-	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPubDBError[:], encrypted))
-	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
-	resp = httptest.NewRecorder()
-	router.ServeHTTP(resp, req)
-
-	assert.Equal(t, 500, resp.Code, "500 response is expected")
-	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_SERVER_ERROR))
-
-	testhelpers.AssertLog(t, hook, 1, logrus.ErrorLevel, "failed to store diagnosis keys")
-
-	// Good response
-	io.ReadFull(rand.Reader, nonce[:])
-	ts = time.Now()
-	pbts = timestamppb.Timestamp{
-		Seconds: ts.Unix(),
-	}
-	upload = buildUpload(1, pbts)
-	marshalledUpload, _ = proto.Marshal(upload)
-	encrypted = box.Seal(msg[:], marshalledUpload, &nonce, goodServerPub, goodAppPriv)
-
-	payload, _ = proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPub[:], encrypted))
-	req, _ = http.NewRequest("POST", "/upload", bytes.NewReader(payload))
-	resp = httptest.NewRecorder()
+	payload, _ := proto.Marshal(buildUploadRequest(goodServerPub[:], nonce[:], goodAppPub[:], encrypted))
+	req, _ := http.NewRequest("POST", "/upload", bytes.NewReader(payload))
+	resp := httptest.NewRecorder()
 	router.ServeHTTP(resp, req)
 
 	assert.Equal(t, 200, resp.Code, "200 response is expected")
