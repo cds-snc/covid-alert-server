@@ -45,10 +45,7 @@ func TestNewUploadServlet(t *testing.T) {
 }
 
 func TestRegisterRoutingUpload(t *testing.T) {
-	servlet := NewUploadServlet(&persistence.Conn{})
-	router := Router()
-	servlet.RegisterRouting(router)
-
+	router := setupUploadRouter(&persistence.Conn{})
 	expectedPaths := GetPaths(router)
 	assert.Contains(t, expectedPaths, "/upload", "should include an upload path")
 }
@@ -59,12 +56,19 @@ func TestUploadError(t *testing.T) {
 	assert.Equal(t, expected, uploadError(err), "should wrap the upload error code in an upload error response")
 }
 
-func TestUpload_NonProtoBufPayload (t *testing.T) {
-	hook, oldLog := testhelpers.SetupTestLogging(&log)
-	defer func() { log = *oldLog }()
+func setupUploadTest() (*test.Hook, *logger.Logger, *persistence.Conn, *mux.Router) {
 
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
 	db := &persistence.Conn{}
 	router := setupUploadRouter(db)
+
+	return hook, oldLog, db, router
+
+}
+
+func TestUpload_NonProtoBufPayload(t *testing.T) {
+	hook, oldLog, _, router := setupUploadTest()
+	defer func() { log = *oldLog }()
 
 	// Bad, non-protobuff payload
 	req, _ := http.NewRequest("POST", "/upload", strings.NewReader("sd"))
@@ -79,11 +83,8 @@ func TestUpload_NonProtoBufPayload (t *testing.T) {
 
 func TestUpload_PublicCertTooShort(t *testing.T) {
 
-	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	hook, oldLog, _, router := setupUploadTest()
 	defer func() { log = *oldLog }()
-
-	db := &persistence.Conn{}
-	router := setupUploadRouter(db)
 
 	// Server Public cert too short
 	payload, _ := proto.Marshal(buildUploadRequest(make([]byte, 16), nil, nil, nil))
@@ -99,11 +100,8 @@ func TestUpload_PublicCertTooShort(t *testing.T) {
 
 func TestUpload_PublicCertNotFound(t *testing.T) {
 
-	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	hook, oldLog, db, router := setupUploadTest()
 	defer func() { log = *oldLog }()
-
-	db := &persistence.Conn{}
-	router := setupUploadRouter(db)
 
 	badServerPub, _, _ := box.GenerateKey(rand.Reader)
 	db.On("PrivForPub", badServerPub[:]).Return(nil, fmt.Errorf("No priv cert"))
@@ -122,11 +120,8 @@ func TestUpload_PublicCertNotFound(t *testing.T) {
 
 func TestUpload_IncorrectNonceLength(t *testing.T) {
 
-	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	hook, oldLog, db, router := setupUploadTest()
 	defer func() { log = *oldLog }()
-
-	db := &persistence.Conn{}
-	router := setupUploadRouter(db)
 
 	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
 	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
@@ -144,11 +139,8 @@ func TestUpload_IncorrectNonceLength(t *testing.T) {
 }
 
 func TestUpload_AppPublicCertTooShort(t *testing.T) {
-	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	hook, oldLog, db, router := setupUploadTest()
 	defer func() { log = *oldLog }()
-
-	db := &persistence.Conn{}
-	router := setupUploadRouter(db)
 
 	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
 	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
@@ -166,11 +158,8 @@ func TestUpload_AppPublicCertTooShort(t *testing.T) {
 }
 
 func TestUpload_ServerPrivateCertTooShort(t *testing.T) {
-	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	hook, oldLog, db, router := setupUploadTest()
 	defer func() { log = *oldLog }()
-
-	db := &persistence.Conn{}
-	router := setupUploadRouter(db)
 
 	goodServerPubBadPriv, _, _ := box.GenerateKey(rand.Reader)
 	db.On("PrivForPub", goodServerPubBadPriv[:]).Return(make([]byte, 16), nil)
@@ -188,11 +177,8 @@ func TestUpload_ServerPrivateCertTooShort(t *testing.T) {
 }
 
 func TestUpload_FailsToDecryptPayload(t *testing.T) {
-	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	hook, oldLog, db, router := setupUploadTest()
 	defer func() { log = *oldLog }()
-
-	db := &persistence.Conn{}
-	router := setupUploadRouter(db)
 
 	goodAppPub, _, _ := box.GenerateKey(rand.Reader)
 	badServerPub, _, _ := box.GenerateKey(rand.Reader)
@@ -202,8 +188,10 @@ func TestUpload_FailsToDecryptPayload(t *testing.T) {
 	db.On("PrivForPub", badServerPub[:]).Return(nil, fmt.Errorf("No priv cert"))
 
 	// Fails to decrypt payload
-	var nonce [24]byte
-	var msg []byte
+	var (
+		nonce [24]byte
+		msg   []byte
+	)
 	io.ReadFull(rand.Reader, nonce[:])
 	encrypted := box.Seal(msg[:], []byte("hello world"), &nonce, goodAppPub, badServerPub)
 
@@ -220,12 +208,8 @@ func TestUpload_FailsToDecryptPayload(t *testing.T) {
 
 func TestUpload_FailsUnmarshalIntoUpload(t *testing.T) {
 
-
-	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	hook, oldLog, db, router := setupUploadTest()
 	defer func() { log = *oldLog }()
-
-	db := &persistence.Conn{}
-	router := setupUploadRouter(db)
 
 	goodAppPub, _, _ := box.GenerateKey(rand.Reader)
 	badServerPub, _, _ := box.GenerateKey(rand.Reader)
@@ -235,8 +219,11 @@ func TestUpload_FailsUnmarshalIntoUpload(t *testing.T) {
 	db.On("PrivForPub", badServerPub[:]).Return(nil, fmt.Errorf("No priv cert"))
 
 	// Fails unmarshall into Upload
-	var nonce [24]byte
-	var msg []byte
+	var (
+		nonce [24]byte
+		msg   []byte
+	)
+
 	io.ReadFull(rand.Reader, nonce[:])
 	encrypted := box.Seal(msg[:], []byte("hello world"), &nonce, goodAppPub, goodServerPriv)
 
@@ -252,21 +239,18 @@ func TestUpload_FailsUnmarshalIntoUpload(t *testing.T) {
 }
 
 func TestUpload_NoKeysInPayload(t *testing.T) {
-	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	hook, oldLog, db, router := setupUploadTest()
 	defer func() { log = *oldLog }()
-
-	db := &persistence.Conn{}
-	router := setupUploadRouter(db)
-
 	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
 	goodAppPub, goodAppPriv, _ := box.GenerateKey(rand.Reader)
 
 	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
 	db.On("StoreKeys", goodAppPub, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(nil)
 
-	var nonce [24]byte
-	var msg []byte
-
+	var (
+		nonce [24]byte
+		msg   []byte
+	)
 	// No keys in payload
 	io.ReadFull(rand.Reader, nonce[:])
 	ts := time.Now()
@@ -290,21 +274,18 @@ func TestUpload_NoKeysInPayload(t *testing.T) {
 
 func TestUpload_TooManyKeys(t *testing.T) {
 
-	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	hook, oldLog, db, router := setupUploadTest()
 	defer func() { log = *oldLog }()
-
-	db := &persistence.Conn{}
-	router := setupUploadRouter(db)
-
 	// Set up PrivForPub
 	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
 	goodAppPub, goodAppPriv, _ := box.GenerateKey(rand.Reader)
 
 	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
 	db.On("StoreKeys", goodAppPub, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(nil)
-	var nonce [24]byte
-	var msg []byte
-
+	var (
+		nonce [24]byte
+		msg   []byte
+	)
 	// Too many keys in payload
 
 	io.ReadFull(rand.Reader, nonce[:])
@@ -329,12 +310,8 @@ func TestUpload_TooManyKeys(t *testing.T) {
 
 func TestUpload_InvalidTimestamp(t *testing.T) {
 
-	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	hook, oldLog, db, router := setupUploadTest()
 	defer func() { log = *oldLog }()
-
-	db := &persistence.Conn{}
-	router := setupUploadRouter(db)
-
 	// Set up PrivForPub
 	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
 	goodAppPub, goodAppPriv, _ := box.GenerateKey(rand.Reader)
@@ -342,8 +319,10 @@ func TestUpload_InvalidTimestamp(t *testing.T) {
 	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
 	db.On("StoreKeys", goodAppPub, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(nil)
 
-	var nonce [24]byte
-	var msg []byte
+	var (
+		nonce [24]byte
+		msg   []byte
+	)
 	// Invalid timestamp
 	io.ReadFull(rand.Reader, nonce[:])
 	ts := time.Now()
@@ -367,12 +346,8 @@ func TestUpload_InvalidTimestamp(t *testing.T) {
 
 func TestUpload_ExpiredKey(t *testing.T) {
 
-	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	hook, oldLog, db, router := setupUploadTest()
 	defer func() { log = *oldLog }()
-
-	db := &persistence.Conn{}
-	router := setupUploadRouter(db)
-
 	// Set up PrivForPub
 	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
 	goodAppPubKeyUsed, goodAppPrivKeyUsed, _ := box.GenerateKey(rand.Reader)
@@ -380,9 +355,10 @@ func TestUpload_ExpiredKey(t *testing.T) {
 	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
 	db.On("StoreKeys", goodAppPubKeyUsed, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(persistenceErrors.ErrKeyConsumed)
 
-	var nonce [24]byte
-	var msg []byte
-
+	var (
+		nonce [24]byte
+		msg   []byte
+	)
 	// Expired Key
 	io.ReadFull(rand.Reader, nonce[:])
 	ts := time.Now()
@@ -406,12 +382,8 @@ func TestUpload_ExpiredKey(t *testing.T) {
 
 func TestUpload_GenericDBError(t *testing.T) {
 
-	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	hook, oldLog, db, router := setupUploadTest()
 	defer func() { log = *oldLog }()
-
-	db := &persistence.Conn{}
-	router := setupUploadRouter(db)
-
 	// Set up PrivForPub
 	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
 	goodAppPubDBError, goodAppPrivDBError, _ := box.GenerateKey(rand.Reader)
@@ -419,9 +391,10 @@ func TestUpload_GenericDBError(t *testing.T) {
 	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
 	db.On("StoreKeys", goodAppPubDBError, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(fmt.Errorf("generic DB error"))
 
-	var nonce [24]byte
-	var msg []byte
-
+	var (
+		nonce [24]byte
+		msg   []byte
+	)
 	// Generic DB Error
 	io.ReadFull(rand.Reader, nonce[:])
 	ts := time.Now()
@@ -446,11 +419,8 @@ func TestUpload_GenericDBError(t *testing.T) {
 
 func TestUpload_NotEnoughKeysRemaining(t *testing.T) {
 
-	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	hook, oldLog, db, router := setupUploadTest()
 	defer func() { log = *oldLog }()
-
-	db := &persistence.Conn{}
-	router := setupUploadRouter(db)
 	// Set up PrivForPub
 	goodAppPubNoKeysRemaining, goodAppPrivNoKeysRemaining, _ := box.GenerateKey(rand.Reader)
 	goodServerPubNoKeysRemaining, goodServerPrivNoKeysRemaining, _ := box.GenerateKey(rand.Reader)
@@ -458,9 +428,10 @@ func TestUpload_NotEnoughKeysRemaining(t *testing.T) {
 	db.On("PrivForPub", goodServerPubNoKeysRemaining[:]).Return(goodServerPrivNoKeysRemaining[:], nil)
 	db.On("StoreKeys", goodAppPubNoKeysRemaining, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(persistenceErrors.ErrTooManyKeys)
 
-	var nonce [24]byte
-	var msg []byte
-
+	var (
+		nonce [24]byte
+		msg   []byte
+	)
 	// Not enough keys remaining
 	io.ReadFull(rand.Reader, nonce[:])
 	ts := time.Now()
@@ -497,9 +468,10 @@ func TestUpload(t *testing.T) {
 	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
 	db.On("StoreKeys", goodAppPub, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(nil)
 
-	var nonce [24]byte
-	var msg []byte
-
+	var (
+		nonce [24]byte
+		msg   []byte
+	)
 	// Good response
 	io.ReadFull(rand.Reader, nonce[:])
 	ts := time.Now()
