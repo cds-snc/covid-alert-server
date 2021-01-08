@@ -44,31 +44,13 @@ func TestRegisterRoutingRetrieve(t *testing.T) {
 
 }
 
-func setupRetrieveMockers() (*persistence.Conn, *retrieval.Authenticator, *retrieval.Signer) {
-
-	db := &persistence.Conn{}
-	auth := &retrieval.Authenticator{}
-	signer := &retrieval.Signer{}
-
-	return db, auth, signer
-}
-
-func setupRouter(db *persistence.Conn, auth *retrieval.Authenticator, signer *retrieval.Signer) *mux.Router {
-
-	servlet := NewRetrieveServlet(db, auth, signer)
-	router := Router()
-	servlet.RegisterRouting(router)
-
-	return router
-}
-
 func TestRetrieve_BadAuthmock(t *testing.T) {
 	hook, oldLog := testhelpers.SetupTestLogging(&log)
 	defer func() { log = *oldLog }()
 
 	db, auth, signer := setupRetrieveMockers()
 
-	router := setupRouter(db, auth, signer)
+	router := setupRetrieveRouter(db, auth, signer)
 
 	badAuth := "dcba"
 	region := "302"
@@ -93,7 +75,7 @@ func TestRetrieve_GoodAuthmock(t *testing.T) {
 	defer func() { log = *oldLog }()
 
 	db, auth, signer := setupRetrieveMockers()
-	router := setupRouter(db, auth, signer)
+	router := setupRetrieveRouter(db, auth, signer)
 
 	goodAuth := "abcd"
 	region := "302"
@@ -118,7 +100,7 @@ func TestRetrieve_AllKeysDownload(t *testing.T) {
 	defer func() { log = *oldLog }()
 
 	db, auth, signer := setupRetrieveMockers()
-	router := setupRouter(db, auth, signer)
+	router := setupRetrieveRouter(db, auth, signer)
 
 	region := "302"
 	goodAuth := "abcd"
@@ -144,13 +126,14 @@ func TestRetrieve_AllKeysDownload(t *testing.T) {
 
 	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "Wrote retrieval")
 }
+
 func TestRetrieve_FutureDate(t *testing.T) {
 
 	hook, oldLog := testhelpers.SetupTestLogging(&log)
 	defer func() { log = *oldLog }()
 
 	db, auth, signer := setupRetrieveMockers()
-	router := setupRouter(db, auth, signer)
+	router := setupRetrieveRouter(db, auth, signer)
 
 	region := "302"
 	goodAuth := "abcd"
@@ -175,7 +158,7 @@ func TestRetrieve_OldDate(t *testing.T) {
 	defer func() { log = *oldLog }()
 
 	db, auth, signer := setupRetrieveMockers()
-	router := setupRouter(db, auth, signer)
+	router := setupRetrieveRouter(db, auth, signer)
 
 	region := "302"
 	goodAuth := "abcd"
@@ -194,13 +177,13 @@ func TestRetrieve_OldDate(t *testing.T) {
 	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "request for too-old data")
 }
 
-func TestRetrieve(t *testing.T) {
+func TestRetrieve_FailedDbCall(t *testing.T) {
 
 	hook, oldLog := testhelpers.SetupTestLogging(&log)
 	defer func() { log = *oldLog }()
 
 	db, auth, signer := setupRetrieveMockers()
-	router := setupRouter(db, auth, signer)
+	router := setupRetrieveRouter(db, auth, signer)
 
 	region := "302"
 	goodAuth := "abcd"
@@ -223,6 +206,24 @@ func TestRetrieve(t *testing.T) {
 
 	testhelpers.AssertLog(t, hook, 1, logrus.ErrorLevel, "database error")
 
+}
+
+func setupRetrieveMockers() (*persistence.Conn, *retrieval.Authenticator, *retrieval.Signer) {
+
+	db := &persistence.Conn{}
+	auth := &retrieval.Authenticator{}
+	signer := &retrieval.Signer{}
+
+	return db, auth, signer
+}
+
+func setupRetrieveRouter(db *persistence.Conn, auth *retrieval.Authenticator, signer *retrieval.Signer) *mux.Router {
+
+	servlet := NewRetrieveServlet(db, auth, signer)
+	router := Router()
+	servlet.RegisterRouting(router)
+
+	return router
 }
 
 func randomTestKey() *pb.TemporaryExposureKey {
