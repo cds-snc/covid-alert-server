@@ -64,7 +64,7 @@ func TestMetricsServlet_InvalidDateFormat(t *testing.T) {
 	endpoints := []string{"", "uploads/", "otkdurations/"}
 
 	for _, endpoint := range endpoints {
-		req, _ := http.NewRequest("GET", fmt.Sprintf("/events/%s01-01-2001",endpoint), nil)
+		req, _ := http.NewRequest("GET", fmt.Sprintf("/events/%s01-01-2001", endpoint), nil)
 		req.Header.Set("Authorization", "Basic Zm9vOmJhcg==")
 
 		resp := httptest.NewRecorder()
@@ -104,7 +104,7 @@ func TestMetricsServlet_DisallowedMethods(t *testing.T) {
 	for _, endpoint := range endpoints {
 
 		for _, verb := range httpVerbs {
-			req, _ := http.NewRequest(verb, fmt.Sprintf("/events/%s2001-01-01",endpoint), nil)
+			req, _ := http.NewRequest(verb, fmt.Sprintf("/events/%s2001-01-01", endpoint), nil)
 			req.Header.Set("Authorization", "Basic Zm9vOmJhcg==")
 
 			resp := httptest.NewRecorder()
@@ -235,15 +235,15 @@ func TestMetricsServlet_GetOtkDurationsData(t *testing.T) {
 	db.On("GetAggregateOtkDurationsByDate", "2020-01-01").
 		Return(
 			[]persistence2.AggregateOtkDuration{{
-				Source:      "foo",
-				Hours:       1,
-				Date:        "bar",
-				Count:       1,
+				Source: "foo",
+				Hours:  1,
+				Date:   "bar",
+				Count:  1,
 			}, {
-				Source:      "foo",
-				Hours:       12,
-				Date:        "bar",
-				Count:       1,
+				Source: "foo",
+				Hours:  12,
+				Date:   "bar",
+				Count:  1,
 			}},
 			nil,
 		)

@@ -26,7 +26,7 @@ func GetPaths(router *mux.Router) []string {
 }
 
 // TestMain this gets called instead of the regular testing main method and allows us to run setup code
-func TestMain(m *testing.M)  {
+func TestMain(m *testing.M) {
 
 	// We need to run init config before any of the server tests
 	config.InitConfig()
