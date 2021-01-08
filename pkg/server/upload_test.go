@@ -491,23 +491,10 @@ func TestUpload(t *testing.T) {
 	router := setupUploadRouter(db)
 
 	// Set up PrivForPub
-	badServerPub, _, _ := box.GenerateKey(rand.Reader)
 	goodServerPub, goodServerPriv, _ := box.GenerateKey(rand.Reader)
-	goodServerPubBadPriv, _, _ := box.GenerateKey(rand.Reader)
 	goodAppPub, goodAppPriv, _ := box.GenerateKey(rand.Reader)
-	goodAppPubKeyUsed, _, _ := box.GenerateKey(rand.Reader)
-	goodAppPubNoKeysRemaining, _, _ := box.GenerateKey(rand.Reader)
-	goodServerPubNoKeysRemaining, goodServerPrivNoKeysRemaining, _ := box.GenerateKey(rand.Reader)
-	goodAppPubDBError, _, _ := box.GenerateKey(rand.Reader)
 
-	db.On("PrivForPub", badServerPub[:]).Return(nil, fmt.Errorf("No priv cert"))
 	db.On("PrivForPub", goodServerPub[:]).Return(goodServerPriv[:], nil)
-	db.On("PrivForPub", goodServerPubNoKeysRemaining[:]).Return(goodServerPrivNoKeysRemaining[:], nil)
-	db.On("PrivForPub", goodServerPubBadPriv[:]).Return(make([]byte, 16), nil)
-
-	db.On("StoreKeys", goodAppPubKeyUsed, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(persistenceErrors.ErrKeyConsumed)
-	db.On("StoreKeys", goodAppPubNoKeysRemaining, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(persistenceErrors.ErrTooManyKeys)
-	db.On("StoreKeys", goodAppPubDBError, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(fmt.Errorf("generic DB error"))
 	db.On("StoreKeys", goodAppPub, mock.AnythingOfType("[]*covidshield.TemporaryExposureKey"), mock.Anything).Return(nil)
 
 	var nonce [24]byte
