@@ -519,23 +519,13 @@ func TestUpload(t *testing.T) {
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_NONE))
 }
 
-func TestValidateKey(t *testing.T) {
-	// Capture logs
-	oldLog := log
-	defer func() { log = oldLog }()
+func TestValidateKey_RollingPeriodLT1(t *testing.T) {
 
-	nullLog, hook := test.NewNullLogger()
-	nullLog.ExitFunc = func(code int) {}
-
-	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
-		return logrus.NewEntry(nullLog)
-	}
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
 
 	db := &persistence.Conn{}
-	servlet := NewUploadServlet(db)
-	router := Router()
-	servlet.RegisterRouting(router)
-
+	setupUploadRouter(db)
 	req, _ := http.NewRequest("POST", "/upload", nil)
 	resp := httptest.NewRecorder()
 
@@ -552,13 +542,25 @@ func TestValidateKey(t *testing.T) {
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_ROLLING_PERIOD))
 
 	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "missing or invalid rollingPeriod")
+}
+
+func TestValidateKey_RollingPeriodGT144(t *testing.T) {
+
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	setupUploadRouter(db)
+
+	req, _ := http.NewRequest("POST", "/upload", nil)
+	resp := httptest.NewRecorder()
 
 	// Test RollingPeriod > 144
-	token = make([]byte, 16)
+	token := make([]byte, 16)
 	rand.Read(token)
-	key = buildKey(token, int32(2), int32(2651450), int32(145))
+	key := buildKey(token, int32(2), int32(2651450), int32(145))
 
-	result = validateKey(req.Context(), resp, &key)
+	result := validateKey(req.Context(), resp, &key)
 
 	assert.False(t, result)
 
@@ -567,12 +569,24 @@ func TestValidateKey(t *testing.T) {
 
 	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "missing or invalid rollingPeriod")
 
-	// Key data not 16 bytes
-	token = make([]byte, 8)
-	rand.Read(token)
-	key = buildKey(token, int32(2), int32(2651450), int32(144))
+}
 
-	result = validateKey(req.Context(), resp, &key)
+func TestValidateKey_KeyDataNot16Bytes(t *testing.T) {
+
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	setupUploadRouter(db)
+	req, _ := http.NewRequest("POST", "/upload", nil)
+	resp := httptest.NewRecorder()
+
+	// Key data not 16 bytes
+	token := make([]byte, 8)
+	rand.Read(token)
+	key := buildKey(token, int32(2), int32(2651450), int32(144))
+
+	result := validateKey(req.Context(), resp, &key)
 
 	assert.False(t, result)
 
@@ -581,12 +595,23 @@ func TestValidateKey(t *testing.T) {
 
 	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "invalid key data")
 
-	// Invalid RSIN
-	token = make([]byte, 16)
-	rand.Read(token)
-	key = buildKey(token, int32(2), int32(0), int32(144))
+}
 
-	result = validateKey(req.Context(), resp, &key)
+func TestValidateKey_InvalidRSIN(t *testing.T) {
+
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	setupUploadRouter(db)
+	req, _ := http.NewRequest("POST", "/upload", nil)
+	resp := httptest.NewRecorder()
+	// Invalid RSIN
+	token := make([]byte, 16)
+	rand.Read(token)
+	key := buildKey(token, int32(2), int32(0), int32(144))
+
+	result := validateKey(req.Context(), resp, &key)
 
 	assert.False(t, result)
 
@@ -595,12 +620,25 @@ func TestValidateKey(t *testing.T) {
 
 	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "invalid rolling start number")
 
-	//  TransmissionRiskLevel < 0
-	token = make([]byte, 16)
-	rand.Read(token)
-	key = buildKey(token, int32(-1), int32(2651450), int32(144))
+}
 
-	result = validateKey(req.Context(), resp, &key)
+func TestValidateKey_TransmissionRiskLevelLT0(t *testing.T) {
+
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	setupUploadRouter(db)
+
+	req, _ := http.NewRequest("POST", "/upload", nil)
+	resp := httptest.NewRecorder()
+
+	//  TransmissionRiskLevel < 0
+	token := make([]byte, 16)
+	rand.Read(token)
+	key := buildKey(token, int32(-1), int32(2651450), int32(144))
+
+	result := validateKey(req.Context(), resp, &key)
 
 	assert.False(t, result)
 
@@ -608,13 +646,25 @@ func TestValidateKey(t *testing.T) {
 	assert.True(t, checkUploadResponse(resp.Body.Bytes(), pb.EncryptedUploadResponse_INVALID_TRANSMISSION_RISK_LEVEL))
 
 	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "invalid transmission risk level")
+
+}
+
+func TestValidateKey_TransmissionRiskLevelGT8(t *testing.T) {
+
+	hook, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	setupUploadRouter(db)
+	req, _ := http.NewRequest("POST", "/upload", nil)
+	resp := httptest.NewRecorder()
 
 	// Invalid TransmissionRiskLevel > 8
-	token = make([]byte, 16)
+	token := make([]byte, 16)
 	rand.Read(token)
-	key = buildKey(token, int32(9), int32(2651450), int32(144))
+	key := buildKey(token, int32(9), int32(2651450), int32(144))
 
-	result = validateKey(req.Context(), resp, &key)
+	result := validateKey(req.Context(), resp, &key)
 
 	assert.False(t, result)
 
@@ -623,12 +673,24 @@ func TestValidateKey(t *testing.T) {
 
 	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "invalid transmission risk level")
 
-	// Valid key
-	token = make([]byte, 16)
-	rand.Read(token)
-	key = buildKey(token, int32(8), int32(2651450), int32(144))
+}
 
-	result = validateKey(req.Context(), resp, &key)
+func TestValidateKey(t *testing.T) {
+	_, oldLog := testhelpers.SetupTestLogging(&log)
+	defer func() { log = *oldLog }()
+
+	db := &persistence.Conn{}
+	setupUploadRouter(db)
+
+	req, _ := http.NewRequest("POST", "/upload", nil)
+	resp := httptest.NewRecorder()
+
+	// Valid key
+	token := make([]byte, 16)
+	rand.Read(token)
+	key := buildKey(token, int32(8), int32(2651450), int32(144))
+
+	result := validateKey(req.Context(), resp, &key)
 
 	assert.True(t, result)
 }
