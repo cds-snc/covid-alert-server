@@ -51,7 +51,7 @@ func TestTestToolsServlet_RegisterRoutingDisabled(t *testing.T) {
 	os.Setenv("ENABLE_TEST_TOOLS", "false")
 	servlet := NewTestToolsServlet(&persistence.Conn{}, &keyclaim.Authenticator{})
 	router := Router()
-	assert.Panics(t, func () { servlet.RegisterRouting(router) }, "should panic if called while ENABLE_TEST_TOOLS is false")
+	assert.Panics(t, func() { servlet.RegisterRouting(router) }, "should panic if called while ENABLE_TEST_TOOLS is false")
 
 }
 
@@ -61,7 +61,7 @@ func TestTestToolsServlet_RegisterRoutingProduction(t *testing.T) {
 
 	servlet := NewTestToolsServlet(&persistence.Conn{}, &keyclaim.Authenticator{})
 	router := Router()
-	assert.Panics(t, func () { servlet.RegisterRouting(router) }, "should panic if ENV is production")
+	assert.Panics(t, func() { servlet.RegisterRouting(router) }, "should panic if ENV is production")
 	os.Setenv("ENV", "")
 }
 

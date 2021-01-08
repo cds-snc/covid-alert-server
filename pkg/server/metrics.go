@@ -208,7 +208,7 @@ func (m *metricsServlet) getDurationData(ctx context.Context, w http.ResponseWri
 
 	js, err := json.Marshal(durations)
 	if err != nil {
-		log(ctx, err).WithField("EventDurationResults",durations).Errorf("error marshaling events")
+		log(ctx, err).WithField("EventDurationResults", durations).Errorf("error marshaling events")
 		http.Error(w, "error building json object", http.StatusInternalServerError)
 		return
 	}

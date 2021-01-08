@@ -91,7 +91,6 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
 func kcrError(errCode pb.KeyClaimResponse_ErrorCode, triesRemaining int) *pb.KeyClaimResponse {
 	tr := uint32(triesRemaining)
 	return &pb.KeyClaimResponse{Error: &errCode, TriesRemaining: &tr}

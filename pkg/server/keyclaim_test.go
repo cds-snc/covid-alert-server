@@ -123,8 +123,7 @@ func TestBadAuthToken(t *testing.T) {
 	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
 }
 
-func TestGoodAuthToken_NoHashID(t *testing.T){
-
+func TestGoodAuthToken_NoHashID(t *testing.T) {
 
 	db := &persistence.Conn{}
 	auth := &keyclaim.Authenticator{}
@@ -135,7 +134,6 @@ func TestGoodAuthToken_NoHashID(t *testing.T){
 
 	// DB Mock
 	db.On("NewKeyClaim", mock.Anything, "302", "goodtoken", "").Return("AAABBBCCCC", nil)
-
 
 	router := buildNewKeyClaimServletRouter(db, auth)
 	_, oldLog := testhelpers.SetupTestLogging(&log)
@@ -220,7 +218,6 @@ func TestNewKeyClaimErrorSavingDuplicateHashID(t *testing.T) {
 	hook, oldLog := testhelpers.SetupTestLogging(&log)
 	defer func() { log = *oldLog }()
 
-
 	// Error saving - duplicate HashID
 	req, _ := http.NewRequest("POST", "/new-key-claim/"+hashID, nil)
 	req.Header.Set("Authorization", "Bearer errortoken")
@@ -233,7 +230,7 @@ func TestNewKeyClaimErrorSavingDuplicateHashID(t *testing.T) {
 	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "hashID used")
 }
 
-func TestMalformedAuthHeader_Bear(t *testing.T)  {
+func TestMalformedAuthHeader_Bear(t *testing.T) {
 
 	db := &persistence.Conn{}
 	auth := &keyclaim.Authenticator{}
@@ -276,7 +273,7 @@ func TestNoAuthHeader(t *testing.T) {
 	testhelpers.AssertLog(t, hook, 1, logrus.InfoLevel, "bad auth header")
 }
 
-func TestNoPost(t *testing.T)  {
+func TestNoPost(t *testing.T) {
 	db := &persistence.Conn{}
 	auth := &keyclaim.Authenticator{}
 
@@ -539,7 +536,6 @@ func TestClaimKey(t *testing.T) {
 	testhelpers.AssertLog(t, hook, 1, logrus.WarnLevel, "error recording claim-key success")
 }
 
-
 func buildKeyClaimRequest(oneTimeCode *string, appPublicKey []byte) *pb.KeyClaimRequest {
 	return &pb.KeyClaimRequest{
 		OneTimeCode:  oneTimeCode,
@@ -577,5 +573,3 @@ func SHA512(message []byte) []byte {
 	c.Write(message)
 	return c.Sum(nil)
 }
-
-

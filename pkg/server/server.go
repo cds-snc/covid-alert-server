@@ -5,9 +5,9 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/cds-snc/covid-alert-server/pkg/telemetry"
 	"github.com/Shopify/goose/genmain"
 	"github.com/Shopify/goose/logger"
+	"github.com/cds-snc/covid-alert-server/pkg/telemetry"
 
 	// "github.com/Shopify/goose/profiler"
 	"github.com/Shopify/goose/safely"
