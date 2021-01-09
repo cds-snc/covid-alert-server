@@ -5,5 +5,13 @@
 /key-submission
 /key-retrieval
 /.generated
-/build
-/.vscode
+build
+.vscode
+mocks
+bin
+scripts
+.devcontainer
+.githooks
+policy
+test
+tmp
