@@ -1,17 +1,13 @@
-.dockerignore
-.git
-.dev
-.shadowenv.d
-/key-submission
-/key-retrieval
-/.generated
-build
-.vscode
-mocks
-bin
-scripts
-.devcontainer
-.githooks
-policy
-test
-tmp
+/*
+    Exclude everything
+*/
+*
+
+/*
+  Safelist
+*/
+!cmd
+!config.yaml
+!go.mod
+!go.sum
+!pkg
