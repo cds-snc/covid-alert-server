@@ -1,7 +1,7 @@
 ###
 # Step 1 - Compile
 ###
-FROM golang:1.14-alpine AS builder
+FROM golang:1.15.6-alpine3.12 AS builder
 
 ARG component=${component:-key-retrieval}
 ARG branch
