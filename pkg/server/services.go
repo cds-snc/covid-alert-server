@@ -25,7 +25,6 @@ type version struct {
 }
 
 type featureFlags struct {
-	EnableEnV2                         bool `json:"enableEnV2"`
 	EnableEntirePeriodBundle           bool `json:"enableEntirePeriodBundle"`
 	DisableCurrentDateCheckFeatureFlag bool `json:"disableCurrentDateCheckFeatureFlag"`
 }
@@ -58,7 +57,6 @@ func (s *servicesServlet) featureFlags(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json; charset=utf-8")
 
 	featureFlags := featureFlags{
-		EnableEnV2:                         config.AppConstants.EnableEnV2,
 		DisableCurrentDateCheckFeatureFlag: config.AppConstants.DisableCurrentDateCheckFeatureFlag,
 		EnableEntirePeriodBundle:           config.AppConstants.EnableEntirePeriodBundle,
 	}
