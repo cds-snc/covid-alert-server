@@ -34,6 +34,7 @@ type Conn interface {
 	// Only returns keys that correspond to a Key for a date
 	// less than 14 days ago.
 	FetchKeysForHours(string, uint32, uint32, int32) ([]*pb.TemporaryExposureKey, error)
+
 	StoreKeys(*[32]byte, []*pb.TemporaryExposureKey, context.Context) error
 	NewKeyClaim(context.Context, string, string, string) (string, error)
 	ClaimKey(string, []byte, context.Context) ([]byte, error)
@@ -302,6 +303,7 @@ func (c *conn) FetchKeysForHours(region string, startHour uint32, endHour uint32
 
 func handleKeysRows(rows *sql.Rows) ([]*pb.TemporaryExposureKey, error) {
 	var keys []*pb.TemporaryExposureKey
+
 	for rows.Next() {
 		var key []byte
 		var rollingStartIntervalNumber int32
@@ -312,12 +314,17 @@ func handleKeysRows(rows *sql.Rows) ([]*pb.TemporaryExposureKey, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		onsetDays := int32(0)
 		keys = append(keys, &pb.TemporaryExposureKey{
 			KeyData:                    key,
+			TransmissionRiskLevel:      &transmissionRiskLevel,
 			RollingStartIntervalNumber: &rollingStartIntervalNumber,
 			RollingPeriod:              &rollingPeriod,
-			TransmissionRiskLevel:      &transmissionRiskLevel,
+			ReportType:                 pb.TemporaryExposureKey_CONFIRMED_TEST.Enum(),
+			DaysSinceOnsetOfSymptoms:   &onsetDays,
 		})
+
 	}
 	return keys, nil
 }
