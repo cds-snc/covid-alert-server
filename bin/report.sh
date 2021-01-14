@@ -49,7 +49,7 @@ function query {
     echo Status of query "$STATUS"
 
     if [[ "$STATUS" == "Complete" ]]; then
-      echo "20-12-$3, $(jq -r '.results[] | map(.value) | join(", ")' <<< "$RES")" >> results.json
+      echo "20-12-$3, $(jq -r '.results[] | map(.value) | join(", ")' <<< "$RES")" >> results.csv
       return 0
     fi
 
@@ -59,7 +59,7 @@ function query {
 } 
 
 
-echo "Date, Okay Codes, Unauthorized Codes, Success Percentage"  >> results.json
+echo "Date, Okay Codes, Unauthorized Codes, Success Percentage"  >> results.csv
 for i in {1..1};
 do
   START=$(date  -v 2020y -v 12m -v "${i}"d -v 00H -v 00M -v 00S +%s)
