@@ -1,20 +1,15 @@
 {
-  "name": "createRecord",
-  "version": "1.0.1",
-  "description": "puts stuff in S3",
+  "name": "create-record",
+  "version": "1.0.2",
+  "description": "A serivce that takes in a JSON payload and puts it in an encrypted s3 bucket.",
   "main": "index.js",
   "dependencies": {
     "aws-sdk": "^2.649.0",
-    "crypto-random-string": "^3.2.0",
-    "file-encryptor": "^0.1.1",
-    "file-system": "^2.2.2",
-    "lodash": "^4.17.15",
     "uuid": "^8.1.0"
   },
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Timothy Jodoin",
-  "license": "ISC"
+  "author": "",
+  "license": "apache 2.0 license"
 }
