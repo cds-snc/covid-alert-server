@@ -224,7 +224,7 @@ func (_m *Conn) DeleteDiagnosisKeys() (int64, error) {
 }
 
 // DeleteOldExhaustedKeys provides a mock function with given fields: _a0
-func (_m *Conn) DeleteOldExhaustedKeys(_a0 context.Context) (int64, error) {
+func (_m *Conn) DeleteExhaustedKeys(_a0 context.Context) (int64, error) {
 	ret := _m.Called(_a0)
 
 	var r0 int64
