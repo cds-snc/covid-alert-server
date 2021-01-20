@@ -315,14 +315,11 @@ func handleKeysRows(rows *sql.Rows) ([]*pb.TemporaryExposureKey, error) {
 			return nil, err
 		}
 
-		onsetDays := int32(0)
 		keys = append(keys, &pb.TemporaryExposureKey{
 			KeyData:                    key,
 			TransmissionRiskLevel:      &transmissionRiskLevel,
 			RollingStartIntervalNumber: &rollingStartIntervalNumber,
 			RollingPeriod:              &rollingPeriod,
-			ReportType:                 pb.TemporaryExposureKey_CONFIRMED_TEST.Enum(),
-			DaysSinceOnsetOfSymptoms:   &onsetDays,
 		})
 
 	}
