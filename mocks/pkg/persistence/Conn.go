@@ -6,8 +6,6 @@ import (
 	context "context"
 
 	covidshield "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
-	covidshieldv1 "github.com/cds-snc/covid-alert-server/pkg/proto/covidshieldv1"
-
 	mock "github.com/stretchr/testify/mock"
 
 	persistence "github.com/cds-snc/covid-alert-server/pkg/persistence"
@@ -183,98 +181,6 @@ func (_m *Conn) CountDiagnosisKeys() (int64, error) {
 	return r0, r1
 }
 
-// CountExhaustedEncryptionKeysByOriginator provides a mock function with given fields:
-func (_m *Conn) CountExhaustedEncryptionKeysByOriginator() ([]persistence.CountByOriginator, error) {
-	ret := _m.Called()
-
-	var r0 []persistence.CountByOriginator
-	if rf, ok := ret.Get(0).(func() []persistence.CountByOriginator); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]persistence.CountByOriginator)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// CountExpiredClaimedEncryptionKeysByOriginator provides a mock function with given fields:
-func (_m *Conn) CountExpiredClaimedEncryptionKeysByOriginator() ([]persistence.CountByOriginator, error) {
-	ret := _m.Called()
-
-	var r0 []persistence.CountByOriginator
-	if rf, ok := ret.Get(0).(func() []persistence.CountByOriginator); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]persistence.CountByOriginator)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// CountExpiredClaimedEncryptionKeysWithNoUploadsByOriginator provides a mock function with given fields:
-func (_m *Conn) CountExpiredClaimedEncryptionKeysWithNoUploadsByOriginator() ([]persistence.CountByOriginator, error) {
-	ret := _m.Called()
-
-	var r0 []persistence.CountByOriginator
-	if rf, ok := ret.Get(0).(func() []persistence.CountByOriginator); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]persistence.CountByOriginator)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// CountUnclaimedEncryptionKeysByOriginator provides a mock function with given fields:
-func (_m *Conn) CountUnclaimedEncryptionKeysByOriginator() ([]persistence.CountByOriginator, error) {
-	ret := _m.Called()
-
-	var r0 []persistence.CountByOriginator
-	if rf, ok := ret.Get(0).(func() []persistence.CountByOriginator); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]persistence.CountByOriginator)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // CountUnclaimedOneTimeCodes provides a mock function with given fields:
 func (_m *Conn) CountUnclaimedOneTimeCodes() (int64, error) {
 	ret := _m.Called()
@@ -297,7 +203,7 @@ func (_m *Conn) CountUnclaimedOneTimeCodes() (int64, error) {
 }
 
 // DeleteOldDiagnosisKeys provides a mock function with given fields:
-func (_m *Conn) DeleteOldDiagnosisKeys() (int64, error) {
+func (_m *Conn) DeleteDiagnosisKeys() (int64, error) {
 	ret := _m.Called()
 
 	var r0 int64
@@ -317,20 +223,41 @@ func (_m *Conn) DeleteOldDiagnosisKeys() (int64, error) {
 	return r0, r1
 }
 
-// DeleteOldEncryptionKeys provides a mock function with given fields:
-func (_m *Conn) DeleteOldEncryptionKeys() (int64, error) {
-	ret := _m.Called()
+// DeleteOldExhaustedKeys provides a mock function with given fields: _a0
+func (_m *Conn) DeleteOldExhaustedKeys(_a0 context.Context) (int64, error) {
+	ret := _m.Called(_a0)
 
 	var r0 int64
-	if rf, ok := ret.Get(0).(func() int64); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) int64); ok {
+		r0 = rf(_a0)
 	} else {
 		r0 = ret.Get(0).(int64)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DeleteOldExpiredKeys provides a mock function with given fields: _a0
+func (_m *Conn) DeleteExpiredKeys(_a0 context.Context) (int64, error) {
+	ret := _m.Called(_a0)
+
+	var r0 int64
+	if rf, ok := ret.Get(0).(func(context.Context) int64); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(_a0)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -359,6 +286,27 @@ func (_m *Conn) DeleteOldFailedClaimKeyAttempts() (int64, error) {
 	return r0, r1
 }
 
+// DeleteOldUnclaimedKeys provides a mock function with given fields: _a0
+func (_m *Conn) DeleteUnclaimedKeys(_a0 context.Context) (int64, error) {
+	ret := _m.Called(_a0)
+
+	var r0 int64
+	if rf, ok := ret.Get(0).(func(context.Context) int64); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Get(0).(int64)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(_a0)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // FetchKeysForHours provides a mock function with given fields: _a0, _a1, _a2, _a3
 func (_m *Conn) FetchKeysForHours(_a0 string, _a1 uint32, _a2 uint32, _a3 int32) ([]*covidshield.TemporaryExposureKey, error) {
 	ret := _m.Called(_a0, _a1, _a2, _a3)
@@ -369,29 +317,6 @@ func (_m *Conn) FetchKeysForHours(_a0 string, _a1 uint32, _a2 uint32, _a3 int32)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*covidshield.TemporaryExposureKey)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string, uint32, uint32, int32) error); ok {
-		r1 = rf(_a0, _a1, _a2, _a3)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// FetchKeysForHoursV1 provides a mock function with given fields: _a0, _a1, _a2, _a3
-func (_m *Conn) FetchKeysForHoursV1(_a0 string, _a1 uint32, _a2 uint32, _a3 int32) ([]*covidshieldv1.TemporaryExposureKey, error) {
-	ret := _m.Called(_a0, _a1, _a2, _a3)
-
-	var r0 []*covidshieldv1.TemporaryExposureKey
-	if rf, ok := ret.Get(0).(func(string, uint32, uint32, int32) []*covidshieldv1.TemporaryExposureKey); ok {
-		r0 = rf(_a0, _a1, _a2, _a3)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*covidshieldv1.TemporaryExposureKey)
 		}
 	}
 
@@ -516,20 +441,6 @@ func (_m *Conn) PrivForPub(_a0 []byte) ([]byte, error) {
 	}
 
 	return r0, r1
-}
-
-// SaveEvent provides a mock function with given fields: event
-func (_m *Conn) SaveEvent(event persistence.Event) error {
-	ret := _m.Called(event)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(persistence.Event) error); ok {
-		r0 = rf(event)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
 }
 
 // StoreKeys provides a mock function with given fields: _a0, _a1, _a2
