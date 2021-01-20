@@ -203,7 +203,7 @@ func (_m *Conn) CountUnclaimedOneTimeCodes() (int64, error) {
 }
 
 // DeleteOldDiagnosisKeys provides a mock function with given fields:
-func (_m *Conn) DeleteDiagnosisKeys() (int64, error) {
+func (_m *Conn) DeleteOldDiagnosisKeys() (int64, error) {
 	ret := _m.Called()
 
 	var r0 int64

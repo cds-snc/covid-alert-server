@@ -23,40 +23,25 @@ var expirationRunner = func(w *worker, ctx context.Context) error {
 		log(ctx, nil).WithField("count", nDeleted).Info("deleted old diagnosis keys")
 	}
 
-	// Count the keys we are going to delete
-	var (
-		unclaimedCounts        []persistence.CountByOriginator
-		expiredCounts          []persistence.CountByOriginator
-		expiredCountsNoUploads []persistence.CountByOriginator
-		exhaustedCounts        []persistence.CountByOriginator
-		countErr               error
-	)
-
-	if unclaimedCounts, countErr = w.db.CountUnclaimedEncryptionKeysByOriginator(); countErr != nil {
-		log(ctx, countErr).Info("Unable to count unclaimed encryption keys")
-	}
-
-	if expiredCounts, countErr = w.db.CountExpiredClaimedEncryptionKeysByOriginator(); countErr != nil {
-		log(ctx, countErr).Info("Unable to count expired encryption keys")
-	}
-
-	if expiredCountsNoUploads, countErr = w.db.CountExpiredClaimedEncryptionKeysWithNoUploadsByOriginator(); countErr != nil {
-		log(ctx, countErr).Info("Unable to count expired encryption keys with no uploads")
-	}
-
-	if exhaustedCounts, countErr = w.db.CountExhaustedEncryptionKeysByOriginator(); countErr != nil {
-		log(ctx, countErr).Info("Unable to count exhausted encryption keys")
-	}
-
-	if nDeleted, err := w.db.DeleteOldEncryptionKeys(); err != nil {
-		log(ctx, err).Info("failed to delete old encryption keys")
+	if nDeleted, err := w.db.DeleteUnclaimedKeys(ctx); err != nil {
+		log(ctx, err).Info("failed to delete unclaimed keys")
 		lastErr = err
 	} else {
-		saveCountEvents(ctx, w, persistence.OTKUnclaimed, unclaimedCounts)
-		saveCountEvents(ctx, w, persistence.OTKExpired, expiredCounts)
-		saveCountEvents(ctx, w, persistence.OTKExpiredNoUploads, expiredCountsNoUploads)
-		saveCountEvents(ctx, w, persistence.OTKExhausted, exhaustedCounts)
-		log(ctx, nil).WithField("count", nDeleted).Info("deleted old encryption keys")
+		log(ctx, nil).WithField("count", nDeleted).Info("deleted unclaimed keys")
+	}
+
+	if nDeleted, err := w.db.DeleteExpiredKeys(ctx); err != nil {
+		log(ctx, err).Info("failed to delete expired keys")
+		lastErr = err
+	} else {
+		log(ctx, nil).WithField("count", nDeleted).Info("deleted expired keys")
+	}
+
+	if nDeleted, err := w.db.DeleteExhaustedKeys(ctx); err != nil {
+		log(ctx, err).Info("failed to delete exhausted keys")
+		lastErr = err
+	} else {
+		log(ctx, nil).WithField("count", nDeleted).Info("deleted exhausted keys")
 	}
 
 	if nDeleted, err := w.db.DeleteOldFailedClaimKeyAttempts(); err != nil {
@@ -67,23 +52,6 @@ var expirationRunner = func(w *worker, ctx context.Context) error {
 	}
 
 	return lastErr
-}
-
-func saveCountEvents(ctx context.Context, w *worker, identifier persistence.EventType, counts []persistence.CountByOriginator) {
-
-	for _, count := range counts {
-		event := persistence.Event{
-			Identifier: identifier,
-			DeviceType: persistence.Server,
-			Date:       time.Now(),
-			Count:      count.Count,
-			Originator: count.Originator,
-		}
-		if err := w.db.SaveEvent(event); err != nil {
-			persistence.LogEvent(ctx, err, event)
-		}
-
-	}
 }
 
 func StartExpirationWorker(db persistence.Conn) (Worker, error) {

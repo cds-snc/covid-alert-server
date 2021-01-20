@@ -43,7 +43,6 @@ func Test_translateTokenForLogs(t *testing.T) {
 }
 
 func setupSaveEventMock(mock sqlmock.Sqlmock, event Event) {
-	mock.ExpectBegin()
 	mock.ExpectExec(
 		`INSERT INTO events
 		(source, identifier, device_type, date, count)
@@ -55,7 +54,6 @@ func setupSaveEventMock(mock sqlmock.Sqlmock, event Event) {
 		event.Count,
 		event.Count,
 	).WillReturnResult(sqlmock.NewResult(0, 1))
-	mock.ExpectCommit()
 }
 
 func Test_SaveEvent(t *testing.T) {
@@ -65,16 +63,21 @@ func Test_SaveEvent(t *testing.T) {
 
 	event := Event{
 		Identifier: OTKGenerated,
-		Originator: token1,
+		Originator: "ONApi",
 		Count:      1,
 		DeviceType: Server,
 		Date:       time.Now(),
 	}
 
+	mock.ExpectBegin()
 	setupSaveEventMock(mock, event)
 
-	saveEvent(db, event)
+	event.Originator = token1
 
+	tx, _ := db.Begin()
+	res := saveEvent(tx, event)
+
+	assert.Nil(t, res)
 }
 
 func Test_LogEvent(t *testing.T) {
