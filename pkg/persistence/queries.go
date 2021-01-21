@@ -262,22 +262,22 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte, ctx context.C
 
 	row = s.QueryRow(appPublicKey)
 
-	otkDuration := OtkDuration{ originator,time.Now().Sub(otkCreated) }
-	if err := saveOtkDuration(db, otkDuration); err != nil {
-		log(ctx, nil).Infof("Unable to save otkCreated %f", otkDuration.Duration.Minutes())
-	}
-
-	event := Event{Originator: originator, DeviceType: Server, Identifier: OTKClaimed, Count: 1, Date: time.Now()}
-	if err := saveEvent(tx, event); err != nil {
-		LogEvent(ctx, err, event)
-	}
-
 	var serverPub []byte
 	if err := row.Scan(&serverPub); err != nil {
 		if err := tx.Rollback(); err != nil {
 			return nil, err
 		}
 		return nil, err
+	}
+
+	otkDuration := OtkDuration{ originator,time.Now().Sub(otkCreated) }
+	if err := saveOtkDuration(tx, otkDuration); err != nil {
+		log(ctx, nil).Infof("Unable to save otkCreated %f", otkDuration.Duration.Minutes())
+	}
+
+	event := Event{Originator: originator, DeviceType: Server, Identifier: OTKClaimed, Count: 1, Date: time.Now()}
+	if err := saveEvent(tx, event); err != nil {
+		LogEvent(ctx, err, event)
 	}
 
 	if err = tx.Commit(); err != nil {

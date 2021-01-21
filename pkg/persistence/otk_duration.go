@@ -18,14 +18,14 @@ type OtkDuration struct {
 	Duration time.Duration
 }
 
-func saveOtkDuration(db *sql.DB, otkDuration OtkDuration) error {
+func saveOtkDuration(tx *sql.Tx, otkDuration OtkDuration) error {
 
 	hoursLive := otkDuration.Duration.Hours()
 	hours := math.Ceil(hoursLive)
 
 	originator := translateToken(otkDuration.Originator)
 
-	if _, err := db.Exec(`
+	if _, err := tx.Exec(`
 		INSERT INTO otk_life_duration
 		(originator, hours, date, count)
 		VALUES(?, ?, ?, 1) ON DUPLICATE KEY UPDATE count = count + 1`,
