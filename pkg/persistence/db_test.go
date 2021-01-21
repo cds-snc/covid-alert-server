@@ -655,12 +655,15 @@ func TestDBFetchKeysForHours(t *testing.T) {
 	row := sqlmock.NewRows([]string{"region", "key_data", "rolling_start_interval_number", "rolling_period", "transmission_risk_level"}).AddRow("302", []byte{}, 2651450, 144, 4)
 	mock.ExpectQuery("").WillReturnRows(row)
 
+	onsetDays := int32(0)
 	expectedResult := []*pb.TemporaryExposureKey{
 		&pb.TemporaryExposureKey{
 			KeyData:                    []byte{},
 			TransmissionRiskLevel:      &transmissionRiskLevel,
 			RollingStartIntervalNumber: &currentRollingStartIntervalNumber,
 			RollingPeriod:              &rollingPeriod,
+			ReportType:                 pb.TemporaryExposureKey_CONFIRMED_TEST.Enum(),
+			DaysSinceOnsetOfSymptoms:   &onsetDays,
 		},
 	}
 
