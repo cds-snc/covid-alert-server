@@ -45,19 +45,15 @@ type Conn interface {
 	ClaimKeyFailure(string) (triesRemaining int, banDuration time.Duration, err error)
 
 	DeleteOldDiagnosisKeys() (int64, error)
-	DeleteOldEncryptionKeys() (int64, error)
+	DeleteUnclaimedKeys(context.Context) (int64, error)
+	DeleteExhaustedKeys(context.Context) (int64, error)
+	DeleteExpiredKeys(context.Context) (int64, error)
 	DeleteOldFailedClaimKeyAttempts() (int64, error)
 
 	CountClaimedOneTimeCodes() (int64, error)
 	CountDiagnosisKeys() (int64, error)
 	CountUnclaimedOneTimeCodes() (int64, error)
 
-	CountUnclaimedEncryptionKeysByOriginator() ([]CountByOriginator, error)
-	CountExhaustedEncryptionKeysByOriginator() ([]CountByOriginator, error)
-	CountExpiredClaimedEncryptionKeysByOriginator() ([]CountByOriginator, error)
-	CountExpiredClaimedEncryptionKeysWithNoUploadsByOriginator() ([]CountByOriginator, error)
-
-	SaveEvent(event Event) error
 	GetServerEvents(startDate string) ([]Events, error)
 	GetTEKUploads(startDate string) ([]Uploads, error)
 	GetAggregateOtkDurationsByDate(startDate string) ([]AggregateOtkDuration, error)
@@ -128,24 +124,16 @@ func (c *conn) DeleteOldDiagnosisKeys() (int64, error) {
 	return deleteOldDiagnosisKeys(c.db)
 }
 
-func (c *conn) CountUnclaimedEncryptionKeysByOriginator() ([]CountByOriginator, error) {
-	return countUnclaimedEncryptionKeysByOriginator(c.db)
+func (c *conn) DeleteExpiredKeys(ctx context.Context) (int64, error) {
+	return deleteExpiredKeys(ctx, c.db)
 }
 
-func (c *conn) CountExhaustedEncryptionKeysByOriginator() ([]CountByOriginator, error) {
-	return countExhaustedEncryptionKeysByOriginator(c.db)
+func (c *conn) DeleteExhaustedKeys(ctx context.Context) (int64, error) {
+	return deleteExhaustedKeys(ctx, c.db)
 }
 
-func (c *conn) CountExpiredClaimedEncryptionKeysByOriginator() ([]CountByOriginator, error) {
-	return countExpiredClaimedEncryptionKeysByOriginator(c.db)
-}
-
-func (c *conn) CountExpiredClaimedEncryptionKeysWithNoUploadsByOriginator() ([]CountByOriginator, error) {
-	return countExpiredClaimedEncryptionKeysWithNoUploadsByOriginator(c.db)
-}
-
-func (c *conn) DeleteOldEncryptionKeys() (int64, error) {
-	return deleteOldEncryptionKeys(c.db)
+func (c *conn) DeleteUnclaimedKeys(ctx context.Context) (int64, error) {
+	return deleteUnclaimedKeys(ctx, c.db)
 }
 
 // ErrNoRecordWritten indicates that, though we should have been able to write
@@ -231,7 +219,20 @@ func (c *conn) saveNewKeyClaimEvent(ctx context.Context, originator string, rege
 		Date:       time.Now(),
 		Count:      1,
 	}
-	if err := saveEvent(c.db, event); err != nil {
+
+	tx, err := c.db.Begin()
+	if err != nil{
+		LogEvent(ctx, err, event)
+		return
+	}
+
+	if err := saveEvent(tx, event); err != nil {
+		LogEvent(ctx, err, event)
+		_ = tx.Rollback()
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
 		LogEvent(ctx, err, event)
 	}
 }
@@ -315,14 +316,11 @@ func handleKeysRows(rows *sql.Rows) ([]*pb.TemporaryExposureKey, error) {
 			return nil, err
 		}
 
-		onsetDays := int32(0)
 		keys = append(keys, &pb.TemporaryExposureKey{
 			KeyData:                    key,
 			TransmissionRiskLevel:      &transmissionRiskLevel,
 			RollingStartIntervalNumber: &rollingStartIntervalNumber,
 			RollingPeriod:              &rollingPeriod,
-			ReportType:                 pb.TemporaryExposureKey_CONFIRMED_TEST.Enum(),
-			DaysSinceOnsetOfSymptoms:   &onsetDays,
 		})
 
 	}

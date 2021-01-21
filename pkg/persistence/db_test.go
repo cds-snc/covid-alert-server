@@ -49,7 +49,8 @@ func TestDBDeleteOldDiagnosisKeys(t *testing.T) {
 	assert.Nil(t, receivedError)
 }
 
-func TestDBDeleteOldEncryptionKeys(t *testing.T) {
+func TestDBDeleteOldExpiredKeys(t *testing.T) {
+
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
 	defer db.Close()
 
@@ -57,15 +58,82 @@ func TestDBDeleteOldEncryptionKeys(t *testing.T) {
 		db: db,
 	}
 
+	mock.ExpectBegin()
+	rows := sqlmock.NewRows([]string{"originator", "count"}).AddRow("foo", 1).AddRow("bar", 2)
+	mock.ExpectQuery(fmt.Sprintf(`SELECT originator, COUNT(*) FROM encryption_keys
+		WHERE  (created < (NOW() - INTERVAL %d DAY))
+		GROUP BY encryption_keys.originator`,
+		config.AppConstants.EncryptionKeyValidityDays),
+	).WillReturnRows(rows)
+	mock.ExpectQuery(fmt.Sprintf(`SELECT originator, COUNT(*) FROM encryption_keys
+		WHERE  (created < (NOW() - INTERVAL %d DAY)) AND remaining_keys = %d
+		GROUP BY encryption_keys.originator`,
+		config.AppConstants.OneTimeCodeExpiryInMinutes,
+		config.AppConstants.InitialRemainingKeys),
+	).WillReturnRows(rows)
 	mock.ExpectExec("").WillReturnResult(sqlmock.NewResult(1, 1))
-
+	mock.ExpectCommit()
 	expectedResult := int64(1)
-	receivedResult, receivedError := conn.DeleteOldEncryptionKeys()
+	receivedResult, receivedError := conn.DeleteExpiredKeys(context.Background())
 
 	assert.Equal(t, expectedResult, receivedResult)
 	assert.Nil(t, receivedError)
+
 }
 
+func TestDBDeleteOldUnclaimedKeys(t *testing.T) {
+
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
+	defer db.Close()
+
+	conn := conn{
+		db: db,
+	}
+
+	mock.ExpectBegin()
+	rows := sqlmock.NewRows([]string{"originator", "count"}).AddRow("foo", 1).AddRow("bar", 2)
+
+	mock.ExpectQuery(fmt.Sprintf(`
+		SELECT originator, count(*) FROM encryption_keys
+		WHERE  ((created < (NOW() - INTERVAL %d MINUTE)) AND app_public_key IS NULL)
+		GROUP BY encryption_keys.originator `,
+		config.AppConstants.OneTimeCodeExpiryInMinutes),
+	).WillReturnRows(rows)
+	mock.ExpectExec("").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+	expectedResult := int64(1)
+	receivedResult, receivedError := conn.DeleteUnclaimedKeys(context.Background())
+
+	assert.Equal(t, expectedResult, receivedResult)
+	assert.Nil(t, receivedError)
+
+}
+
+func TestDBDeleteOldExhaustedKeys(t *testing.T) {
+
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
+	defer db.Close()
+
+	conn := conn{
+		db: db,
+	}
+
+	mock.ExpectBegin()
+	rows := sqlmock.NewRows([]string{"originator", "count"}).AddRow("foo", 1).AddRow("bar", 2)
+	mock.ExpectQuery(`
+		SELECT originator, COUNT(*) FROM encryption_keys
+		WHERE  remaining_keys = 0
+		GROUP BY encryption_keys.originator`,
+	).WillReturnRows(rows)
+	mock.ExpectExec("").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+	expectedResult := int64(1)
+	receivedResult, receivedError := conn.DeleteExhaustedKeys(context.Background())
+
+	assert.Equal(t, expectedResult, receivedResult)
+	assert.Nil(t, receivedError)
+
+}
 func TestDBClaimKey(t *testing.T) {
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	defer db.Close()
@@ -154,6 +222,7 @@ func TestSuccessWithNoHashID(t *testing.T) {
 		config.AppConstants.InitialRemainingKeys,
 	).WillReturnResult(sqlmock.NewResult(1, 1))
 
+	mock.ExpectBegin()
 	setupSaveEventMock(mock, Event{
 		Identifier: OTKGenerated,
 		DeviceType: Server,
@@ -161,6 +230,7 @@ func TestSuccessWithNoHashID(t *testing.T) {
 		Count:      1,
 		Originator: originator,
 	})
+	mock.ExpectCommit()
 
 	receivedResult, receivedError := conn.NewKeyClaim(context.TODO(), region, originator, "")
 
@@ -258,6 +328,7 @@ func TestErrorExistingCode(t *testing.T) {
 		config.AppConstants.InitialRemainingKeys,
 	).WillReturnResult(sqlmock.NewResult(1, 1))
 
+	mock.ExpectBegin()
 	setupSaveEventMock(mock,
 		Event{
 			Identifier: OTKGenerated,
@@ -266,6 +337,8 @@ func TestErrorExistingCode(t *testing.T) {
 			Count:      1,
 			Originator: "randomOrigin",
 		})
+	mock.ExpectCommit()
+
 	receivedResult, receivedError := conn.NewKeyClaim(context.TODO(), region, originator, "")
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -377,6 +450,7 @@ func TestUnclaimedHashIDEventualSuccess(t *testing.T) {
 		config.AppConstants.InitialRemainingKeys,
 	).WillReturnResult(sqlmock.NewResult(1, 1))
 
+	mock.ExpectBegin()
 	setupSaveEventMock(mock, Event{
 		Identifier: OTKRegenerated,
 		DeviceType: Server,
@@ -384,6 +458,7 @@ func TestUnclaimedHashIDEventualSuccess(t *testing.T) {
 		Count:      1,
 		Originator: "randomOrigin",
 	})
+	mock.ExpectCommit()
 
 	receivedResult, receivedError := conn.NewKeyClaim(context.TODO(), region, originator, hashID)
 
@@ -580,15 +655,12 @@ func TestDBFetchKeysForHours(t *testing.T) {
 	row := sqlmock.NewRows([]string{"region", "key_data", "rolling_start_interval_number", "rolling_period", "transmission_risk_level"}).AddRow("302", []byte{}, 2651450, 144, 4)
 	mock.ExpectQuery("").WillReturnRows(row)
 
-	onsetDays := int32(0)
 	expectedResult := []*pb.TemporaryExposureKey{
 		&pb.TemporaryExposureKey{
 			KeyData:                    []byte{},
 			TransmissionRiskLevel:      &transmissionRiskLevel,
 			RollingStartIntervalNumber: &currentRollingStartIntervalNumber,
 			RollingPeriod:              &rollingPeriod,
-			ReportType:                 pb.TemporaryExposureKey_CONFIRMED_TEST.Enum(),
-			DaysSinceOnsetOfSymptoms:   &onsetDays,
 		},
 	}
 

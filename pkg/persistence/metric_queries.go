@@ -7,40 +7,40 @@ import (
 	"github.com/cds-snc/covid-alert-server/pkg/config"
 )
 
-func countUnclaimedEncryptionKeysByOriginator(db *sql.DB) ([]CountByOriginator, error) {
-	return countByOriginator(db, fmt.Sprintf(`
+func countUnclaimedEncryptionKeysByOriginator(tx *sql.Tx) ([]CountByOriginator, error) {
+	return countByOriginator(tx, fmt.Sprintf(`
 			SELECT originator, count(*) FROM encryption_keys
 			WHERE  ((created < (NOW() - INTERVAL %d MINUTE)) AND app_public_key IS NULL)
 			GROUP BY encryption_keys.originator `, config.AppConstants.OneTimeCodeExpiryInMinutes))
 }
 
-func countExpiredClaimedEncryptionKeysByOriginator(db *sql.DB) ([]CountByOriginator, error) {
-	return countByOriginator(db, fmt.Sprintf(`
+func countExpiredClaimedEncryptionKeysByOriginator(tx *sql.Tx) ([]CountByOriginator, error) {
+	return countByOriginator(tx, fmt.Sprintf(`
 			SELECT originator, COUNT(*) FROM encryption_keys
 			WHERE  (created < (NOW() - INTERVAL %d DAY))
 			GROUP BY encryption_keys.originator
 		`, config.AppConstants.EncryptionKeyValidityDays))
 }
 
-func countExpiredClaimedEncryptionKeysWithNoUploadsByOriginator(db *sql.DB) ([]CountByOriginator, error) {
-	return countByOriginator(db, fmt.Sprintf(`
+func countExpiredClaimedEncryptionKeysWithNoUploadsByOriginator(tx *sql.Tx) ([]CountByOriginator, error) {
+	return countByOriginator(tx, fmt.Sprintf(`
 			SELECT originator, COUNT(*) FROM encryption_keys
 			WHERE  (created < (NOW() - INTERVAL %d DAY)) AND remaining_keys = %d
 			GROUP BY encryption_keys.originator
 		`, config.AppConstants.EncryptionKeyValidityDays, config.AppConstants.InitialRemainingKeys))
 }
 
-func countExhaustedEncryptionKeysByOriginator(db *sql.DB) ([]CountByOriginator, error) {
-	return countByOriginator(db, `
+func countExhaustedEncryptionKeysByOriginator(tx *sql.Tx) ([]CountByOriginator, error) {
+	return countByOriginator(tx, `
 			SELECT originator, COUNT(*) FROM encryption_keys
 			WHERE  remaining_keys = 0
 			GROUP BY encryption_keys.originator
 		`)
 }
 
-func countByOriginator(db *sql.DB, query string) ([]CountByOriginator, error) {
+func countByOriginator(tx *sql.Tx, query string) ([]CountByOriginator, error) {
 
-	rows, err := db.Query(query)
+	rows, err := tx.Query(query)
 	if err != nil {
 		return nil, err
 	}

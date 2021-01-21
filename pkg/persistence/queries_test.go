@@ -31,26 +31,6 @@ func TestDeleteOldDiagnosisKeys(t *testing.T) {
 
 }
 
-func TestDeleteOldEncryptionKeys(t *testing.T) {
-
-	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
-	defer db.Close()
-
-	query := fmt.Sprintf(`
-		DELETE FROM encryption_keys
-		WHERE  (created < (NOW() - INTERVAL %d DAY))
-		OR    ((created < (NOW() - INTERVAL %d MINUTE)) AND app_public_key IS NULL)
-		OR    remaining_keys = 0
-	`, config.AppConstants.EncryptionKeyValidityDays, config.AppConstants.OneTimeCodeExpiryInMinutes)
-
-	mock.ExpectExec(query).WillReturnResult(sqlmock.NewResult(1, 1))
-	deleteOldEncryptionKeys(db)
-
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("there were unfulfilled expectations: %s", err)
-	}
-
-}
 
 func TestClaimKey(t *testing.T) {
 

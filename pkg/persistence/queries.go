@@ -13,7 +13,24 @@ import (
 	"github.com/cds-snc/covid-alert-server/pkg/timemath"
 )
 
+func saveCountEvents(ctx context.Context, tx *sql.Tx, identifier EventType, counts []CountByOriginator) {
+
+	for _, count := range counts {
+		event := Event{
+			Identifier: identifier,
+			DeviceType: Server,
+			Date:       time.Now(),
+			Count:      count.Count,
+			Originator: count.Originator,
+		}
+		if err := saveEvent(tx, event); err != nil {
+			LogEvent(ctx, err, event)
+		}
+	}
+}
+
 func deleteOldDiagnosisKeys(db *sql.DB) (int64, error) {
+
 	oldestDateNumber := timemath.DateNumber(time.Now()) - config.AppConstants.MaxDiagnosisKeyRetentionDays
 	oldestHour := timemath.HourNumberAtStartOfDate(oldestDateNumber)
 
@@ -21,22 +38,129 @@ func deleteOldDiagnosisKeys(db *sql.DB) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+
 	return res.RowsAffected()
 }
 
-// Delete anything past our data retention threshold, AND any timed-out KeyClaims.
-func deleteOldEncryptionKeys(db *sql.DB) (int64, error) {
+func deleteExpiredKeys(ctx context.Context, db *sql.DB) (int64, error) {
+
+	tx, err := db.Begin()
+	if err != nil{
+		return 0, err
+	}
+
+	var (
+		expiredCounts          []CountByOriginator
+		expiredCountsNoUploads []CountByOriginator
+		countErr               error
+	)
+
+	if expiredCounts, countErr = countExpiredClaimedEncryptionKeysByOriginator(tx); countErr != nil {
+		log(ctx, countErr).Info("Unable to count expired encryption keys")
+	}
+
+	if expiredCountsNoUploads, countErr = countExpiredClaimedEncryptionKeysWithNoUploadsByOriginator(tx); countErr != nil {
+		log(ctx, countErr).Info("Unable to count expired encryption keys with no uploads")
+	}
+
 	res, err := db.Exec(
 		fmt.Sprintf(`
 			DELETE FROM encryption_keys
 			WHERE  (created < (NOW() - INTERVAL %d DAY))
-			OR    ((created < (NOW() - INTERVAL %d MINUTE)) AND app_public_key IS NULL)
-			OR    remaining_keys = 0
-		`, config.AppConstants.EncryptionKeyValidityDays, config.AppConstants.OneTimeCodeExpiryInMinutes),
+		`, config.AppConstants.EncryptionKeyValidityDays),
 	)
 	if err != nil {
+		if err := tx.Rollback(); err != nil {
+			return 0, err
+		}
 		return 0, err
 	}
+
+	saveCountEvents(ctx, tx, OTKExpired, expiredCounts)
+	saveCountEvents(ctx, tx, OTKExpiredNoUploads, expiredCountsNoUploads)
+
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	return res.RowsAffected()
+}
+
+func deleteUnclaimedKeys(ctx context.Context, db *sql.DB) (int64, error) {
+
+	//start transaction
+	tx, err := db.Begin()
+	if err != nil{
+		return 0, err
+	}
+
+	// Count the keys we are going to delete
+	var (
+		unclaimedCounts        []CountByOriginator
+		countErr               error
+	)
+
+	if unclaimedCounts, countErr = countUnclaimedEncryptionKeysByOriginator(tx); countErr != nil {
+		log(ctx, countErr).Info("Unable to count unclaimed encryption keys")
+	}
+
+	res, err :=tx.Exec(
+		fmt.Sprintf(`
+			DELETE FROM encryption_keys
+			WHERE created < (NOW() - INTERVAL %d MINUTE)
+			AND app_public_key IS NULL
+		`,  config.AppConstants.OneTimeCodeExpiryInMinutes),
+	)
+	if err != nil {
+		if err := tx.Rollback(); err != nil {
+			return 0, err
+		}
+		return 0, err
+	}
+
+	saveCountEvents(ctx, tx, OTKUnclaimed, unclaimedCounts)
+
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	return res.RowsAffected()
+}
+
+func deleteExhaustedKeys(ctx context.Context, db *sql.DB) (int64, error) {
+	//start transaction
+	tx, err := db.Begin()
+	if err != nil{
+		return 0, err
+	}
+
+	// Count the keys we are going to delete
+	var (
+		exhaustedCounts        []CountByOriginator
+		countErr               error
+	)
+
+	if exhaustedCounts, countErr = countExhaustedEncryptionKeysByOriginator(tx); countErr != nil {
+		log(ctx, countErr).Info("Unable to count exhausted encryption keys")
+	}
+
+	res, err := db.Exec(`
+		DELETE FROM encryption_keys
+		WHERE    remaining_keys = 0`,
+	)
+	if err != nil {
+		if err := tx.Rollback(); err != nil {
+			return 0, err
+		}
+		return 0, err
+	}
+
+	saveCountEvents(ctx, tx, OTKExhausted, exhaustedCounts)
+
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+
 	return res.RowsAffected()
 }
 
@@ -138,22 +262,22 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte, ctx context.C
 
 	row = s.QueryRow(appPublicKey)
 
-	otkDuration := OtkDuration{ originator,time.Now().Sub(otkCreated) }
-	if err := saveOtkDuration(db, otkDuration); err != nil {
-		log(ctx, nil).Infof("Unable to save otkCreated %f", otkDuration.Duration.Minutes())
-	}
-
-	event := Event{Originator: originator, DeviceType: Server, Identifier: OTKClaimed, Count: 1, Date: time.Now()}
-	if err := saveEvent(db, event); err != nil {
-		LogEvent(ctx, err, event)
-	}
-
 	var serverPub []byte
 	if err := row.Scan(&serverPub); err != nil {
 		if err := tx.Rollback(); err != nil {
 			return nil, err
 		}
 		return nil, err
+	}
+
+	otkDuration := OtkDuration{ originator,time.Now().Sub(otkCreated) }
+	if err := saveOtkDuration(tx, otkDuration); err != nil {
+		log(ctx, nil).Infof("Unable to save otkCreated %f", otkDuration.Duration.Minutes())
+	}
+
+	event := Event{Originator: originator, DeviceType: Server, Identifier: OTKClaimed, Count: 1, Date: time.Now()}
+	if err := saveEvent(tx, event); err != nil {
+		LogEvent(ctx, err, event)
 	}
 
 	if err = tx.Commit(); err != nil {

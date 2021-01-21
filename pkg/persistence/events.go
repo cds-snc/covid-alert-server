@@ -71,16 +71,7 @@ func LogEvent(ctx context.Context, err error, event Event) {
 	}).Warn("Unable to log event")
 }
 
-// SaveEvent log an Event in the database
-func (c *conn) SaveEvent(event Event) error {
-
-	if err := saveEvent(c.db, event); err != nil {
-		return err
-	}
-	return nil
-}
-
-func saveEvent(db *sql.DB, e Event) error {
+func saveEvent(tx *sql.Tx, e Event) error {
 	if err := e.DeviceType.IsValid(); err != nil {
 		return err
 	}
@@ -91,24 +82,12 @@ func saveEvent(db *sql.DB, e Event) error {
 
 	originator := translateToken(e.Originator)
 
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-
 	if _, err := tx.Exec(`
 		INSERT INTO events
 		(source, identifier, device_type, date, count)
 		VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE count = count + ?`,
 		originator, e.Identifier, e.DeviceType, e.Date.Format("2006-01-02"), e.Count, e.Count); err != nil {
 
-		if err := tx.Rollback(); err != nil {
-			return err
-		}
-		return err
-	}
-
-	if err := tx.Commit(); err != nil {
 		return err
 	}
 
