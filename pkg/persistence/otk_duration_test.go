@@ -20,6 +20,7 @@ func Test_roundToNearestHourLessThan1Hour(t *testing.T){
 	db, mock := createNewSqlMock()
 	defer db.Close()
 
+	mock.ExpectBegin()
 	setupOtkDurationMock(mock, "foo", 1)
 
 	d, _ := time.ParseDuration("30m")
@@ -27,15 +28,20 @@ func Test_roundToNearestHourLessThan1Hour(t *testing.T){
 		"foo",
 		d,
 	}
+	tx, _ := db.Begin()
+	saveOtkDuration(tx, od)
 
-	saveOtkDuration(db, od)
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
 }
 
 func Test_roundToNearestHourSixHours(t *testing.T){
 	db, mock := createNewSqlMock()
 	defer db.Close()
 
-	setupOtkDurationMock(mock, "foo", 1)
+	mock.ExpectBegin()
+	setupOtkDurationMock(mock, "foo", 6)
 
 	d, _ := time.ParseDuration("5h15m")
 	od := OtkDuration{
@@ -43,7 +49,12 @@ func Test_roundToNearestHourSixHours(t *testing.T){
 		d,
 	}
 
-	saveOtkDuration(db, od)
+	tx, _ := db.Begin()
+	saveOtkDuration(tx, od)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
 }
 
 func TestConn_GetAggregateOtkDurationsByDate(t *testing.T){

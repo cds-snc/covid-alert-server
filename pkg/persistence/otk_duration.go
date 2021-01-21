@@ -21,7 +21,7 @@ type OtkDuration struct {
 func saveOtkDuration(tx *sql.Tx, otkDuration OtkDuration) error {
 
 	hoursLive := otkDuration.Duration.Hours()
-	hours := math.Ceil(hoursLive)
+	hours := int64(math.Ceil(hoursLive))
 
 	originator := translateToken(otkDuration.Originator)
 
