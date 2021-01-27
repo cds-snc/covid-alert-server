@@ -162,17 +162,22 @@ func TestDBClaimKey(t *testing.T) {
 
 	created = timemath.MostRecentUTCMidnight(created)
 
-	query := fmt.Sprintf(
-		`UPDATE encryption_keys
+	query := `UPDATE encryption_keys
 		SET one_time_code = NULL,
 			app_public_key = ?,
 			created = ?
 		WHERE one_time_code = ?
-		AND created > (NOW() - INTERVAL %d MINUTE)`,
-		config.AppConstants.OneTimeCodeExpiryInMinutes,
-	)
+		AND created > (NOW() - INTERVAL ? MINUTE)`
 
-	mock.ExpectPrepare(query).ExpectExec().WithArgs(pub[:], created, oneTimeCode).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectPrepare(query).
+		 ExpectExec().
+		 WithArgs(
+				pub[:],
+				created,
+				oneTimeCode,
+				config.AppConstants.OneTimeCodeExpiryInMinutes,
+			).
+		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	rows = sqlmock.NewRows([]string{"server_public_key"}).AddRow(pub[:])
 	mock.ExpectPrepare(`SELECT server_public_key FROM encryption_keys WHERE app_public_key = ?`).ExpectQuery().WithArgs(pub[:]).WillReturnRows(rows)
@@ -655,15 +660,12 @@ func TestDBFetchKeysForHours(t *testing.T) {
 	row := sqlmock.NewRows([]string{"region", "key_data", "rolling_start_interval_number", "rolling_period", "transmission_risk_level"}).AddRow("302", []byte{}, 2651450, 144, 4)
 	mock.ExpectQuery("").WillReturnRows(row)
 
-	onsetDays := int32(0)
 	expectedResult := []*pb.TemporaryExposureKey{
 		&pb.TemporaryExposureKey{
 			KeyData:                    []byte{},
 			TransmissionRiskLevel:      &transmissionRiskLevel,
 			RollingStartIntervalNumber: &currentRollingStartIntervalNumber,
 			RollingPeriod:              &rollingPeriod,
-			ReportType:                 pb.TemporaryExposureKey_CONFIRMED_TEST.Enum(),
-			DaysSinceOnsetOfSymptoms:   &onsetDays,
 		},
 	}
 

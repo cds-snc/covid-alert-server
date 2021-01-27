@@ -63,11 +63,10 @@ func deleteExpiredKeys(ctx context.Context, db *sql.DB) (int64, error) {
 		log(ctx, countErr).Info("Unable to count expired encryption keys with no uploads")
 	}
 
-	res, err := db.Exec(
-		fmt.Sprintf(`
-			DELETE FROM encryption_keys
-			WHERE  (created < (NOW() - INTERVAL %d DAY))
-		`, config.AppConstants.EncryptionKeyValidityDays),
+	res, err := db.Exec(`
+		DELETE FROM encryption_keys
+		WHERE  (created < (NOW() - INTERVAL ? DAY))`,
+		config.AppConstants.EncryptionKeyValidityDays,
 	)
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
@@ -76,14 +75,18 @@ func deleteExpiredKeys(ctx context.Context, db *sql.DB) (int64, error) {
 		return 0, err
 	}
 
-	saveCountEvents(ctx, tx, OTKExpired, expiredCounts)
-	saveCountEvents(ctx, tx, OTKExpiredNoUploads, expiredCountsNoUploads)
+	count, err := res.RowsAffected()
+
+	if count != 0 {
+		saveCountEvents(ctx, tx, OTKExpired, expiredCounts)
+		saveCountEvents(ctx, tx, OTKExpiredNoUploads, expiredCountsNoUploads)
+	}
 
 	if err := tx.Commit(); err != nil {
 		return 0, err
 	}
 
-	return res.RowsAffected()
+	return count, err
 }
 
 func deleteUnclaimedKeys(ctx context.Context, db *sql.DB) (int64, error) {
@@ -104,13 +107,13 @@ func deleteUnclaimedKeys(ctx context.Context, db *sql.DB) (int64, error) {
 		log(ctx, countErr).Info("Unable to count unclaimed encryption keys")
 	}
 
-	res, err :=tx.Exec(
-		fmt.Sprintf(`
-			DELETE FROM encryption_keys
-			WHERE created < (NOW() - INTERVAL %d MINUTE)
-			AND app_public_key IS NULL
-		`,  config.AppConstants.OneTimeCodeExpiryInMinutes),
+	res, err :=tx.Exec(`
+		DELETE FROM encryption_keys
+		WHERE created < (NOW() - INTERVAL ? MINUTE)
+		AND app_public_key IS NULL`,
+		config.AppConstants.OneTimeCodeExpiryInMinutes,
 	)
+
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
 			return 0, err
@@ -118,13 +121,17 @@ func deleteUnclaimedKeys(ctx context.Context, db *sql.DB) (int64, error) {
 		return 0, err
 	}
 
-	saveCountEvents(ctx, tx, OTKUnclaimed, unclaimedCounts)
+	count, err := res.RowsAffected()
+
+	if count != 0 {
+		saveCountEvents(ctx, tx, OTKUnclaimed, unclaimedCounts)
+	}
 
 	if err := tx.Commit(); err != nil {
 		return 0, err
 	}
 
-	return res.RowsAffected()
+	return count, err
 }
 
 func deleteExhaustedKeys(ctx context.Context, db *sql.DB) (int64, error) {
@@ -148,6 +155,7 @@ func deleteExhaustedKeys(ctx context.Context, db *sql.DB) (int64, error) {
 		DELETE FROM encryption_keys
 		WHERE    remaining_keys = 0`,
 	)
+
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
 			return 0, err
@@ -155,13 +163,17 @@ func deleteExhaustedKeys(ctx context.Context, db *sql.DB) (int64, error) {
 		return 0, err
 	}
 
-	saveCountEvents(ctx, tx, OTKExhausted, exhaustedCounts)
+	count, err := res.RowsAffected()
+
+	if count != 0 {
+		saveCountEvents(ctx, tx, OTKExhausted, exhaustedCounts)
+	}
 
 	if err := tx.Commit(); err != nil {
 		return 0, err
 	}
 
-	return res.RowsAffected()
+	return count, err
 }
 
 func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte, ctx context.Context) ([]byte, error) {
@@ -208,17 +220,15 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte, ctx context.C
 		return nil, ErrInvalidOneTimeCode
 	}
 
-	s, err := tx.Prepare(
-		fmt.Sprintf(
-			`UPDATE encryption_keys
-			SET one_time_code = NULL,
-				app_public_key = ?,
-				created = ?
-			WHERE one_time_code = ?
-			AND created > (NOW() - INTERVAL %d MINUTE)`,
-			config.AppConstants.OneTimeCodeExpiryInMinutes,
-		),
-	)
+	s, err := tx.Prepare(`
+		UPDATE encryption_keys
+		SET one_time_code = NULL,
+			app_public_key = ?,
+			created = ?
+		WHERE one_time_code = ?
+		AND created > (NOW() - INTERVAL ? MINUTE)
+	`)
+
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
 			return nil, err
@@ -226,7 +236,7 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte, ctx context.C
 		return nil, err
 	}
 
-	res, err := s.Exec(appPublicKey, created, oneTimeCode)
+	res, err := s.Exec(appPublicKey, created, oneTimeCode, config.AppConstants.OneTimeCodeExpiryInMinutes)
 	if err != nil {
 		if err := tx.Rollback(); err != nil {
 			return nil, err
