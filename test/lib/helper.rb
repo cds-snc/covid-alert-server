@@ -71,6 +71,8 @@ module Helper
         transmission_risk_level: transmission_risk_level,
         rolling_period: rolling_period,
         rolling_start_interval_number: rolling_start_interval_number,
+        report_type: "CONFIRMED_TEST",
+        days_since_onset_of_symptoms: 0,
       )
     end
 
