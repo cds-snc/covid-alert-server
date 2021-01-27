@@ -143,6 +143,10 @@ message TemporaryExposureKeyExport {
   // The temporary exposure keys themselves.
   repeated TemporaryExposureKey keys = 7;
 
+  // Keys that have changed status from previous key archives,
+  // including keys that are being revoked.
+  repeated TemporaryExposureKey revised_keys = 8;
+
 }
 
 message SignatureInfo {
@@ -182,6 +186,23 @@ message TemporaryExposureKey {
   // Number of intervals in a period.
   optional int32 rolling_period = 4 [default = 144];
 
+  // Data type that represents why this key was published.
+  enum ReportType {
+    UNKNOWN = 0;  // Never returned by the client API.
+    CONFIRMED_TEST = 1;
+    CONFIRMED_CLINICAL_DIAGNOSIS = 2;
+    SELF_REPORT = 3;
+    RECURSIVE = 4;  // Reserved for future use.
+    REVOKED = 5;  // Used to revoke a key, never returned by client API.
+  }
+
+  // Type of diagnosis associated with a key.
+  optional ReportType report_type = 5;
+
+  // Number of days elapsed between symptom onset and the TEK being used.
+  // E.g. 2 means TEK is from 2 days after onset of symptoms.
+  // Valid values range is from -14 to 14.
+  optional sint32 days_since_onset_of_symptoms = 6;
 }
 
 message TEKSignatureList {
