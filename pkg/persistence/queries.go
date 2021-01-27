@@ -75,14 +75,18 @@ func deleteExpiredKeys(ctx context.Context, db *sql.DB) (int64, error) {
 		return 0, err
 	}
 
-	saveCountEvents(ctx, tx, OTKExpired, expiredCounts)
-	saveCountEvents(ctx, tx, OTKExpiredNoUploads, expiredCountsNoUploads)
+	count, err := res.RowsAffected()
+
+	if count != 0 {
+		saveCountEvents(ctx, tx, OTKExpired, expiredCounts)
+		saveCountEvents(ctx, tx, OTKExpiredNoUploads, expiredCountsNoUploads)
+	}
 
 	if err := tx.Commit(); err != nil {
 		return 0, err
 	}
 
-	return res.RowsAffected()
+	return count, err
 }
 
 func deleteUnclaimedKeys(ctx context.Context, db *sql.DB) (int64, error) {
@@ -117,13 +121,17 @@ func deleteUnclaimedKeys(ctx context.Context, db *sql.DB) (int64, error) {
 		return 0, err
 	}
 
-	saveCountEvents(ctx, tx, OTKUnclaimed, unclaimedCounts)
+	count, err := res.RowsAffected()
+
+	if count != 0 {
+		saveCountEvents(ctx, tx, OTKUnclaimed, unclaimedCounts)
+	}
 
 	if err := tx.Commit(); err != nil {
 		return 0, err
 	}
 
-	return res.RowsAffected()
+	return count, err
 }
 
 func deleteExhaustedKeys(ctx context.Context, db *sql.DB) (int64, error) {
@@ -155,13 +163,17 @@ func deleteExhaustedKeys(ctx context.Context, db *sql.DB) (int64, error) {
 		return 0, err
 	}
 
-	saveCountEvents(ctx, tx, OTKExhausted, exhaustedCounts)
+	count, err := res.RowsAffected()
+
+	if count != 0 {
+		saveCountEvents(ctx, tx, OTKExhausted, exhaustedCounts)
+	}
 
 	if err := tx.Commit(); err != nil {
 		return 0, err
 	}
 
-	return res.RowsAffected()
+	return 0, err
 }
 
 func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte, ctx context.Context) ([]byte, error) {
