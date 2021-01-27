@@ -162,17 +162,22 @@ func TestDBClaimKey(t *testing.T) {
 
 	created = timemath.MostRecentUTCMidnight(created)
 
-	query := fmt.Sprintf(
-		`UPDATE encryption_keys
+	query := `UPDATE encryption_keys
 		SET one_time_code = NULL,
 			app_public_key = ?,
 			created = ?
 		WHERE one_time_code = ?
-		AND created > (NOW() - INTERVAL %d MINUTE)`,
-		config.AppConstants.OneTimeCodeExpiryInMinutes,
-	)
+		AND created > (NOW() - INTERVAL ? MINUTE)`
 
-	mock.ExpectPrepare(query).ExpectExec().WithArgs(pub[:], created, oneTimeCode).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectPrepare(query).
+		 ExpectExec().
+		 WithArgs(
+				pub[:],
+				created,
+				oneTimeCode,
+				config.AppConstants.OneTimeCodeExpiryInMinutes,
+			).
+		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	rows = sqlmock.NewRows([]string{"server_public_key"}).AddRow(pub[:])
 	mock.ExpectPrepare(`SELECT server_public_key FROM encryption_keys WHERE app_public_key = ?`).ExpectQuery().WithArgs(pub[:]).WillReturnRows(rows)
