@@ -173,7 +173,7 @@ func deleteExhaustedKeys(ctx context.Context, db *sql.DB) (int64, error) {
 		return 0, err
 	}
 
-	return 0, err
+	return count, err
 }
 
 func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte, ctx context.Context) ([]byte, error) {
