@@ -62,7 +62,6 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       optional :batch_size, :int32, 5
       repeated :signature_infos, :message, 6, "covidshield.SignatureInfo"
       repeated :keys, :message, 7, "covidshield.TemporaryExposureKey"
-      repeated :revised_keys, :message, 8, "covidshield.TemporaryExposureKey"
     end
     add_message "covidshield.SignatureInfo" do
       optional :verification_key_version, :string, 3
@@ -74,16 +73,6 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       optional :transmission_risk_level, :int32, 2
       optional :rolling_start_interval_number, :int32, 3
       optional :rolling_period, :int32, 4, default: 144
-      optional :report_type, :enum, 5, "covidshield.TemporaryExposureKey.ReportType"
-      optional :days_since_onset_of_symptoms, :sint32, 6
-    end
-    add_enum "covidshield.TemporaryExposureKey.ReportType" do
-      value :UNKNOWN, 0
-      value :CONFIRMED_TEST, 1
-      value :CONFIRMED_CLINICAL_DIAGNOSIS, 2
-      value :SELF_REPORT, 3
-      value :RECURSIVE, 4
-      value :REVOKED, 5
     end
     add_message "covidshield.TEKSignatureList" do
       repeated :signatures, :message, 1, "covidshield.TEKSignature"
@@ -108,7 +97,6 @@ module Covidshield
   TemporaryExposureKeyExport = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.TemporaryExposureKeyExport").msgclass
   SignatureInfo = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.SignatureInfo").msgclass
   TemporaryExposureKey = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.TemporaryExposureKey").msgclass
-  TemporaryExposureKey::ReportType = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.TemporaryExposureKey.ReportType").enummodule
   TEKSignatureList = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.TEKSignatureList").msgclass
   TEKSignature = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.TEKSignature").msgclass
 end
