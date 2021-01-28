@@ -134,6 +134,21 @@ CREATE TABLE IF NOT EXISTS otk_life_duration (
 	UNIQUE KEY originator_date(originator, date)
 )`,
 		},
+	},{
+		id: "10",
+		statements: []string{`
+DROP TABLE otk_life_duration
+`,`
+CREATE TABLE IF NOT EXISTS otk_life_duration (
+	originator	VARCHAR(32) 	NOT NULL,
+	hours		INT				NOT NULL,
+	date		DATE			NOT NULL,
+	count		INT				UNSIGNED NOT NULL DEFAULT 0,
+	INDEX (originator),
+	INDEX (hours),
+	UNIQUE KEY originator_hours(originator, hours)
+)`,
+		},
 	},
 }
 
