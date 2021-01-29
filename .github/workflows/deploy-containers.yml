@@ -9,12 +9,30 @@ env:
   BRANCH: ${{ github.ref }}
 
 jobs:
-  deploy-retrieval-service:
+  deploy: 
+    strategy:
+      matrix:
+        name : [ retrieval, submission]
+        include:
+          - name: retrieval
+            SERVICE_NAME: KeyRetrieval
+            TASK_DEFINITION_FILE: task-defintion-retrieval.json
+            LAMBDA: RetrievalValidateBeforeTraffic
+            IMAGE_NAME: covid-server/key-retrieval
+            APPSPEC_FILE: covidshield-retrieval.json
+          - name: submission
+            SERVICE_NAME: KeySubmission
+            TASK_DEFINITION_FILE: task-defintion-submission.json
+            LAMBDA: SubmissionValidateBeforeTraffic
+            IMAGE_NAME: covid-server/key-submission
+            APPSPEC_FILE: covidshield-submission.json
+  
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Wait for container to be built and pushed
-        uses: fountainhead/action-wait-for-check@v1.0.0
+        # v1.0.0 of this action as of Jan 28 2021
+        uses: fountainhead/action-wait-for-check@4699210ccc66e2a13260803fadbb77085421b891
         id: wait-for-build
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -27,16 +45,12 @@ jobs:
 
       - name: Configure AWS credentials
         if: steps.wait-for-build.outputs.conclusion == 'success'
-        uses: aws-actions/configure-aws-credentials@v1
+        # v1 as of Jan 28 2021
+        uses: aws-actions/configure-aws-credentials@51e2d042f8c5cf77f151685c9338e989dc0b8fc8
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ca-central-1
-
-      - name: Login to Amazon ECR
-        if: steps.wait-for-build.outputs.conclusion == 'success'
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
 
       - name: Get Cluster Name
         if: steps.wait-for-build.outputs.conclusion == 'success'
@@ -44,116 +58,42 @@ jobs:
         run: |
           echo "##[set-output name=name;]$(aws ecs list-clusters | jq -r '.clusterArns[0]' | cut -f 2 -d "/" )"
 
-      - name: Download retrieval task definition
+      - name: Download task definition
         if: steps.wait-for-build.outputs.conclusion == 'success'
-        id: download-taskdef-retrieval
+        id: download-taskdef
         run: |
-          aws ecs describe-task-definition --task-definition KeyRetrieval --query taskDefinition > task-definition-retrieval.json
-          echo "##[set-output name=container_name;]$(jq -r '.containerDefinitions[0].name' task-definition-retrieval.json)"
+          aws ecs describe-task-definition --task-definition ${{ matrix.SERVICE_NAME }} --query taskDefinition > ${{ matrix.TASK_DEFINITION_FILE }}
+          echo "##[set-output name=container_name;]$(jq -r '.containerDefinitions[0].name' ${{ matrix.TASK_DEFINITION_FILE }}"
 
-      - name: Render image for retrieval service
+      - name: Render image for service
         if: steps.wait-for-build.outputs.conclusion == 'success'
-        id: taskdef-retrieval
-        uses: aws-actions/amazon-ecs-render-task-definition@9666dc9
+        id: taskdef
+        # v1.0.10
+        uses: aws-actions/amazon-ecs-render-task-definition@9666dc9d3bf790a3a6a49737b240f17fa599a5f2
         with:
-          task-definition: task-definition-retrieval.json
-          container-name: ${{ steps.download-taskdef-retrieval.outputs.container_name }}
-          image: ${{ steps.login-ecr.outputs.registry }}/covid-server/key-retrieval:${{ github.sha }}
+          task-definition: ${{ matrix.TASK_DEFINITION_FILE }}
+          container-name: ${{ steps.download-taskdef.outputs.container_name }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ matrix.IMAGE_NAME }}:${{ github.sha }}
 
-      - name: Render appspec for retrieval service
-        if: steps.wait-for-build.outputs.conclusion == 'success'
-        run: |
-          CONTAINER_PORT=`jq '.containerDefinitions[0].portMappings[0].containerPort' task-definition-retrieval.json`
-          CONTAINER_NAME=${{ steps.download-taskdef-retrieval.outputs.container_name }}
-          TASKDEF_ARN=`jq -r '.taskDefinitionArn' task-definition-retrieval.json | cut -f 1-6 -d "/"`
-          LAMBDA='RetrievalValidateBeforeTraffic'
-          jq  --argjson port "$CONTAINER_PORT" --arg cname "$CONTAINER_NAME" --arg taskdefarn "$TASKDEF_ARN" --arg lambda "$LAMBDA" '.Resources[0].TargetService.Properties.TaskDefinition = $taskdefarn | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerName = $cname | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerPort = $port | .Hooks[0].BeforeAllowTraffic = $lambda ' config/infrastructure/aws/appspec-template.json > covidshield-retrieval-appspec.json
-
-      - name: Deploy image for retrieval service
-        if: steps.wait-for-build.outputs.conclusion == 'success'
-        timeout-minutes: 10
-        uses: aws-actions/amazon-ecs-deploy-task-definition@7218b9c
-        with:
-          task-definition: ${{ steps.taskdef-retrieval.outputs.task-definition }}
-          service: KeyRetrieval
-          cluster: ${{ steps.cluster.outputs.name }}
-          wait-for-service-stability: true
-          codedeploy-appspec: ${{ github.workspace }}/covidshield-retrieval-appspec.json
-
-      - name: Logout of Amazon ECR
-        if: always()
-        run: docker logout ${{ steps.login-ecr.outputs.registry }}
-
-  deploy-submission-service:
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Wait for container to be built and pushed
-        uses: fountainhead/action-wait-for-check@v1.0.0
-        id: wait-for-build
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: build-n-push
-          ref: ${{ github.sha }}
-
-      - name: Checkout
-        if: steps.wait-for-build.outputs.conclusion == 'success'
-        uses: actions/checkout@v2
-
-      - name: Configure AWS credentials
-        if: steps.wait-for-build.outputs.conclusion == 'success'
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ca-central-1
-
-      - name: Login to Amazon ECR
-        if: steps.wait-for-build.outputs.conclusion == 'success'
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Get Cluster Name
-        if: steps.wait-for-build.outputs.conclusion == 'success'
-        id: cluster
-        run: |
-          echo "##[set-output name=name;]$(aws ecs list-clusters | jq -r '.clusterArns[0]' | cut -f 2 -d "/" )"
-
-      - name: Download submission task definition
-        if: steps.wait-for-build.outputs.conclusion == 'success'
-        id: download-taskdef-submission
-        run: |
-          aws ecs describe-task-definition --task-definition KeySubmission --query taskDefinition > task-definition-submission.json
-          echo "##[set-output name=container_name;]$(jq -r '.containerDefinitions[0].name' task-definition-submission.json)"
-
-      - name: Render image for submission service
-        if: steps.wait-for-build.outputs.conclusion == 'success'
-        id: taskdef-submission
-        uses: aws-actions/amazon-ecs-render-task-definition@9666dc9
-        with:
-          task-definition: task-definition-submission.json
-          container-name: ${{ steps.download-taskdef-submission.outputs.container_name }}
-          image: ${{ steps.login-ecr.outputs.registry }}/covid-server/key-submission:${{ github.sha }}
-
-      - name: Render appspec for submission service
+      - name: Render appspec for service
         if: steps.wait-for-build.outputs.conclusion == 'success'
         run: |
-          CONTAINER_PORT=`jq '.containerDefinitions[0].portMappings[0].containerPort' task-definition-submission.json`
-          CONTAINER_NAME=${{ steps.download-taskdef-submission.outputs.container_name }}
-          TASKDEF_ARN=`jq -r '.taskDefinitionArn' task-definition-submission.json | cut -f 1-6 -d "/"`
-          LAMBDA='SubmissionValidateBeforeTraffic'
-          jq  --argjson port "$CONTAINER_PORT" --arg cname "$CONTAINER_NAME" --arg taskdefarn "$TASKDEF_ARN" --arg lambda "$LAMBDA" '.Resources[0].TargetService.Properties.TaskDefinition = $taskdefarn | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerName = $cname | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerPort = $port | .Hooks[0].BeforeAllowTraffic = $lambda ' config/infrastructure/aws/appspec-template.json > covidshield-submission-appspec.json
+          CONTAINER_PORT=`jq '.containerDefinitions[0].portMappings[0].containerPort' ${{ matrix.TASK_DEFINITION_FILE }}`
+          CONTAINER_NAME=${{ steps.download-taskdef.outputs.container_name }}
+          TASKDEF_ARN=`jq -r '.taskDefinitionArn' ${{ matrix.TASK_DEFINITION_FILE }} | cut -f 1-6 -d "/"`
+          jq  --argjson port "$CONTAINER_PORT" --arg cname "$CONTAINER_NAME" --arg taskdefarn "$TASKDEF_ARN" --arg lambda "${{ matrix.LAMBDA }}" '.Resources[0].TargetService.Properties.TaskDefinition = $taskdefarn | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerName = $cname | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerPort = $port | .Hooks[0].BeforeAllowTraffic = $lambda ' config/infrastructure/aws/appspec-template.json > ${{ matrix.APPSPEC_FILE }}
 
       - name: Deploy image for submission service
         if: steps.wait-for-build.outputs.conclusion == 'success'
         timeout-minutes: 10
-        uses: aws-actions/amazon-ecs-deploy-task-definition@7218b9c
+        # v1.3.5
+        uses: aws-actions/amazon-ecs-deploy-task-definition@7218b9c4a02d0482834ead0388d3cdd982888461
         with:
-          task-definition: ${{ steps.taskdef-submission.outputs.task-definition }}
-          service: KeySubmission
+          task-definition: ${{ steps.taskdef.outputs.task-definition }}
+          service: ${{ matrix.SERVICE_NAME }}
           cluster: ${{ steps.cluster.outputs.name }}
           wait-for-service-stability: true
-          codedeploy-appspec: ${{ github.workspace }}/covidshield-submission-appspec.json
+          codedeploy-appspec: ${{ github.workspace }}/${{ APPSPEC_FILE }}
 
       - name: Logout of Amazon ECR
         if: always()
