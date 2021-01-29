@@ -52,6 +52,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ca-central-1
 
+      - name: Login to Amazon ECR
+        if: steps.wait-for-build.outputs.conclusion == 'success'
+        id: login-ecr
+        # v1 as of Jan 28 2021
+        uses: aws-actions/amazon-ecr-login@b9c809dc38d74cd0fde3c13cc4fe4ac72ebecdae
+
       - name: Get Cluster Name
         if: steps.wait-for-build.outputs.conclusion == 'success'
         id: cluster
