@@ -63,7 +63,7 @@ jobs:
         id: download-taskdef
         run: |
           aws ecs describe-task-definition --task-definition ${{ matrix.SERVICE_NAME }} --query taskDefinition > ${{ matrix.TASK_DEFINITION_FILE }}
-          echo "##[set-output name=container_name;]$(jq -r '.containerDefinitions[0].name' ${{ matrix.TASK_DEFINITION_FILE }}"
+          echo "##[set-output name=container_name;]$(jq -r '.containerDefinitions[0].name' ${{ matrix.TASK_DEFINITION_FILE }})"
 
       - name: Render image for service
         if: steps.wait-for-build.outputs.conclusion == 'success'
