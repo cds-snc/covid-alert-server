@@ -18,13 +18,13 @@ jobs:
             SERVICE_NAME: KeyRetrieval
             TASK_DEFINITION_FILE: task-defintion-retrieval.json
             LAMBDA: RetrievalValidateBeforeTraffic
-            CONTAINER_NAME: key-retrieval
+            IMAGE_NAME: covid-server/key-retrieval
             APPSPEC_FILE: covidshield-retrieval.json
           - name: submission
             SERVICE_NAME: KeySubmission
             TASK_DEFINITION_FILE: task-defintion-submission.json
             LAMBDA: SubmissionValidateBeforeTraffic
-            CONTAINER_NAME: key-submission
+            IMAGE_NAME: covid-server/key-submission
             APPSPEC_FILE: covidshield-submission.json
   
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
@@ -62,8 +62,8 @@ jobs:
         if: steps.wait-for-build.outputs.conclusion == 'success'
         id: download-taskdef
         run: |
-          aws ecs describe-task-definition --task-definition ${{ matrix.SERVICE_NAME }} --query taskDefinition > ${{ matric.TASK_DEFINITION_FILE }}
-          echo "##[set-output name=container_name;]$(jq -r '.containerDefinitions[0].name' ${{ matric.TASK_DEFINITION_FILE }}"
+          aws ecs describe-task-definition --task-definition ${{ matrix.SERVICE_NAME }} --query taskDefinition > ${{ matrix.TASK_DEFINITION_FILE }}
+          echo "##[set-output name=container_name;]$(jq -r '.containerDefinitions[0].name' ${{ matrix.TASK_DEFINITION_FILE }}"
 
       - name: Render image for service
         if: steps.wait-for-build.outputs.conclusion == 'success'
@@ -73,7 +73,7 @@ jobs:
         with:
           task-definition: ${{ matrix.TASK_DEFINITION_FILE }}
           container-name: ${{ steps.download-taskdef.outputs.container_name }}
-          image: ${{ steps.login-ecr.outputs.registry }}/covid-server/key-${{ matrix.name }}:${{ github.sha }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ matrix.IMAGE_NAME }}:${{ github.sha }}
 
       - name: Render appspec for service
         if: steps.wait-for-build.outputs.conclusion == 'success'
