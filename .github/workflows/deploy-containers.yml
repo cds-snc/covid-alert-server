@@ -31,7 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Wait for container to be built and pushed
-        uses: fountainhead/action-wait-for-check@v1.0.0
+        # v1.0.0 of this action as of Jan 28 2021
+        uses: fountainhead/action-wait-for-check@4699210ccc66e2a13260803fadbb77085421b891
         id: wait-for-build
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -44,7 +45,8 @@ jobs:
 
       - name: Configure AWS credentials
         if: steps.wait-for-build.outputs.conclusion == 'success'
-        uses: aws-actions/configure-aws-credentials@v1
+        # v1 as of Jan 28 2021
+        uses: aws-actions/configure-aws-credentials@51e2d042f8c5cf77f151685c9338e989dc0b8fc8
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -66,7 +68,8 @@ jobs:
       - name: Render image for service
         if: steps.wait-for-build.outputs.conclusion == 'success'
         id: taskdef
-        uses: aws-actions/amazon-ecs-render-task-definition@9666dc9
+        # v1.0.10
+        uses: aws-actions/amazon-ecs-render-task-definition@9666dc9d3bf790a3a6a49737b240f17fa599a5f2
         with:
           task-definition: ${{ matrix.TASK_DEFINITION_FILE }}
           container-name: ${{ steps.download-taskdef.outputs.container_name }}
@@ -79,10 +82,11 @@ jobs:
           CONTAINER_NAME=${{ steps.download-taskdef.outputs.container_name }}
           TASKDEF_ARN=`jq -r '.taskDefinitionArn' ${{ matrix.TASK_DEFINITION_FILE }} | cut -f 1-6 -d "/"`
           jq  --argjson port "$CONTAINER_PORT" --arg cname "$CONTAINER_NAME" --arg taskdefarn "$TASKDEF_ARN" --arg lambda "${{ matrix.LAMBDA }}" '.Resources[0].TargetService.Properties.TaskDefinition = $taskdefarn | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerName = $cname | .Resources[0].TargetService.Properties.LoadBalancerInfo.ContainerPort = $port | .Hooks[0].BeforeAllowTraffic = $lambda ' config/infrastructure/aws/appspec-template.json > ${{ matrix.APPSPEC_FILE }}
+
       - name: Deploy image for submission service
         if: steps.wait-for-build.outputs.conclusion == 'success'
         timeout-minutes: 10
-        # Version 1.3.5 of the action
+        # v1.3.5
         uses: aws-actions/amazon-ecs-deploy-task-definition@7218b9c4a02d0482834ead0388d3cdd982888461
         with:
           task-definition: ${{ steps.taskdef.outputs.task-definition }}
