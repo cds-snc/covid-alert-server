@@ -93,7 +93,7 @@ jobs:
           service: ${{ matrix.SERVICE_NAME }}
           cluster: ${{ steps.cluster.outputs.name }}
           wait-for-service-stability: true
-          codedeploy-appspec: ${{ github.workspace }}/${{ APPSPEC_FILE }}
+          codedeploy-appspec: ${{ github.workspace }}/${{ matrix.APPSPEC_FILE }}
 
       - name: Logout of Amazon ECR
         if: always()
