@@ -56,7 +56,7 @@ func (s *keyClaimServlet) newKeyClaim(w http.ResponseWriter, r *http.Request) {
 	hdr := r.Header.Get("Authorization")
 	region, originator, ok := s.auth.RegionFromAuthHeader(hdr)
 	if !ok {
-		log(ctx, nil).WithField("header", hdr).Info("bad auth header")
+		log(ctx, nil).Info("bad auth header")
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
