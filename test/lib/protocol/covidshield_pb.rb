@@ -50,6 +50,22 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       value :INVALID_TRANSMISSION_RISK_LEVEL, 13
       value :NO_KEYS_IN_PAYLOAD, 14
     end
+    add_message "covidshield.QrSubmission" do
+      optional :location_id, :string, 1
+      optional :start_time, :message, 2, "google.protobuf.Timestamp"
+      optional :end_time, :message, 3, "google.protobuf.Timestamp"
+    end
+    add_message "covidshield.QrSubmissionResponse" do
+      optional :error, :enum, 1, "covidshield.QrSubmissionResponse.ErrorCode"
+    end
+    add_enum "covidshield.QrSubmissionResponse.ErrorCode" do
+      value :NONE, 0
+      value :UNKNOWN, 1
+      value :INVALID_ID, 2
+      value :MISSING_TIMESTAMP, 3
+      value :PERIOD_INVALID, 4
+      value :SERVER_ERROR, 5
+    end
     add_message "covidshield.Upload" do
       optional :timestamp, :message, 1, "google.protobuf.Timestamp"
       repeated :keys, :message, 2, "covidshield.TemporaryExposureKey"
@@ -104,6 +120,9 @@ module Covidshield
   EncryptedUploadRequest = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.EncryptedUploadRequest").msgclass
   EncryptedUploadResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.EncryptedUploadResponse").msgclass
   EncryptedUploadResponse::ErrorCode = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.EncryptedUploadResponse.ErrorCode").enummodule
+  QrSubmission = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.QrSubmission").msgclass
+  QrSubmissionResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.QrSubmissionResponse").msgclass
+  QrSubmissionResponse::ErrorCode = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.QrSubmissionResponse.ErrorCode").enummodule
   Upload = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.Upload").msgclass
   TemporaryExposureKeyExport = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.TemporaryExposureKeyExport").msgclass
   SignatureInfo = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.SignatureInfo").msgclass

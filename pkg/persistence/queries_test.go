@@ -11,6 +11,7 @@ import (
 	"github.com/cds-snc/covid-alert-server/pkg/config"
 	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
 	"github.com/cds-snc/covid-alert-server/pkg/timemath"
+	timestamp "github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/nacl/box"
 )
@@ -30,7 +31,6 @@ func TestDeleteOldDiagnosisKeys(t *testing.T) {
 	}
 
 }
-
 
 func TestClaimKey(t *testing.T) {
 
@@ -124,11 +124,11 @@ func TestClaimKey(t *testing.T) {
 	mock.ExpectPrepare(query).
 		ExpectExec().
 		WithArgs(
-				pub[:],
-				created,
-				oneTimeCode,
-				config.AppConstants.OneTimeCodeExpiryInMinutes,
-			).
+			pub[:],
+			created,
+			oneTimeCode,
+			config.AppConstants.OneTimeCodeExpiryInMinutes,
+		).
 		WillReturnError(fmt.Errorf("error"))
 
 	mock.ExpectRollback()
@@ -186,11 +186,11 @@ func TestClaimKey(t *testing.T) {
 	mock.ExpectPrepare(query).
 		ExpectExec().
 		WithArgs(
-				pub[:],
-				created,
-				oneTimeCode,
-				config.AppConstants.OneTimeCodeExpiryInMinutes,
-			).
+			pub[:],
+			created,
+			oneTimeCode,
+			config.AppConstants.OneTimeCodeExpiryInMinutes,
+		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectPrepare(`SELECT server_public_key FROM encryption_keys WHERE app_public_key = ?`).ExpectQuery().WithArgs(pub[:]).WillReturnError(fmt.Errorf("error"))
@@ -219,11 +219,11 @@ func TestClaimKey(t *testing.T) {
 	mock.ExpectPrepare(query).
 		ExpectExec().
 		WithArgs(
-				pub[:],
-				created,
-				oneTimeCode,
-				config.AppConstants.OneTimeCodeExpiryInMinutes,
-			).
+			pub[:],
+			created,
+			oneTimeCode,
+			config.AppConstants.OneTimeCodeExpiryInMinutes,
+		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	rows = sqlmock.NewRows([]string{"server_public_key"}).AddRow(pub[:])
@@ -461,6 +461,36 @@ func testPersistEncryptionKeyWithHashID(t *testing.T) {
 
 	assert.Nil(t, receivedResult, "Expected nothing if could execute insert")
 
+}
+
+func TestPersistQrSubmission(t *testing.T) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	defer db.Close()
+
+	originator := "randomOrigin"
+
+	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	startTime, _ := timestamp.TimestampProto(time.Now())
+	endTime, _ := timestamp.TimestampProto(time.Now())
+	submission := pb.QrSubmission{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+
+	mock.ExpectExec(
+		`INSERT INTO qr_codes
+		(location_id, originator, start_time, end_time)
+		VALUES (?, ?, ?, ?)`).WithArgs(
+		submission.GetLocationId(),
+		originator,
+		submission.GetStartTime().Seconds,
+		submission.GetEndTime().Seconds,
+	).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	receivedResult := persistQrSubmission(db, originator, &submission)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Nil(t, receivedResult, "Expected nil if could execute insert")
 }
 
 func TestPrivForPub(t *testing.T) {

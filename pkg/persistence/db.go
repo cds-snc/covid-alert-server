@@ -60,6 +60,8 @@ type Conn interface {
 
 	ClearDiagnosisKeys(context.Context) error
 
+	NewQrSubmission(context.Context, string, *pb.QrSubmission) error
+
 	Close() error
 }
 
@@ -221,7 +223,7 @@ func (c *conn) saveNewKeyClaimEvent(ctx context.Context, originator string, rege
 	}
 
 	tx, err := c.db.Begin()
-	if err != nil{
+	if err != nil {
 		LogEvent(ctx, err, event)
 		return
 	}
@@ -274,6 +276,16 @@ func genRandom(chars []rune, length int64) string {
 	return b.String()
 }
 
+func (c *conn) NewQrSubmission(ctx context.Context, originator string, submission *pb.QrSubmission) error {
+	err := persistQrSubmission(c.db, originator, submission)
+
+	if err != nil {
+		log(nil, err).Error("saving new QR submission")
+	}
+
+	return err
+}
+
 func (c *conn) PrivForPub(pub []byte) ([]byte, error) {
 	if len(pub) != pb.KeyLength {
 		return nil, ErrInvalidKeyFormat
@@ -316,7 +328,6 @@ func handleKeysRows(rows *sql.Rows) ([]*pb.TemporaryExposureKey, error) {
 			return nil, err
 		}
 
-
 		onsetDays := int32(0)
 		keys = append(keys, &pb.TemporaryExposureKey{
 			KeyData:                    key,
@@ -326,7 +337,6 @@ func handleKeysRows(rows *sql.Rows) ([]*pb.TemporaryExposureKey, error) {
 			ReportType:                 pb.TemporaryExposureKey_CONFIRMED_TEST.Enum(),
 			DaysSinceOnsetOfSymptoms:   &onsetDays,
 		})
-
 
 	}
 	return keys, nil

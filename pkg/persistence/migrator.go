@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS tek_upload_count (
 	INDEX (date)
 )`,
 		},
-	},{
+	}, {
 		id: "9",
 		statements: []string{
 			`
@@ -134,11 +134,11 @@ CREATE TABLE IF NOT EXISTS otk_life_duration (
 	UNIQUE KEY originator_date(originator, date)
 )`,
 		},
-	},{
+	}, {
 		id: "10",
 		statements: []string{`
 DROP TABLE otk_life_duration
-`,`
+`, `
 CREATE TABLE IF NOT EXISTS otk_life_duration (
 	originator	VARCHAR(32) 	NOT NULL,
 	hours		INT				NOT NULL,
@@ -147,6 +147,19 @@ CREATE TABLE IF NOT EXISTS otk_life_duration (
 	INDEX (originator),
 	INDEX (hours),
 	UNIQUE KEY originator_hours(originator, hours)
+)`,
+		},
+	}, {
+		id: "11",
+		statements: []string{`
+CREATE TABLE IF NOT EXISTS qr_codes (
+	originator		VARCHAR(32)	NOT NULL,
+	location_id		VARCHAR(36)	NOT NULL,
+	start_time		INT UNSIGNED NOT NULL,
+	end_time			INT UNSIGNED NOT NULL,
+	created       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	INDEX (location_id),
+	INDEX (originator)
 )`,
 		},
 	},

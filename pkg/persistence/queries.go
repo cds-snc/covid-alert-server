@@ -45,7 +45,7 @@ func deleteOldDiagnosisKeys(db *sql.DB) (int64, error) {
 func deleteExpiredKeys(ctx context.Context, db *sql.DB) (int64, error) {
 
 	tx, err := db.Begin()
-	if err != nil{
+	if err != nil {
 		return 0, err
 	}
 
@@ -93,21 +93,21 @@ func deleteUnclaimedKeys(ctx context.Context, db *sql.DB) (int64, error) {
 
 	//start transaction
 	tx, err := db.Begin()
-	if err != nil{
+	if err != nil {
 		return 0, err
 	}
 
 	// Count the keys we are going to delete
 	var (
-		unclaimedCounts        []CountByOriginator
-		countErr               error
+		unclaimedCounts []CountByOriginator
+		countErr        error
 	)
 
 	if unclaimedCounts, countErr = countUnclaimedEncryptionKeysByOriginator(tx); countErr != nil {
 		log(ctx, countErr).Info("Unable to count unclaimed encryption keys")
 	}
 
-	res, err :=tx.Exec(`
+	res, err := tx.Exec(`
 		DELETE FROM encryption_keys
 		WHERE created < (NOW() - INTERVAL ? MINUTE)
 		AND app_public_key IS NULL`,
@@ -137,14 +137,14 @@ func deleteUnclaimedKeys(ctx context.Context, db *sql.DB) (int64, error) {
 func deleteExhaustedKeys(ctx context.Context, db *sql.DB) (int64, error) {
 	//start transaction
 	tx, err := db.Begin()
-	if err != nil{
+	if err != nil {
 		return 0, err
 	}
 
 	// Count the keys we are going to delete
 	var (
-		exhaustedCounts        []CountByOriginator
-		countErr               error
+		exhaustedCounts []CountByOriginator
+		countErr        error
 	)
 
 	if exhaustedCounts, countErr = countExhaustedEncryptionKeysByOriginator(tx); countErr != nil {
@@ -280,7 +280,7 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte, ctx context.C
 		return nil, err
 	}
 
-	otkDuration := OtkDuration{ originator,time.Now().Sub(otkCreated) }
+	otkDuration := OtkDuration{originator, time.Now().Sub(otkCreated)}
 	if err := saveOtkDuration(tx, otkDuration); err != nil {
 		log(ctx, nil).Infof("Unable to save otkCreated %f", otkDuration.Duration.Minutes())
 	}
@@ -331,6 +331,16 @@ func persistEncryptionKeyWithHashID(db *sql.DB, region, originator, hashID strin
 		}
 		return errors.New("used hashID found")
 	}
+	return err
+}
+
+func persistQrSubmission(db *sql.DB, originator string, submission *pb.QrSubmission) error {
+	_, err := db.Exec(
+		`INSERT INTO qr_codes
+			(location_id, originator, start_time, end_time)
+			VALUES (?, ?, ?, ?)`,
+		submission.GetLocationId(), originator, submission.GetStartTime().Seconds, submission.GetEndTime().Seconds,
+	)
 	return err
 }
 
