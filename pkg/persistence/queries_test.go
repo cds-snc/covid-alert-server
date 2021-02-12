@@ -463,7 +463,7 @@ func testPersistEncryptionKeyWithHashID(t *testing.T) {
 
 }
 
-func TestPersistQrSubmission(t *testing.T) {
+func TestPersistOutbreakEvent(t *testing.T) {
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	defer db.Close()
 
@@ -472,10 +472,10 @@ func TestPersistQrSubmission(t *testing.T) {
 	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
 	startTime, _ := timestamp.TimestampProto(time.Now())
 	endTime, _ := timestamp.TimestampProto(time.Now())
-	submission := pb.QrSubmission{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
 
 	mock.ExpectExec(
-		`INSERT INTO qr_codes
+		`INSERT INTO qr_outbreak_events
 		(location_id, originator, start_time, end_time)
 		VALUES (?, ?, ?, ?)`).WithArgs(
 		submission.GetLocationId(),
@@ -484,7 +484,7 @@ func TestPersistQrSubmission(t *testing.T) {
 		submission.GetEndTime().Seconds,
 	).WillReturnResult(sqlmock.NewResult(1, 1))
 
-	receivedResult := persistQrSubmission(db, originator, &submission)
+	receivedResult := persistOutbreakEvent(db, originator, &submission)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)

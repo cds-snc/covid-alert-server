@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS otk_life_duration (
 	}, {
 		id: "11",
 		statements: []string{`
-CREATE TABLE IF NOT EXISTS qr_codes (
+CREATE TABLE IF NOT EXISTS qr_outbreak_events (
 	originator		VARCHAR(32)	NOT NULL,
 	location_id		VARCHAR(36)	NOT NULL,
 	start_time		INT UNSIGNED NOT NULL,

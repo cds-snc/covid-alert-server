@@ -66,7 +66,7 @@ func (a *AppBuilder) WithSubmission() *AppBuilder {
 
 	a.servlets = append(a.servlets, server.NewUploadServlet(a.database))
 	a.servlets = append(a.servlets, server.NewKeyClaimServlet(a.database, lookup))
-	a.servlets = append(a.servlets, server.NewQRSubmissionServlet(a.database, lookup))
+	a.servlets = append(a.servlets, server.NewOutbreakEventServlet(a.database, lookup))
 
 	return a
 }

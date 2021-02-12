@@ -60,7 +60,7 @@ type Conn interface {
 
 	ClearDiagnosisKeys(context.Context) error
 
-	NewQrSubmission(context.Context, string, *pb.QrSubmission) error
+	NewOutbreakEvent(context.Context, string, *pb.OutbreakEvent) error
 
 	Close() error
 }
@@ -276,8 +276,8 @@ func genRandom(chars []rune, length int64) string {
 	return b.String()
 }
 
-func (c *conn) NewQrSubmission(ctx context.Context, originator string, submission *pb.QrSubmission) error {
-	err := persistQrSubmission(c.db, originator, submission)
+func (c *conn) NewOutbreakEvent(ctx context.Context, originator string, submission *pb.OutbreakEvent) error {
+	err := persistOutbreakEvent(c.db, originator, submission)
 
 	if err != nil {
 		log(nil, err).Error("saving new QR submission")

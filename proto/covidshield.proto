@@ -95,14 +95,14 @@ message EncryptedUploadResponse {
   optional ErrorCode error = 1;
 }
 
-message QrSubmission {
+message OutbreakEvent {
   // location ID references the ID in the portal
   optional string location_id = 1;
   optional google.protobuf.Timestamp start_time = 2;
   optional google.protobuf.Timestamp end_time = 3;
 }
 
-message QrSubmissionResponse {
+message OutbreakEventResponse {
   enum ErrorCode {
     NONE = 0;
     UNKNOWN = 1;

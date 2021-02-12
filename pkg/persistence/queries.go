@@ -334,9 +334,9 @@ func persistEncryptionKeyWithHashID(db *sql.DB, region, originator, hashID strin
 	return err
 }
 
-func persistQrSubmission(db *sql.DB, originator string, submission *pb.QrSubmission) error {
+func persistOutbreakEvent(db *sql.DB, originator string, submission *pb.OutbreakEvent) error {
 	_, err := db.Exec(
-		`INSERT INTO qr_codes
+		`INSERT INTO qr_outbreak_events
 			(location_id, originator, start_time, end_time)
 			VALUES (?, ?, ?, ?)`,
 		submission.GetLocationId(), originator, submission.GetStartTime().Seconds, submission.GetEndTime().Seconds,

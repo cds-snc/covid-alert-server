@@ -190,20 +190,20 @@ func (EncryptedUploadResponse_ErrorCode) EnumDescriptor() ([]byte, []int) {
 	return file_proto_covidshield_proto_rawDescGZIP(), []int{3, 0}
 }
 
-type QrSubmissionResponse_ErrorCode int32
+type OutbreakEventResponse_ErrorCode int32
 
 const (
-	QrSubmissionResponse_NONE              QrSubmissionResponse_ErrorCode = 0
-	QrSubmissionResponse_UNKNOWN           QrSubmissionResponse_ErrorCode = 1
-	QrSubmissionResponse_INVALID_ID        QrSubmissionResponse_ErrorCode = 2
-	QrSubmissionResponse_MISSING_TIMESTAMP QrSubmissionResponse_ErrorCode = 3
-	QrSubmissionResponse_PERIOD_INVALID    QrSubmissionResponse_ErrorCode = 4
-	QrSubmissionResponse_SERVER_ERROR      QrSubmissionResponse_ErrorCode = 5
+	OutbreakEventResponse_NONE              OutbreakEventResponse_ErrorCode = 0
+	OutbreakEventResponse_UNKNOWN           OutbreakEventResponse_ErrorCode = 1
+	OutbreakEventResponse_INVALID_ID        OutbreakEventResponse_ErrorCode = 2
+	OutbreakEventResponse_MISSING_TIMESTAMP OutbreakEventResponse_ErrorCode = 3
+	OutbreakEventResponse_PERIOD_INVALID    OutbreakEventResponse_ErrorCode = 4
+	OutbreakEventResponse_SERVER_ERROR      OutbreakEventResponse_ErrorCode = 5
 )
 
-// Enum value maps for QrSubmissionResponse_ErrorCode.
+// Enum value maps for OutbreakEventResponse_ErrorCode.
 var (
-	QrSubmissionResponse_ErrorCode_name = map[int32]string{
+	OutbreakEventResponse_ErrorCode_name = map[int32]string{
 		0: "NONE",
 		1: "UNKNOWN",
 		2: "INVALID_ID",
@@ -211,7 +211,7 @@ var (
 		4: "PERIOD_INVALID",
 		5: "SERVER_ERROR",
 	}
-	QrSubmissionResponse_ErrorCode_value = map[string]int32{
+	OutbreakEventResponse_ErrorCode_value = map[string]int32{
 		"NONE":              0,
 		"UNKNOWN":           1,
 		"INVALID_ID":        2,
@@ -221,40 +221,40 @@ var (
 	}
 )
 
-func (x QrSubmissionResponse_ErrorCode) Enum() *QrSubmissionResponse_ErrorCode {
-	p := new(QrSubmissionResponse_ErrorCode)
+func (x OutbreakEventResponse_ErrorCode) Enum() *OutbreakEventResponse_ErrorCode {
+	p := new(OutbreakEventResponse_ErrorCode)
 	*p = x
 	return p
 }
 
-func (x QrSubmissionResponse_ErrorCode) String() string {
+func (x OutbreakEventResponse_ErrorCode) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (QrSubmissionResponse_ErrorCode) Descriptor() protoreflect.EnumDescriptor {
+func (OutbreakEventResponse_ErrorCode) Descriptor() protoreflect.EnumDescriptor {
 	return file_proto_covidshield_proto_enumTypes[2].Descriptor()
 }
 
-func (QrSubmissionResponse_ErrorCode) Type() protoreflect.EnumType {
+func (OutbreakEventResponse_ErrorCode) Type() protoreflect.EnumType {
 	return &file_proto_covidshield_proto_enumTypes[2]
 }
 
-func (x QrSubmissionResponse_ErrorCode) Number() protoreflect.EnumNumber {
+func (x OutbreakEventResponse_ErrorCode) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
 // Deprecated: Do not use.
-func (x *QrSubmissionResponse_ErrorCode) UnmarshalJSON(b []byte) error {
+func (x *OutbreakEventResponse_ErrorCode) UnmarshalJSON(b []byte) error {
 	num, err := protoimpl.X.UnmarshalJSONEnum(x.Descriptor(), b)
 	if err != nil {
 		return err
 	}
-	*x = QrSubmissionResponse_ErrorCode(num)
+	*x = OutbreakEventResponse_ErrorCode(num)
 	return nil
 }
 
-// Deprecated: Use QrSubmissionResponse_ErrorCode.Descriptor instead.
-func (QrSubmissionResponse_ErrorCode) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use OutbreakEventResponse_ErrorCode.Descriptor instead.
+func (OutbreakEventResponse_ErrorCode) EnumDescriptor() ([]byte, []int) {
 	return file_proto_covidshield_proto_rawDescGZIP(), []int{5, 0}
 }
 
@@ -611,7 +611,7 @@ func (x *EncryptedUploadResponse) GetError() EncryptedUploadResponse_ErrorCode {
 	return EncryptedUploadResponse_NONE
 }
 
-type QrSubmission struct {
+type OutbreakEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -622,8 +622,8 @@ type QrSubmission struct {
 	EndTime    *timestamp.Timestamp `protobuf:"bytes,3,opt,name=end_time,json=endTime" json:"end_time,omitempty"`
 }
 
-func (x *QrSubmission) Reset() {
-	*x = QrSubmission{}
+func (x *OutbreakEvent) Reset() {
+	*x = OutbreakEvent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_proto_covidshield_proto_msgTypes[4]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -631,13 +631,13 @@ func (x *QrSubmission) Reset() {
 	}
 }
 
-func (x *QrSubmission) String() string {
+func (x *OutbreakEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QrSubmission) ProtoMessage() {}
+func (*OutbreakEvent) ProtoMessage() {}
 
-func (x *QrSubmission) ProtoReflect() protoreflect.Message {
+func (x *OutbreakEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_covidshield_proto_msgTypes[4]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -649,42 +649,42 @@ func (x *QrSubmission) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use QrSubmission.ProtoReflect.Descriptor instead.
-func (*QrSubmission) Descriptor() ([]byte, []int) {
+// Deprecated: Use OutbreakEvent.ProtoReflect.Descriptor instead.
+func (*OutbreakEvent) Descriptor() ([]byte, []int) {
 	return file_proto_covidshield_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *QrSubmission) GetLocationId() string {
+func (x *OutbreakEvent) GetLocationId() string {
 	if x != nil && x.LocationId != nil {
 		return *x.LocationId
 	}
 	return ""
 }
 
-func (x *QrSubmission) GetStartTime() *timestamp.Timestamp {
+func (x *OutbreakEvent) GetStartTime() *timestamp.Timestamp {
 	if x != nil {
 		return x.StartTime
 	}
 	return nil
 }
 
-func (x *QrSubmission) GetEndTime() *timestamp.Timestamp {
+func (x *OutbreakEvent) GetEndTime() *timestamp.Timestamp {
 	if x != nil {
 		return x.EndTime
 	}
 	return nil
 }
 
-type QrSubmissionResponse struct {
+type OutbreakEventResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Error *QrSubmissionResponse_ErrorCode `protobuf:"varint,1,opt,name=error,enum=covidshield.QrSubmissionResponse_ErrorCode" json:"error,omitempty"`
+	Error *OutbreakEventResponse_ErrorCode `protobuf:"varint,1,opt,name=error,enum=covidshield.OutbreakEventResponse_ErrorCode" json:"error,omitempty"`
 }
 
-func (x *QrSubmissionResponse) Reset() {
-	*x = QrSubmissionResponse{}
+func (x *OutbreakEventResponse) Reset() {
+	*x = OutbreakEventResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_proto_covidshield_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -692,13 +692,13 @@ func (x *QrSubmissionResponse) Reset() {
 	}
 }
 
-func (x *QrSubmissionResponse) String() string {
+func (x *OutbreakEventResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QrSubmissionResponse) ProtoMessage() {}
+func (*OutbreakEventResponse) ProtoMessage() {}
 
-func (x *QrSubmissionResponse) ProtoReflect() protoreflect.Message {
+func (x *OutbreakEventResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_covidshield_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -710,16 +710,16 @@ func (x *QrSubmissionResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use QrSubmissionResponse.ProtoReflect.Descriptor instead.
-func (*QrSubmissionResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use OutbreakEventResponse.ProtoReflect.Descriptor instead.
+func (*OutbreakEventResponse) Descriptor() ([]byte, []int) {
 	return file_proto_covidshield_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *QrSubmissionResponse) GetError() QrSubmissionResponse_ErrorCode {
+func (x *OutbreakEventResponse) GetError() OutbreakEventResponse_ErrorCode {
 	if x != nil && x.Error != nil {
 		return *x.Error
 	}
-	return QrSubmissionResponse_NONE
+	return OutbreakEventResponse_NONE
 }
 
 // Upload is the decrypted type of the `payload` field in EncryptedUploadRequest.
@@ -1405,14 +1405,14 @@ var file_proto_covidshield_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_proto_covidshield_proto_goTypes = []interface{}{
 	(KeyClaimResponse_ErrorCode)(0),        // 0: covidshield.KeyClaimResponse.ErrorCode
 	(EncryptedUploadResponse_ErrorCode)(0), // 1: covidshield.EncryptedUploadResponse.ErrorCode
-	(QrSubmissionResponse_ErrorCode)(0),    // 2: covidshield.QrSubmissionResponse.ErrorCode
+	(OutbreakEventResponse_ErrorCode)(0),   // 2: covidshield.OutbreakEventResponse.ErrorCode
 	(TemporaryExposureKey_ReportType)(0),   // 3: covidshield.TemporaryExposureKey.ReportType
 	(*KeyClaimRequest)(nil),                // 4: covidshield.KeyClaimRequest
 	(*KeyClaimResponse)(nil),               // 5: covidshield.KeyClaimResponse
 	(*EncryptedUploadRequest)(nil),         // 6: covidshield.EncryptedUploadRequest
 	(*EncryptedUploadResponse)(nil),        // 7: covidshield.EncryptedUploadResponse
-	(*QrSubmission)(nil),                   // 8: covidshield.QrSubmission
-	(*QrSubmissionResponse)(nil),           // 9: covidshield.QrSubmissionResponse
+	(*OutbreakEvent)(nil),                  // 8: covidshield.OutbreakEvent
+	(*OutbreakEventResponse)(nil),          // 9: covidshield.OutbreakEventResponse
 	(*Upload)(nil),                         // 10: covidshield.Upload
 	(*TemporaryExposureKeyExport)(nil),     // 11: covidshield.TemporaryExposureKeyExport
 	(*SignatureInfo)(nil),                  // 12: covidshield.SignatureInfo
@@ -1426,9 +1426,9 @@ var file_proto_covidshield_proto_depIdxs = []int32{
 	0,  // 0: covidshield.KeyClaimResponse.error:type_name -> covidshield.KeyClaimResponse.ErrorCode
 	16, // 1: covidshield.KeyClaimResponse.remaining_ban_duration:type_name -> google.protobuf.Duration
 	1,  // 2: covidshield.EncryptedUploadResponse.error:type_name -> covidshield.EncryptedUploadResponse.ErrorCode
-	17, // 3: covidshield.QrSubmission.start_time:type_name -> google.protobuf.Timestamp
-	17, // 4: covidshield.QrSubmission.end_time:type_name -> google.protobuf.Timestamp
-	2,  // 5: covidshield.QrSubmissionResponse.error:type_name -> covidshield.QrSubmissionResponse.ErrorCode
+	17, // 3: covidshield.OutbreakEvent.start_time:type_name -> google.protobuf.Timestamp
+	17, // 4: covidshield.OutbreakEvent.end_time:type_name -> google.protobuf.Timestamp
+	2,  // 5: covidshield.OutbreakEventResponse.error:type_name -> covidshield.OutbreakEventResponse.ErrorCode
 	17, // 6: covidshield.Upload.timestamp:type_name -> google.protobuf.Timestamp
 	13, // 7: covidshield.Upload.keys:type_name -> covidshield.TemporaryExposureKey
 	12, // 8: covidshield.TemporaryExposureKeyExport.signature_infos:type_name -> covidshield.SignatureInfo
@@ -1499,7 +1499,7 @@ func file_proto_covidshield_proto_init() {
 			}
 		}
 		file_proto_covidshield_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QrSubmission); i {
+			switch v := v.(*OutbreakEvent); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1511,7 +1511,7 @@ func file_proto_covidshield_proto_init() {
 			}
 		}
 		file_proto_covidshield_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QrSubmissionResponse); i {
+			switch v := v.(*OutbreakEventResponse); i {
 			case 0:
 				return &v.state
 			case 1:

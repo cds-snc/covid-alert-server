@@ -12,26 +12,26 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type qrSubmissionServlet struct {
+type OutbreakEventServlet struct {
 	db   persistence.Conn
 	auth keyclaim.Authenticator
 }
 
-func NewQRSubmissionServlet(db persistence.Conn, qrSubmissionAuth keyclaim.Authenticator) srvutil.Servlet {
-	s := &qrSubmissionServlet{db: db, auth: qrSubmissionAuth}
+func NewOutbreakEventServlet(db persistence.Conn, OutbreakEventAuth keyclaim.Authenticator) srvutil.Servlet {
+	s := &OutbreakEventServlet{db: db, auth: OutbreakEventAuth}
 
 	return srvutil.PrefixServlet(s, "/qr")
 }
 
-func (s *qrSubmissionServlet) RegisterRouting(r *mux.Router) {
-	r.HandleFunc("/new-submission", s.newExposureEvent)
+func (s *OutbreakEventServlet) RegisterRouting(r *mux.Router) {
+	r.HandleFunc("/new-event", s.newExposureEvent)
 }
 
-func qrUploadResponse(errCode pb.QrSubmissionResponse_ErrorCode) *pb.QrSubmissionResponse {
-	return &pb.QrSubmissionResponse{Error: &errCode}
+func qrUploadResponse(errCode pb.OutbreakEventResponse_ErrorCode) *pb.OutbreakEventResponse {
+	return &pb.OutbreakEventResponse{Error: &errCode}
 }
 
-func (s *qrSubmissionServlet) newExposureEvent(w http.ResponseWriter, r *http.Request) {
+func (s *OutbreakEventServlet) newExposureEvent(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if r.Method != "POST" {
@@ -56,16 +56,16 @@ func (s *qrSubmissionServlet) newExposureEvent(w http.ResponseWriter, r *http.Re
 	if err != nil {
 		requestError(
 			ctx, w, err, "error reading request",
-			http.StatusBadRequest, qrUploadResponse(pb.QrSubmissionResponse_UNKNOWN),
+			http.StatusBadRequest, qrUploadResponse(pb.OutbreakEventResponse_UNKNOWN),
 		)
 		return
 	}
 
-	var submission pb.QrSubmission
+	var submission pb.OutbreakEvent
 	if err := proto.Unmarshal(data, &submission); err != nil {
 		requestError(
 			ctx, w, err, "error unmarshalling request",
-			http.StatusBadRequest, qrUploadResponse(pb.QrSubmissionResponse_UNKNOWN),
+			http.StatusBadRequest, qrUploadResponse(pb.OutbreakEventResponse_UNKNOWN),
 		)
 		return
 	}
@@ -73,7 +73,7 @@ func (s *qrSubmissionServlet) newExposureEvent(w http.ResponseWriter, r *http.Re
 	if len(submission.GetLocationId()) != 36 {
 		requestError(
 			ctx, w, err, "Location ID is not valid",
-			http.StatusBadRequest, qrUploadResponse(pb.QrSubmissionResponse_INVALID_ID),
+			http.StatusBadRequest, qrUploadResponse(pb.OutbreakEventResponse_INVALID_ID),
 		)
 		return
 	}
@@ -81,7 +81,7 @@ func (s *qrSubmissionServlet) newExposureEvent(w http.ResponseWriter, r *http.Re
 	if submission.GetStartTime().Seconds < 1 || submission.GetEndTime().Seconds < 1 {
 		requestError(
 			ctx, w, err, "missing/invalid timestamp",
-			http.StatusBadRequest, qrUploadResponse(pb.QrSubmissionResponse_MISSING_TIMESTAMP),
+			http.StatusBadRequest, qrUploadResponse(pb.OutbreakEventResponse_MISSING_TIMESTAMP),
 		)
 		return
 	}
@@ -89,28 +89,28 @@ func (s *qrSubmissionServlet) newExposureEvent(w http.ResponseWriter, r *http.Re
 	if submission.GetEndTime().Seconds-submission.GetStartTime().Seconds < 1 {
 		requestError(
 			ctx, w, err, "invalid timeperiod",
-			http.StatusBadRequest, qrUploadResponse(pb.QrSubmissionResponse_PERIOD_INVALID),
+			http.StatusBadRequest, qrUploadResponse(pb.OutbreakEventResponse_PERIOD_INVALID),
 		)
 		return
 	}
 
 	// Save the new QR Submission
-	err = s.db.NewQrSubmission(ctx, originator, &submission)
+	err = s.db.NewOutbreakEvent(ctx, originator, &submission)
 
 	if err != nil {
 		requestError(
 			ctx, w, err, "error saving QR submission",
-			http.StatusBadRequest, qrUploadResponse(pb.QrSubmissionResponse_SERVER_ERROR),
+			http.StatusBadRequest, qrUploadResponse(pb.OutbreakEventResponse_SERVER_ERROR),
 		)
 		return
 	}
 
-	resp := qrUploadResponse(pb.QrSubmissionResponse_NONE)
+	resp := qrUploadResponse(pb.OutbreakEventResponse_NONE)
 	data, err = proto.Marshal(resp)
 	if err != nil {
 		requestError(
 			ctx, w, err, "error marshalling response",
-			http.StatusInternalServerError, qrUploadResponse(pb.QrSubmissionResponse_SERVER_ERROR),
+			http.StatusInternalServerError, qrUploadResponse(pb.OutbreakEventResponse_SERVER_ERROR),
 		)
 		return
 	}

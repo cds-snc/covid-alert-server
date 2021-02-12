@@ -420,12 +420,12 @@ func (_m *Conn) NewKeyClaim(_a0 context.Context, _a1 string, _a2 string, _a3 str
 	return r0, r1
 }
 
-// NewQrSubmission provides a mock function with given fields: _a0, _a1, _a2
-func (_m *Conn) NewQrSubmission(_a0 context.Context, _a1 string, _a2 *covidshield.QrSubmission) error {
+// NewOutbreakEvent provides a mock function with given fields: _a0, _a1, _a2
+func (_m *Conn) NewOutbreakEvent(_a0 context.Context, _a1 string, _a2 *covidshield.OutbreakEvent) error {
 	ret := _m.Called(_a0, _a1, _a2)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *covidshield.QrSubmission) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *covidshield.OutbreakEvent) error); ok {
 		r0 = rf(_a0, _a1, _a2)
 	} else {
 		r0 = ret.Error(0)

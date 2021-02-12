@@ -522,7 +522,7 @@ func TestClaimedHashID(t *testing.T) {
 	assert.Equal(t, ErrHashIDClaimed, receivedError) // This is a bug and should be fixed, however, it is high unlikely to trigger
 }
 
-func TestNewQrSubmissionError(t *testing.T) {
+func TestNewOutbreakEventError(t *testing.T) {
 	// Capture logs
 	oldLog := log
 	defer func() { log = oldLog }()
@@ -544,10 +544,10 @@ func TestNewQrSubmissionError(t *testing.T) {
 	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
 	startTime, _ := timestamp.TimestampProto(time.Now())
 	endTime, _ := timestamp.TimestampProto(time.Now())
-	submission := pb.QrSubmission{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
 
 	mock.ExpectExec(
-		`INSERT INTO qr_codes
+		`INSERT INTO qr_outbreak_events
 		(location_id, originator, start_time, end_time)
 		VALUES (?, ?, ?, ?)`).WithArgs(
 		AnyType{},
@@ -556,7 +556,7 @@ func TestNewQrSubmissionError(t *testing.T) {
 		AnyType{},
 	).WillReturnError(fmt.Errorf("error"))
 
-	receivedError := conn.NewQrSubmission(context.TODO(), originator, &submission)
+	receivedError := conn.NewOutbreakEvent(context.TODO(), originator, &submission)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
@@ -567,7 +567,7 @@ func TestNewQrSubmissionError(t *testing.T) {
 	assertLog(t, hook, 1, logrus.ErrorLevel, "saving new QR submission")
 }
 
-func TestNewQrSubmissionSuccess(t *testing.T) {
+func TestNewOutbreakEventSuccess(t *testing.T) {
 	// Capture logs
 	oldLog := log
 	defer func() { log = oldLog }()
@@ -589,10 +589,10 @@ func TestNewQrSubmissionSuccess(t *testing.T) {
 	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
 	startTime, _ := timestamp.TimestampProto(time.Now())
 	endTime, _ := timestamp.TimestampProto(time.Now())
-	submission := pb.QrSubmission{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
 
 	mock.ExpectExec(
-		`INSERT INTO qr_codes
+		`INSERT INTO qr_outbreak_events
 		(location_id, originator, start_time, end_time)
 		VALUES (?, ?, ?, ?)`).WithArgs(
 		AnyType{},
@@ -601,7 +601,7 @@ func TestNewQrSubmissionSuccess(t *testing.T) {
 		AnyType{},
 	).WillReturnResult(sqlmock.NewResult(1, 1))
 
-	receivedError := conn.NewQrSubmission(context.TODO(), originator, &submission)
+	receivedError := conn.NewOutbreakEvent(context.TODO(), originator, &submission)
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
