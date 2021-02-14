@@ -777,6 +777,41 @@ func TestDBFetchKeysForHours(t *testing.T) {
 	assert.Equal(t, fmt.Errorf("Generic error"), receivedError, "Expected rows for the query")
 }
 
+func TestFetchOutbreakForTimeRange(t *testing.T) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
+	defer db.Close()
+
+	conn := conn{
+		db: db,
+	}
+
+	// No errors
+	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	startTime, _ := timestamp.TimestampProto(time.Unix(1613238163, 0))
+	endTime, _ := timestamp.TimestampProto(time.Unix(1613324563, 0))
+	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+
+	row := sqlmock.NewRows([]string{"location_id", "start_time", "end_time"}).AddRow(uuid, startTime.Seconds, endTime.Seconds)
+	mock.ExpectQuery("").WillReturnRows(row)
+
+	expectedResult := []*pb.OutbreakEvent{&submission}
+
+	receivedResult, _ := conn.FetchOutbreakForTimeRange(time.Now(), time.Now().Add(time.Hour*24))
+
+	assert.Equal(t, expectedResult, receivedResult, "Expected rows for the query")
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	// Errors
+	mock.ExpectQuery("").WillReturnError(fmt.Errorf("Generic error"))
+
+	_, receivedError := conn.FetchOutbreakForTimeRange(time.Now(), time.Now().Add(time.Hour*24))
+
+	assert.Equal(t, fmt.Errorf("Generic error"), receivedError, "Expected rows for the query")
+}
+
 func TestDBCheckClaimKeyBan(t *testing.T) {
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
 	defer db.Close()

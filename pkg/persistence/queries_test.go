@@ -560,6 +560,39 @@ func TestDiagnosisKeysForHours(t *testing.T) {
 	}
 }
 
+func TestOutbreakEventsForTimeRange(t *testing.T) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	defer db.Close()
+
+	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	startTime := time.Unix(1613238163, 0)
+	endTime := time.Unix(1613324563, 0)
+
+	query := `SELECT location_id, start_time, end_time FROM qr_outbreak_events
+	WHERE created >= ?
+	AND created < ?
+	ORDER BY location_id
+	`
+
+	row := sqlmock.NewRows([]string{"location_id", "start_time", "end_time"}).AddRow(uuid, startTime, endTime)
+	mock.ExpectQuery(query).WithArgs(
+		startTime,
+		endTime).WillReturnRows(row)
+
+	expectedResult := uuid
+	rows, _ := outbreakEventsForTimeRange(db, startTime, endTime)
+	var receivedResult string
+	for rows.Next() {
+		rows.Scan(&receivedResult, nil, nil)
+	}
+
+	assert.Equal(t, expectedResult, receivedResult, "Expected rows for the query")
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
+
 func TestRegisterDiagnosisKeys(t *testing.T) {
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	defer db.Close()

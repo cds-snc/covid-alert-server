@@ -65,6 +65,15 @@ module Helper
       @ret_conn.send(method, "/retrieve/302/#{date_number}/#{hmac}")
     end
 
+    def get_qr_date(date_number, method: :get)
+      hmac = OpenSSL::HMAC.hexdigest(
+        "SHA256",
+        [ENV.fetch("RETRIEVE_HMAC_KEY")].pack("H*"),
+        "302:#{date_number}:#{Time.now.to_i / 3600}"
+      )
+      @ret_conn.send(method, "/qr/302/#{date_number}/#{hmac}")
+    end
+
     def tek(data: '1' * 16, transmission_risk_level: 3, rolling_period: 144, rolling_start_interval_number: next_rsin)
       Covidshield::TemporaryExposureKey.new(
         key_data: data,

@@ -85,6 +85,8 @@ func (a *AppBuilder) WithRetrieval() *AppBuilder {
 	checkEnvironmentVariable("METRICS_PASSWORD")
 	a.servlets = append(a.servlets, server.NewMetricsServlet(a.database, lookup))
 
+	a.servlets = append(a.servlets, server.NewQrRetrieveServlet(a.database, retrieval.NewAuthenticator(), retrieval.NewSigner()))
+
 	return a
 }
 

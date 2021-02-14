@@ -66,6 +66,14 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       value :PERIOD_INVALID, 4
       value :SERVER_ERROR, 5
     end
+    add_message "covidshield.OutbreakEventExport" do
+      optional :start_timestamp, :fixed64, 1
+      optional :end_timestamp, :fixed64, 2
+      repeated :locations, :message, 3, "covidshield.OutbreakEvent"
+    end
+    add_message "covidshield.OutbreakEventExportSignature" do
+      optional :signature, :bytes, 1
+    end
     add_message "covidshield.Upload" do
       optional :timestamp, :message, 1, "google.protobuf.Timestamp"
       repeated :keys, :message, 2, "covidshield.TemporaryExposureKey"
@@ -123,6 +131,8 @@ module Covidshield
   OutbreakEvent = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.OutbreakEvent").msgclass
   OutbreakEventResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.OutbreakEventResponse").msgclass
   OutbreakEventResponse::ErrorCode = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.OutbreakEventResponse.ErrorCode").enummodule
+  OutbreakEventExport = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.OutbreakEventExport").msgclass
+  OutbreakEventExportSignature = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.OutbreakEventExportSignature").msgclass
   Upload = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.Upload").msgclass
   TemporaryExposureKeyExport = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.TemporaryExposureKeyExport").msgclass
   SignatureInfo = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.SignatureInfo").msgclass

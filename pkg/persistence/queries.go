@@ -375,6 +375,16 @@ func diagnosisKeysForHours(db *sql.DB, region string, startHour uint32, endHour 
 	)
 }
 
+func outbreakEventsForTimeRange(db *sql.DB, startTime time.Time, endTime time.Time) (*sql.Rows, error) {
+	return db.Query(
+		`SELECT location_id, start_time, end_time FROM qr_outbreak_events
+		WHERE created >= ?
+		AND created < ?
+		ORDER BY location_id
+		`, startTime, endTime,
+	)
+}
+
 func registerDiagnosisKeys(db *sql.DB, appPubKey *[32]byte, keys []*pb.TemporaryExposureKey, ctx context.Context) error {
 	tx, err := db.Begin()
 	if err != nil {
