@@ -45,7 +45,7 @@ func deleteOldDiagnosisKeys(db *sql.DB) (int64, error) {
 func deleteExpiredKeys(ctx context.Context, db *sql.DB) (int64, error) {
 
 	tx, err := db.Begin()
-	if err != nil{
+	if err != nil {
 		return 0, err
 	}
 
@@ -93,21 +93,21 @@ func deleteUnclaimedKeys(ctx context.Context, db *sql.DB) (int64, error) {
 
 	//start transaction
 	tx, err := db.Begin()
-	if err != nil{
+	if err != nil {
 		return 0, err
 	}
 
 	// Count the keys we are going to delete
 	var (
-		unclaimedCounts        []CountByOriginator
-		countErr               error
+		unclaimedCounts []CountByOriginator
+		countErr        error
 	)
 
 	if unclaimedCounts, countErr = countUnclaimedEncryptionKeysByOriginator(tx); countErr != nil {
 		log(ctx, countErr).Info("Unable to count unclaimed encryption keys")
 	}
 
-	res, err :=tx.Exec(`
+	res, err := tx.Exec(`
 		DELETE FROM encryption_keys
 		WHERE created < (NOW() - INTERVAL ? MINUTE)
 		AND app_public_key IS NULL`,
@@ -137,14 +137,14 @@ func deleteUnclaimedKeys(ctx context.Context, db *sql.DB) (int64, error) {
 func deleteExhaustedKeys(ctx context.Context, db *sql.DB) (int64, error) {
 	//start transaction
 	tx, err := db.Begin()
-	if err != nil{
+	if err != nil {
 		return 0, err
 	}
 
 	// Count the keys we are going to delete
 	var (
-		exhaustedCounts        []CountByOriginator
-		countErr               error
+		exhaustedCounts []CountByOriginator
+		countErr        error
 	)
 
 	if exhaustedCounts, countErr = countExhaustedEncryptionKeysByOriginator(tx); countErr != nil {
@@ -280,7 +280,7 @@ func claimKey(db *sql.DB, oneTimeCode string, appPublicKey []byte, ctx context.C
 		return nil, err
 	}
 
-	otkDuration := OtkDuration{ originator,time.Now().Sub(otkCreated) }
+	otkDuration := OtkDuration{originator, time.Now().Sub(otkCreated)}
 	if err := saveOtkDuration(tx, otkDuration); err != nil {
 		log(ctx, nil).Infof("Unable to save otkCreated %f", otkDuration.Duration.Minutes())
 	}
@@ -334,6 +334,16 @@ func persistEncryptionKeyWithHashID(db *sql.DB, region, originator, hashID strin
 	return err
 }
 
+func persistOutbreakEvent(db *sql.DB, originator string, submission *pb.OutbreakEvent) error {
+	_, err := db.Exec(
+		`INSERT INTO qr_outbreak_events
+			(location_id, originator, start_time, end_time)
+			VALUES (?, ?, ?, ?)`,
+		submission.GetLocationId(), originator, submission.GetStartTime().Seconds, submission.GetEndTime().Seconds,
+	)
+	return err
+}
+
 func privForPub(db *sql.DB, pub []byte) *sql.Row {
 	return db.QueryRow(fmt.Sprintf(`
 		SELECT server_private_key FROM encryption_keys
@@ -362,6 +372,16 @@ func diagnosisKeysForHours(db *sql.DB, region string, startHour uint32, endHour 
 		ORDER BY key_data
 		`, // don't implicitly order by insertion date: for privacy
 		startHour, endHour, minRollingStartIntervalNumber, region,
+	)
+}
+
+func outbreakEventsForTimeRange(db *sql.DB, startTime time.Time, endTime time.Time) (*sql.Rows, error) {
+	return db.Query(
+		`SELECT location_id, start_time, end_time FROM qr_outbreak_events
+		WHERE created >= ?
+		AND created < ?
+		ORDER BY location_id
+		`, startTime, endTime,
 	)
 }
 

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
+	timestamp "github.com/golang/protobuf/ptypes"
 
 	"github.com/Shopify/goose/logger"
 	"github.com/go-sql-driver/mysql"
@@ -59,6 +60,9 @@ type Conn interface {
 	GetAggregateOtkDurationsByDate(startDate string) ([]AggregateOtkDuration, error)
 
 	ClearDiagnosisKeys(context.Context) error
+
+	NewOutbreakEvent(context.Context, string, *pb.OutbreakEvent) error
+	FetchOutbreakForTimeRange(time.Time, time.Time) ([]*pb.OutbreakEvent, error)
 
 	Close() error
 }
@@ -221,7 +225,7 @@ func (c *conn) saveNewKeyClaimEvent(ctx context.Context, originator string, rege
 	}
 
 	tx, err := c.db.Begin()
-	if err != nil{
+	if err != nil {
 		LogEvent(ctx, err, event)
 		return
 	}
@@ -274,6 +278,16 @@ func genRandom(chars []rune, length int64) string {
 	return b.String()
 }
 
+func (c *conn) NewOutbreakEvent(ctx context.Context, originator string, submission *pb.OutbreakEvent) error {
+	err := persistOutbreakEvent(c.db, originator, submission)
+
+	if err != nil {
+		log(nil, err).Error("saving new QR submission")
+	}
+
+	return err
+}
+
 func (c *conn) PrivForPub(pub []byte) ([]byte, error) {
 	if len(pub) != pb.KeyLength {
 		return nil, ErrInvalidKeyFormat
@@ -316,7 +330,6 @@ func handleKeysRows(rows *sql.Rows) ([]*pb.TemporaryExposureKey, error) {
 			return nil, err
 		}
 
-
 		onsetDays := int32(0)
 		keys = append(keys, &pb.TemporaryExposureKey{
 			KeyData:                    key,
@@ -327,9 +340,41 @@ func handleKeysRows(rows *sql.Rows) ([]*pb.TemporaryExposureKey, error) {
 			DaysSinceOnsetOfSymptoms:   &onsetDays,
 		})
 
-
 	}
 	return keys, nil
+}
+
+func (c *conn) FetchOutbreakForTimeRange(startTime time.Time, endTime time.Time) ([]*pb.OutbreakEvent, error) {
+	rows, err := outbreakEventsForTimeRange(c.db, startTime, endTime)
+	if err != nil {
+		return nil, err
+	}
+	return handleOutbreakRows(rows)
+}
+
+func handleOutbreakRows(rows *sql.Rows) ([]*pb.OutbreakEvent, error) {
+	var events []*pb.OutbreakEvent
+
+	for rows.Next() {
+		var location string
+		var startTime int64
+		var endTime int64
+		err := rows.Scan(&location, &startTime, &endTime)
+		if err != nil {
+			return nil, err
+		}
+
+		startTimeProto, _ := timestamp.TimestampProto(time.Unix(startTime, 0))
+		endTimeProto, _ := timestamp.TimestampProto(time.Unix(endTime, 0))
+
+		events = append(events, &pb.OutbreakEvent{
+			LocationId: &location,
+			StartTime:  startTimeProto,
+			EndTime:    endTimeProto,
+		})
+
+	}
+	return events, nil
 }
 
 func (c *conn) CheckClaimKeyBan(identifier string) (triesRemaining int, banDuration time.Duration, err error) {

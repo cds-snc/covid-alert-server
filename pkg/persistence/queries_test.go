@@ -11,6 +11,7 @@ import (
 	"github.com/cds-snc/covid-alert-server/pkg/config"
 	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
 	"github.com/cds-snc/covid-alert-server/pkg/timemath"
+	timestamp "github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/nacl/box"
 )
@@ -30,7 +31,6 @@ func TestDeleteOldDiagnosisKeys(t *testing.T) {
 	}
 
 }
-
 
 func TestClaimKey(t *testing.T) {
 
@@ -124,11 +124,11 @@ func TestClaimKey(t *testing.T) {
 	mock.ExpectPrepare(query).
 		ExpectExec().
 		WithArgs(
-				pub[:],
-				created,
-				oneTimeCode,
-				config.AppConstants.OneTimeCodeExpiryInMinutes,
-			).
+			pub[:],
+			created,
+			oneTimeCode,
+			config.AppConstants.OneTimeCodeExpiryInMinutes,
+		).
 		WillReturnError(fmt.Errorf("error"))
 
 	mock.ExpectRollback()
@@ -186,11 +186,11 @@ func TestClaimKey(t *testing.T) {
 	mock.ExpectPrepare(query).
 		ExpectExec().
 		WithArgs(
-				pub[:],
-				created,
-				oneTimeCode,
-				config.AppConstants.OneTimeCodeExpiryInMinutes,
-			).
+			pub[:],
+			created,
+			oneTimeCode,
+			config.AppConstants.OneTimeCodeExpiryInMinutes,
+		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	mock.ExpectPrepare(`SELECT server_public_key FROM encryption_keys WHERE app_public_key = ?`).ExpectQuery().WithArgs(pub[:]).WillReturnError(fmt.Errorf("error"))
@@ -219,11 +219,11 @@ func TestClaimKey(t *testing.T) {
 	mock.ExpectPrepare(query).
 		ExpectExec().
 		WithArgs(
-				pub[:],
-				created,
-				oneTimeCode,
-				config.AppConstants.OneTimeCodeExpiryInMinutes,
-			).
+			pub[:],
+			created,
+			oneTimeCode,
+			config.AppConstants.OneTimeCodeExpiryInMinutes,
+		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	rows = sqlmock.NewRows([]string{"server_public_key"}).AddRow(pub[:])
@@ -463,6 +463,36 @@ func testPersistEncryptionKeyWithHashID(t *testing.T) {
 
 }
 
+func TestPersistOutbreakEvent(t *testing.T) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	defer db.Close()
+
+	originator := "randomOrigin"
+
+	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	startTime, _ := timestamp.TimestampProto(time.Now())
+	endTime, _ := timestamp.TimestampProto(time.Now())
+	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+
+	mock.ExpectExec(
+		`INSERT INTO qr_outbreak_events
+		(location_id, originator, start_time, end_time)
+		VALUES (?, ?, ?, ?)`).WithArgs(
+		submission.GetLocationId(),
+		originator,
+		submission.GetStartTime().Seconds,
+		submission.GetEndTime().Seconds,
+	).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	receivedResult := persistOutbreakEvent(db, originator, &submission)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Nil(t, receivedResult, "Expected nil if could execute insert")
+}
+
 func TestPrivForPub(t *testing.T) {
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	defer db.Close()
@@ -521,6 +551,39 @@ func TestDiagnosisKeysForHours(t *testing.T) {
 	var receivedResult []byte
 	for rows.Next() {
 		rows.Scan(&receivedResult, nil, nil, nil, nil)
+	}
+
+	assert.Equal(t, expectedResult, receivedResult, "Expected rows for the query")
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestOutbreakEventsForTimeRange(t *testing.T) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
+	defer db.Close()
+
+	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	startTime := time.Unix(1613238163, 0)
+	endTime := time.Unix(1613324563, 0)
+
+	query := `SELECT location_id, start_time, end_time FROM qr_outbreak_events
+	WHERE created >= ?
+	AND created < ?
+	ORDER BY location_id
+	`
+
+	row := sqlmock.NewRows([]string{"location_id", "start_time", "end_time"}).AddRow(uuid, startTime, endTime)
+	mock.ExpectQuery(query).WithArgs(
+		startTime,
+		endTime).WillReturnRows(row)
+
+	expectedResult := uuid
+	rows, _ := outbreakEventsForTimeRange(db, startTime, endTime)
+	var receivedResult string
+	for rows.Next() {
+		rows.Scan(&receivedResult, nil, nil)
 	}
 
 	assert.Equal(t, expectedResult, receivedResult, "Expected rows for the query")

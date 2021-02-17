@@ -16,6 +16,7 @@ import (
 	"github.com/cds-snc/covid-alert-server/pkg/config"
 	pb "github.com/cds-snc/covid-alert-server/pkg/proto/covidshield"
 	"github.com/cds-snc/covid-alert-server/pkg/timemath"
+	timestamp "github.com/golang/protobuf/ptypes"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -170,13 +171,13 @@ func TestDBClaimKey(t *testing.T) {
 		AND created > (NOW() - INTERVAL ? MINUTE)`
 
 	mock.ExpectPrepare(query).
-		 ExpectExec().
-		 WithArgs(
-				pub[:],
-				created,
-				oneTimeCode,
-				config.AppConstants.OneTimeCodeExpiryInMinutes,
-			).
+		ExpectExec().
+		WithArgs(
+			pub[:],
+			created,
+			oneTimeCode,
+			config.AppConstants.OneTimeCodeExpiryInMinutes,
+		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	rows = sqlmock.NewRows([]string{"server_public_key"}).AddRow(pub[:])
@@ -521,6 +522,94 @@ func TestClaimedHashID(t *testing.T) {
 	assert.Equal(t, ErrHashIDClaimed, receivedError) // This is a bug and should be fixed, however, it is high unlikely to trigger
 }
 
+func TestNewOutbreakEventError(t *testing.T) {
+	// Capture logs
+	oldLog := log
+	defer func() { log = oldLog }()
+
+	nullLog, hook := test.NewNullLogger()
+	nullLog.ExitFunc = func(code int) {}
+
+	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
+		return logrus.NewEntry(nullLog)
+	}
+
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
+	defer db.Close()
+
+	conn := conn{
+		db: db,
+	}
+
+	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	startTime, _ := timestamp.TimestampProto(time.Now())
+	endTime, _ := timestamp.TimestampProto(time.Now())
+	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+
+	mock.ExpectExec(
+		`INSERT INTO qr_outbreak_events
+		(location_id, originator, start_time, end_time)
+		VALUES (?, ?, ?, ?)`).WithArgs(
+		AnyType{},
+		originator,
+		AnyType{},
+		AnyType{},
+	).WillReturnError(fmt.Errorf("error"))
+
+	receivedError := conn.NewOutbreakEvent(context.TODO(), originator, &submission)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	expectedErr := fmt.Errorf("error")
+	assert.Equal(t, expectedErr, receivedError, "Expected error if could not execute insert")
+	assertLog(t, hook, 1, logrus.ErrorLevel, "saving new QR submission")
+}
+
+func TestNewOutbreakEventSuccess(t *testing.T) {
+	// Capture logs
+	oldLog := log
+	defer func() { log = oldLog }()
+
+	nullLog, _ := test.NewNullLogger()
+	nullLog.ExitFunc = func(code int) {}
+
+	log = func(ctx logger.Valuer, err ...error) *logrus.Entry {
+		return logrus.NewEntry(nullLog)
+	}
+
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
+	defer db.Close()
+
+	conn := conn{
+		db: db,
+	}
+
+	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	startTime, _ := timestamp.TimestampProto(time.Now())
+	endTime, _ := timestamp.TimestampProto(time.Now())
+	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+
+	mock.ExpectExec(
+		`INSERT INTO qr_outbreak_events
+		(location_id, originator, start_time, end_time)
+		VALUES (?, ?, ?, ?)`).WithArgs(
+		AnyType{},
+		originator,
+		AnyType{},
+		AnyType{},
+	).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	receivedError := conn.NewOutbreakEvent(context.TODO(), originator, &submission)
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	assert.Nil(t, receivedError, "Expected nil if could execute insert")
+}
+
 func TestDBPrivForPub(t *testing.T) {
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
 	defer db.Close()
@@ -684,6 +773,41 @@ func TestDBFetchKeysForHours(t *testing.T) {
 	mock.ExpectQuery("").WillReturnError(fmt.Errorf("Generic error"))
 
 	_, receivedError := conn.FetchKeysForHours(region, startHour, endHour, currentRollingStartIntervalNumber)
+
+	assert.Equal(t, fmt.Errorf("Generic error"), receivedError, "Expected rows for the query")
+}
+
+func TestFetchOutbreakForTimeRange(t *testing.T) {
+	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(allQueryMatcher))
+	defer db.Close()
+
+	conn := conn{
+		db: db,
+	}
+
+	// No errors
+	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	startTime, _ := timestamp.TimestampProto(time.Unix(1613238163, 0))
+	endTime, _ := timestamp.TimestampProto(time.Unix(1613324563, 0))
+	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+
+	row := sqlmock.NewRows([]string{"location_id", "start_time", "end_time"}).AddRow(uuid, startTime.Seconds, endTime.Seconds)
+	mock.ExpectQuery("").WillReturnRows(row)
+
+	expectedResult := []*pb.OutbreakEvent{&submission}
+
+	receivedResult, _ := conn.FetchOutbreakForTimeRange(time.Now(), time.Now().Add(time.Hour*24))
+
+	assert.Equal(t, expectedResult, receivedResult, "Expected rows for the query")
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	// Errors
+	mock.ExpectQuery("").WillReturnError(fmt.Errorf("Generic error"))
+
+	_, receivedError := conn.FetchOutbreakForTimeRange(time.Now(), time.Now().Add(time.Hour*24))
 
 	assert.Equal(t, fmt.Errorf("Generic error"), receivedError, "Expected rows for the query")
 }

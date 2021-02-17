@@ -50,6 +50,30 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       value :INVALID_TRANSMISSION_RISK_LEVEL, 13
       value :NO_KEYS_IN_PAYLOAD, 14
     end
+    add_message "covidshield.OutbreakEvent" do
+      optional :location_id, :string, 1
+      optional :start_time, :message, 2, "google.protobuf.Timestamp"
+      optional :end_time, :message, 3, "google.protobuf.Timestamp"
+    end
+    add_message "covidshield.OutbreakEventResponse" do
+      optional :error, :enum, 1, "covidshield.OutbreakEventResponse.ErrorCode"
+    end
+    add_enum "covidshield.OutbreakEventResponse.ErrorCode" do
+      value :NONE, 0
+      value :UNKNOWN, 1
+      value :INVALID_ID, 2
+      value :MISSING_TIMESTAMP, 3
+      value :PERIOD_INVALID, 4
+      value :SERVER_ERROR, 5
+    end
+    add_message "covidshield.OutbreakEventExport" do
+      optional :start_timestamp, :fixed64, 1
+      optional :end_timestamp, :fixed64, 2
+      repeated :locations, :message, 3, "covidshield.OutbreakEvent"
+    end
+    add_message "covidshield.OutbreakEventExportSignature" do
+      optional :signature, :bytes, 1
+    end
     add_message "covidshield.Upload" do
       optional :timestamp, :message, 1, "google.protobuf.Timestamp"
       repeated :keys, :message, 2, "covidshield.TemporaryExposureKey"
@@ -104,6 +128,11 @@ module Covidshield
   EncryptedUploadRequest = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.EncryptedUploadRequest").msgclass
   EncryptedUploadResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.EncryptedUploadResponse").msgclass
   EncryptedUploadResponse::ErrorCode = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.EncryptedUploadResponse.ErrorCode").enummodule
+  OutbreakEvent = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.OutbreakEvent").msgclass
+  OutbreakEventResponse = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.OutbreakEventResponse").msgclass
+  OutbreakEventResponse::ErrorCode = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.OutbreakEventResponse.ErrorCode").enummodule
+  OutbreakEventExport = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.OutbreakEventExport").msgclass
+  OutbreakEventExportSignature = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.OutbreakEventExportSignature").msgclass
   Upload = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.Upload").msgclass
   TemporaryExposureKeyExport = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.TemporaryExposureKeyExport").msgclass
   SignatureInfo = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("covidshield.SignatureInfo").msgclass
