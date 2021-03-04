@@ -469,19 +469,21 @@ func TestPersistOutbreakEvent(t *testing.T) {
 
 	originator := "randomOrigin"
 
-	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	locationID := "ABCDEFGH"
 	startTime, _ := timestamp.TimestampProto(time.Now())
 	endTime, _ := timestamp.TimestampProto(time.Now())
-	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+	severity := uint32(1)
+	submission := pb.OutbreakEvent{LocationId: &locationID, StartTime: startTime, EndTime: endTime, Severity: &severity}
 
 	mock.ExpectExec(
 		`INSERT INTO qr_outbreak_events
-		(location_id, originator, start_time, end_time)
-		VALUES (?, ?, ?, ?)`).WithArgs(
+		(location_id, originator, start_time, end_time, severity)
+		VALUES (?, ?, ?, ?, ?)`).WithArgs(
 		submission.GetLocationId(),
 		originator,
 		submission.GetStartTime().Seconds,
 		submission.GetEndTime().Seconds,
+		submission.GetSeverity(),
 	).WillReturnResult(sqlmock.NewResult(1, 1))
 
 	receivedResult := persistOutbreakEvent(db, originator, &submission)
@@ -564,26 +566,27 @@ func TestOutbreakEventsForTimeRange(t *testing.T) {
 	db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 	defer db.Close()
 
-	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	locationID := "ABCDEFGH"
 	startTime := time.Unix(1613238163, 0)
 	endTime := time.Unix(1613324563, 0)
+	severity := uint32(1)
 
-	query := `SELECT location_id, start_time, end_time FROM qr_outbreak_events
+	query := `SELECT location_id, start_time, end_time, severity FROM qr_outbreak_events
 	WHERE created >= ?
 	AND created < ?
 	ORDER BY location_id
 	`
 
-	row := sqlmock.NewRows([]string{"location_id", "start_time", "end_time"}).AddRow(uuid, startTime, endTime)
+	row := sqlmock.NewRows([]string{"location_id", "start_time", "end_time", "severity"}).AddRow(locationID, startTime, endTime, severity)
 	mock.ExpectQuery(query).WithArgs(
 		startTime,
 		endTime).WillReturnRows(row)
 
-	expectedResult := uuid
+	expectedResult := locationID
 	rows, _ := outbreakEventsForTimeRange(db, startTime, endTime)
 	var receivedResult string
 	for rows.Next() {
-		rows.Scan(&receivedResult, nil, nil)
+		rows.Scan(&receivedResult, nil, nil, nil)
 	}
 
 	assert.Equal(t, expectedResult, receivedResult, "Expected rows for the query")

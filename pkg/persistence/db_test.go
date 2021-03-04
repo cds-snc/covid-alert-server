@@ -541,17 +541,18 @@ func TestNewOutbreakEventError(t *testing.T) {
 		db: db,
 	}
 
-	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	locationID := "ABCDEFGH"
 	startTime, _ := timestamp.TimestampProto(time.Now())
 	endTime, _ := timestamp.TimestampProto(time.Now())
-	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+	submission := pb.OutbreakEvent{LocationId: &locationID, StartTime: startTime, EndTime: endTime}
 
 	mock.ExpectExec(
 		`INSERT INTO qr_outbreak_events
-		(location_id, originator, start_time, end_time)
-		VALUES (?, ?, ?, ?)`).WithArgs(
+		(location_id, originator, start_time, end_time, severity)
+		VALUES (?, ?, ?, ?, ?)`).WithArgs(
 		AnyType{},
 		originator,
+		AnyType{},
 		AnyType{},
 		AnyType{},
 	).WillReturnError(fmt.Errorf("error"))
@@ -586,17 +587,18 @@ func TestNewOutbreakEventSuccess(t *testing.T) {
 		db: db,
 	}
 
-	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	locationID := "ABCDEFGH"
 	startTime, _ := timestamp.TimestampProto(time.Now())
 	endTime, _ := timestamp.TimestampProto(time.Now())
-	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+	submission := pb.OutbreakEvent{LocationId: &locationID, StartTime: startTime, EndTime: endTime}
 
 	mock.ExpectExec(
 		`INSERT INTO qr_outbreak_events
-		(location_id, originator, start_time, end_time)
-		VALUES (?, ?, ?, ?)`).WithArgs(
+		(location_id, originator, start_time, end_time, severity)
+		VALUES (?, ?, ?, ?, ?)`).WithArgs(
 		AnyType{},
 		originator,
+		AnyType{},
 		AnyType{},
 		AnyType{},
 	).WillReturnResult(sqlmock.NewResult(1, 1))
@@ -786,12 +788,13 @@ func TestFetchOutbreakForTimeRange(t *testing.T) {
 	}
 
 	// No errors
-	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	locationID := "ABCDEFGH"
 	startTime, _ := timestamp.TimestampProto(time.Unix(1613238163, 0))
 	endTime, _ := timestamp.TimestampProto(time.Unix(1613324563, 0))
-	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+	severity := uint32(1)
+	submission := pb.OutbreakEvent{LocationId: &locationID, StartTime: startTime, EndTime: endTime, Severity: &severity}
 
-	row := sqlmock.NewRows([]string{"location_id", "start_time", "end_time"}).AddRow(uuid, startTime.Seconds, endTime.Seconds)
+	row := sqlmock.NewRows([]string{"location_id", "start_time", "end_time", "severity"}).AddRow(locationID, startTime.Seconds, endTime.Seconds, severity)
 	mock.ExpectQuery("").WillReturnRows(row)
 
 	expectedResult := []*pb.OutbreakEvent{&submission}

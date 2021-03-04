@@ -232,9 +232,10 @@ func setupQrRetrieveRouter(db *persistence.Conn, auth *retrieval.Authenticator, 
 }
 
 func randomTestOutbreakEvent() *pb.OutbreakEvent {
-	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	locationID := "ABCDEFGH"
 	startTime, _ := timestamp.TimestampProto(time.Unix(1613238163, 0))
 	endTime, _ := timestamp.TimestampProto(time.Unix(1613324563, 0))
-	location := &pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+	severity := uint32(1)
+	location := &pb.OutbreakEvent{LocationId: &locationID, StartTime: startTime, EndTime: endTime, Severity: &severity}
 	return location
 }
