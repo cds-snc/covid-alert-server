@@ -42,7 +42,7 @@ class NewOutbreakEventTest < MiniTest::Test
     resp = @sub_conn.post do |req|
       req.url('/qr/new-event')
       req.headers['Authorization'] = 'Bearer first-very-long-token'
-      req.body = Covidshield::OutbreakEvent.new(start_time: Time.at(0), end_time: Time.now, location_id: "5c21d3e7-15ef-46bb-8635-5a2d0626b67e").to_proto
+      req.body = Covidshield::OutbreakEvent.new(start_time: Time.at(0), end_time: Time.now, location_id: "ABCDEFGH", severity: 1).to_proto
     end
     assert_result(resp, 400, :MISSING_TIMESTAMP)
 
@@ -50,7 +50,7 @@ class NewOutbreakEventTest < MiniTest::Test
     resp = @sub_conn.post do |req|
       req.url('/qr/new-event')
       req.headers['Authorization'] = 'Bearer first-very-long-token'
-      req.body = Covidshield::OutbreakEvent.new(start_time: Time.now,  end_time: Time.at(0), location_id: "5c21d3e7-15ef-46bb-8635-5a2d0626b67e").to_proto
+      req.body = Covidshield::OutbreakEvent.new(start_time: Time.now,  end_time: Time.at(0), location_id: "ABCDEFGH", severity: 1).to_proto
     end
     assert_result(resp, 400, :MISSING_TIMESTAMP)
 
@@ -58,7 +58,7 @@ class NewOutbreakEventTest < MiniTest::Test
     resp = @sub_conn.post do |req|
       req.url('/qr/new-event')
       req.headers['Authorization'] = 'Bearer first-very-long-token'
-      req.body = Covidshield::OutbreakEvent.new(start_time: Time.now,  end_time: Time.now, location_id: "5c21d3e7-15ef-46bb-8635-5a2d0626b67e").to_proto
+      req.body = Covidshield::OutbreakEvent.new(start_time: Time.now,  end_time: Time.now, location_id: "ABCDEFGH", severity: 1).to_proto
     end
     assert_result(resp, 400, :PERIOD_INVALID)
 
@@ -66,7 +66,7 @@ class NewOutbreakEventTest < MiniTest::Test
     resp = @sub_conn.post do |req|
       req.url('/qr/new-event')
       req.headers['Authorization'] = 'Bearer first-very-long-token'
-      req.body = Covidshield::OutbreakEvent.new(start_time: Time.now,  end_time: Time.now+1, location_id: "5c21d3e7-15ef-46bb-8635-5a2d0626b67e").to_proto
+      req.body = Covidshield::OutbreakEvent.new(start_time: Time.now,  end_time: Time.now+1, location_id: "ABCDEFGH", severity: 1).to_proto
     end
     assert_result(resp, 200, :NONE)
   end

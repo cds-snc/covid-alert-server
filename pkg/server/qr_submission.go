@@ -70,7 +70,7 @@ func (s *OutbreakEventServlet) newExposureEvent(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if len(submission.GetLocationId()) != 36 {
+	if len(submission.GetLocationId()) != 8 {
 		requestError(
 			ctx, w, err, "Location ID is not valid",
 			http.StatusBadRequest, qrUploadResponse(pb.OutbreakEventResponse_INVALID_ID),

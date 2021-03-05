@@ -337,9 +337,9 @@ func persistEncryptionKeyWithHashID(db *sql.DB, region, originator, hashID strin
 func persistOutbreakEvent(db *sql.DB, originator string, submission *pb.OutbreakEvent) error {
 	_, err := db.Exec(
 		`INSERT INTO qr_outbreak_events
-			(location_id, originator, start_time, end_time)
-			VALUES (?, ?, ?, ?)`,
-		submission.GetLocationId(), originator, submission.GetStartTime().Seconds, submission.GetEndTime().Seconds,
+			(location_id, originator, start_time, end_time, severity)
+			VALUES (?, ?, ?, ?, ?)`,
+		submission.GetLocationId(), originator, submission.GetStartTime().Seconds, submission.GetEndTime().Seconds, submission.GetSeverity(),
 	)
 	return err
 }
@@ -377,7 +377,7 @@ func diagnosisKeysForHours(db *sql.DB, region string, startHour uint32, endHour 
 
 func outbreakEventsForTimeRange(db *sql.DB, startTime time.Time, endTime time.Time) (*sql.Rows, error) {
 	return db.Query(
-		`SELECT location_id, start_time, end_time FROM qr_outbreak_events
+		`SELECT location_id, start_time, end_time, severity FROM qr_outbreak_events
 		WHERE created >= ?
 		AND created < ?
 		ORDER BY location_id

@@ -54,6 +54,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       optional :location_id, :string, 1
       optional :start_time, :message, 2, "google.protobuf.Timestamp"
       optional :end_time, :message, 3, "google.protobuf.Timestamp"
+      optional :severity, :uint32, 4
     end
     add_message "covidshield.OutbreakEventResponse" do
       optional :error, :enum, 1, "covidshield.OutbreakEventResponse.ErrorCode"

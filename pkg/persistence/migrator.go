@@ -162,6 +162,11 @@ CREATE TABLE IF NOT EXISTS qr_outbreak_events (
 	INDEX (originator)
 )`,
 		},
+	}, {
+		id: "12",
+		statements: []string{
+			`ALTER TABLE qr_outbreak_events ADD COLUMN severity SMALLINT UNSIGNED`,
+		},
 	},
 }
 

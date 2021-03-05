@@ -14,7 +14,7 @@ require('tempfile')
 class QRRetrieveTest < MiniTest::Test
   include(Helper::Include)
 
-  UUID = 'f10fff06-ec62-426b-b696-fbf5a0fce129'
+  LOCATION_ID = 'ABCDEFGH'
 
   def assert_happy_zip_response(resp)
     assert_response(resp, 200, 'application/zip')
@@ -76,7 +76,7 @@ class QRRetrieveTest < MiniTest::Test
   def test_retrieve_stuff
     start_time = time_in_date('10:00', today_utc.prev_day(8))
     end_time = time_in_date('12:00', today_utc.prev_day(8))
-    add_location(start_time: start_time.to_i, end_time: end_time.to_i, created: time_in_date('07:00', yesterday_utc))
+    add_location(start_time: start_time.to_i, end_time: end_time.to_i, severity: 1, created: time_in_date('07:00', yesterday_utc))
 
     dn = current_date_number - 1
 
@@ -85,6 +85,7 @@ class QRRetrieveTest < MiniTest::Test
     locations = [location(
         start_time: start_time,
         end_time: end_time,
+        severity: 1
     )]
     assert_locations(export, locations, date_number: dn)
   end
@@ -97,12 +98,12 @@ class QRRetrieveTest < MiniTest::Test
     fiveteen_days_ago = yesterday_utc.prev_day(15)
 
     # Our retrieve endpoint returns keys CREATED within the given period.
-    add_location(location_id: '1' * 36, start_time: start_time.to_i, end_time: end_time.to_i, created: time_in_date("23:59:59", fiveteen_days_ago))
-    add_location(location_id: '2' * 36, start_time: start_time.to_i, end_time: end_time.to_i, created: time_in_date("00:00", fourteen_days_ago))
-    add_location(location_id: '3' * 36, start_time: start_time.to_i, end_time: end_time.to_i, created: time_in_date("01:59:59", yesterday_utc))
-    add_location(location_id: '4' * 36, start_time: start_time.to_i, end_time: end_time.to_i, created: time_in_date("02:00", yesterday_utc))
-    add_location(location_id: '5' * 36, start_time: start_time.to_i, end_time: end_time.to_i, created: time_in_date("02:00", yesterday_utc))
-    add_location(location_id: '6' * 36, start_time: start_time.to_i, end_time: end_time.to_i, created: time_in_date("02:00", today_utc))
+    add_location(location_id: '1' * 8, start_time: start_time.to_i, end_time: end_time.to_i, severity: 1, created: time_in_date("23:59:59", fiveteen_days_ago))
+    add_location(location_id: '2' * 8, start_time: start_time.to_i, end_time: end_time.to_i, severity: 1, created: time_in_date("00:00", fourteen_days_ago))
+    add_location(location_id: '3' * 8, start_time: start_time.to_i, end_time: end_time.to_i, severity: 1, created: time_in_date("01:59:59", yesterday_utc))
+    add_location(location_id: '4' * 8, start_time: start_time.to_i, end_time: end_time.to_i, severity: 1, created: time_in_date("02:00", yesterday_utc))
+    add_location(location_id: '5' * 8, start_time: start_time.to_i, end_time: end_time.to_i, severity: 1, created: time_in_date("02:00", yesterday_utc))
+    add_location(location_id: '6' * 8, start_time: start_time.to_i, end_time: end_time.to_i, severity: 1, created: time_in_date("02:00", today_utc))
 
     resp = get_qr_date("00000")
 
@@ -111,21 +112,25 @@ class QRRetrieveTest < MiniTest::Test
     if config["enableEntirePeriodBundle"]
       export = assert_happy_zip_response(resp)
       locations = [location(
-        location_id: '2' * 36,
+        location_id: '2' * 8,
         start_time: start_time,
         end_time: end_time,
+        severity: 1,
     ), location(
-        location_id: '3' * 36,
+        location_id: '3' * 8,
         start_time: start_time,
         end_time: end_time,
+        severity: 1,
     ), location(
-        location_id: '4' * 36,
+        location_id: '4' * 8,
         start_time: start_time,
         end_time: end_time,
+        severity: 1,
     ), location(
-        location_id: '5' * 36,
+        location_id: '5' * 8,
         start_time: start_time,
         end_time: end_time,
+        severity: 1,
     )]
       assert_equal(locations, export.locations)
     else
@@ -139,27 +144,30 @@ class QRRetrieveTest < MiniTest::Test
     two_days_ago = yesterday_utc.prev_day(1)
 
     # Our retrieve endpoint returns keys CREATED within the given period.
-    add_location(location_id: '1' * 36, start_time: start_time.to_i, end_time: end_time.to_i, created: time_in_date("23:59:59", two_days_ago))
-    add_location(location_id: '2' * 36, start_time: start_time.to_i, end_time: end_time.to_i, created: time_in_date("00:00", yesterday_utc))
-    add_location(location_id: '3' * 36, start_time: start_time.to_i, end_time: end_time.to_i, created: time_in_date("01:59:59", yesterday_utc))
-    add_location(location_id: '4' * 36, start_time: start_time.to_i, end_time: end_time.to_i, created: time_in_date("02:00", yesterday_utc))
+    add_location(location_id: '1' * 8, start_time: start_time.to_i, end_time: end_time.to_i, severity: 1, created: time_in_date("23:59:59", two_days_ago))
+    add_location(location_id: '2' * 8, start_time: start_time.to_i, end_time: end_time.to_i, severity: 1, created: time_in_date("00:00", yesterday_utc))
+    add_location(location_id: '3' * 8, start_time: start_time.to_i, end_time: end_time.to_i, severity: 1, created: time_in_date("01:59:59", yesterday_utc))
+    add_location(location_id: '4' * 8, start_time: start_time.to_i, end_time: end_time.to_i, severity: 1, created: time_in_date("02:00", yesterday_utc))
 
     dn = current_date_number - 1
 
     resp = get_qr_date(dn)
     export = assert_happy_zip_response(resp)
     locations = [location(
-        location_id: '2' * 36,
+        location_id: '2' * 8,
         start_time: start_time,
         end_time: end_time,
+        severity: 1,
     ), location(
-        location_id: '3' * 36,
+        location_id: '3' * 8,
         start_time: start_time,
         end_time: end_time,
+        severity: 1,
     ), location(
-        location_id: '4' * 36,
+        location_id: '4' * 8,
         start_time: start_time,
         end_time: end_time,
+        severity: 1,
     )]
     assert_equal(locations, export.locations)
   end
@@ -197,15 +205,15 @@ class QRRetrieveTest < MiniTest::Test
     assert_equal([], files, "  (from #{caller[0]})")
   end
 
-  def add_location(location_id: UUID, originator: "ON", start_time: Time.now.to_i, end_time: Time.now.to_i, created: Time.now)
-    insert_location.execute(location_id, originator, start_time, end_time, created)
+  def add_location(location_id: LOCATION_ID, originator: "ON", start_time: Time.now.to_i, end_time: Time.now.to_i, created: Time.now, severity: 1)
+    insert_location.execute(location_id, originator, start_time, end_time, created, severity)
   end
 
   def insert_location
     @insert_location ||= @dbconn.prepare(<<~SQL)
       INSERT INTO qr_outbreak_events
-      (location_id, originator, start_time, end_time, created)
-      VALUES (?, ?, ?, ?, ?)
+      (location_id, originator, start_time, end_time, created, severity)
+      VALUES (?, ?, ?, ?, ?, ?)
     SQL
   end
 
@@ -242,11 +250,12 @@ class QRRetrieveTest < MiniTest::Test
     )
   end
 
-  def location(location_id: UUID, start_time: Time.now, end_time: Time.now)
+  def location(location_id: LOCATION_ID, start_time: Time.now, end_time: Time.now, severity: 1)
     Covidshield::OutbreakEvent.new(
       location_id: location_id,
       start_time: start_time,
       end_time: end_time,
+      severity: severity,
     )
   end
 end

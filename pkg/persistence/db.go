@@ -359,7 +359,8 @@ func handleOutbreakRows(rows *sql.Rows) ([]*pb.OutbreakEvent, error) {
 		var location string
 		var startTime int64
 		var endTime int64
-		err := rows.Scan(&location, &startTime, &endTime)
+		var severity uint32
+		err := rows.Scan(&location, &startTime, &endTime, &severity)
 		if err != nil {
 			return nil, err
 		}
@@ -371,6 +372,7 @@ func handleOutbreakRows(rows *sql.Rows) ([]*pb.OutbreakEvent, error) {
 			LocationId: &location,
 			StartTime:  startTimeProto,
 			EndTime:    endTimeProto,
+			Severity:   &severity,
 		})
 
 	}

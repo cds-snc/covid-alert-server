@@ -136,10 +136,11 @@ func TestQrUpload_LocationIdTooShort(t *testing.T) {
 	defer func() { log = *oldLog }()
 
 	// Location ID too short
-	uuid := "abcd"
+	location := "abcd"
 	startTime, _ := timestamp.TimestampProto(time.Now())
 	endTime, _ := timestamp.TimestampProto(time.Now().Add(time.Hour * 24))
-	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+	severity := uint32(1)
+	submission := pb.OutbreakEvent{LocationId: &location, StartTime: startTime, EndTime: endTime, Severity: &severity}
 
 	payload, _ := proto.Marshal(&submission)
 	req, _ := http.NewRequest("POST", "/qr/new-event", bytes.NewReader(payload))
@@ -157,11 +158,12 @@ func TestQrUpload_LocationIdTooLong(t *testing.T) {
 	hook, oldLog, _, router := setupQrUploadTest()
 	defer func() { log = *oldLog }()
 
-	// Location ID too short
-	uuid := "abcdef-abcdef-abcdef-abcdef-abcdef-abcdef"
+	// Location ID too long
+	location := "abcdefabcdef"
 	startTime, _ := timestamp.TimestampProto(time.Now())
 	endTime, _ := timestamp.TimestampProto(time.Now().Add(time.Hour * 24))
-	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+	severity := uint32(1)
+	submission := pb.OutbreakEvent{LocationId: &location, StartTime: startTime, EndTime: endTime, Severity: &severity}
 
 	payload, _ := proto.Marshal(&submission)
 	req, _ := http.NewRequest("POST", "/qr/new-event", bytes.NewReader(payload))
@@ -179,10 +181,11 @@ func TestQrUpload_StartTimeZero(t *testing.T) {
 	hook, oldLog, _, router := setupQrUploadTest()
 	defer func() { log = *oldLog }()
 
-	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	location := "ABCDEFGH"
 	startTime, _ := timestamp.TimestampProto(time.Unix(0, 0))
 	endTime, _ := timestamp.TimestampProto(time.Now().Add(time.Hour * 24))
-	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+	severity := uint32(1)
+	submission := pb.OutbreakEvent{LocationId: &location, StartTime: startTime, EndTime: endTime, Severity: &severity}
 
 	payload, _ := proto.Marshal(&submission)
 	req, _ := http.NewRequest("POST", "/qr/new-event", bytes.NewReader(payload))
@@ -200,10 +203,11 @@ func TestQrUpload_EndTimeZero(t *testing.T) {
 	hook, oldLog, _, router := setupQrUploadTest()
 	defer func() { log = *oldLog }()
 
-	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	location := "ABCDEFGH"
 	startTime, _ := timestamp.TimestampProto(time.Now())
 	endTime, _ := timestamp.TimestampProto(time.Unix(0, 0))
-	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+	severity := uint32(1)
+	submission := pb.OutbreakEvent{LocationId: &location, StartTime: startTime, EndTime: endTime, Severity: &severity}
 
 	payload, _ := proto.Marshal(&submission)
 	req, _ := http.NewRequest("POST", "/qr/new-event", bytes.NewReader(payload))
@@ -221,10 +225,11 @@ func TestQrUpload_EndBeforeStart(t *testing.T) {
 	hook, oldLog, _, router := setupQrUploadTest()
 	defer func() { log = *oldLog }()
 
-	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	location := "ABCDEFGH"
 	endTime, _ := timestamp.TimestampProto(time.Now())
 	startTime, _ := timestamp.TimestampProto(time.Now().Add(time.Hour * 24))
-	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+	severity := uint32(1)
+	submission := pb.OutbreakEvent{LocationId: &location, StartTime: startTime, EndTime: endTime, Severity: &severity}
 
 	payload, _ := proto.Marshal(&submission)
 	req, _ := http.NewRequest("POST", "/qr/new-event", bytes.NewReader(payload))
@@ -244,10 +249,11 @@ func TestQrUpload_ErrorSaving(t *testing.T) {
 
 	db.On("NewOutbreakEvent", mock.Anything, "goodtoken", mock.AnythingOfType("*covidshield.OutbreakEvent")).Return(fmt.Errorf("error"))
 
-	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	location := "ABCDEFGH"
 	startTime, _ := timestamp.TimestampProto(time.Now())
 	endTime, _ := timestamp.TimestampProto(time.Now().Add(time.Hour * 24))
-	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+	severity := uint32(1)
+	submission := pb.OutbreakEvent{LocationId: &location, StartTime: startTime, EndTime: endTime, Severity: &severity}
 
 	payload, _ := proto.Marshal(&submission)
 	req, _ := http.NewRequest("POST", "/qr/new-event", bytes.NewReader(payload))
@@ -267,10 +273,11 @@ func TestQrUpload_SuccessSaving(t *testing.T) {
 
 	db.On("NewOutbreakEvent", mock.Anything, "goodtoken", mock.AnythingOfType("*covidshield.OutbreakEvent")).Return(nil)
 
-	uuid := "8a2c34b2-74a5-4b6a-8bed-79b7823b37c7"
+	location := "ABCDEFGH"
 	startTime, _ := timestamp.TimestampProto(time.Now())
 	endTime, _ := timestamp.TimestampProto(time.Now().Add(time.Hour * 24))
-	submission := pb.OutbreakEvent{LocationId: &uuid, StartTime: startTime, EndTime: endTime}
+	severity := uint32(1)
+	submission := pb.OutbreakEvent{LocationId: &location, StartTime: startTime, EndTime: endTime, Severity: &severity}
 
 	payload, _ := proto.Marshal(&submission)
 	req, _ := http.NewRequest("POST", "/qr/new-event", bytes.NewReader(payload))
