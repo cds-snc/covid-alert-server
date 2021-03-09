@@ -62,6 +62,14 @@ class NewOutbreakEventTest < MiniTest::Test
     end
     assert_result(resp, 400, :PERIOD_INVALID)
 
+    # No severity
+    resp = @sub_conn.post do |req|
+      req.url('/qr/new-event')
+      req.headers['Authorization'] = 'Bearer first-very-long-token'
+      req.body = Covidshield::OutbreakEvent.new(start_time: Time.now,  end_time: Time.now+1, location_id: "ABCDEFGH").to_proto
+    end
+    assert_result(resp, 200, :NONE)
+
     # valid response
     resp = @sub_conn.post do |req|
       req.url('/qr/new-event')

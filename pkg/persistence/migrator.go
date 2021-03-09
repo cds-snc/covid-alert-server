@@ -167,6 +167,11 @@ CREATE TABLE IF NOT EXISTS qr_outbreak_events (
 		statements: []string{
 			`ALTER TABLE qr_outbreak_events ADD COLUMN severity SMALLINT UNSIGNED`,
 		},
+	}, {
+		id: "13",
+		statements: []string{
+			`ALTER TABLE qr_outbreak_events ALTER severity SET DEFAULT 0`,
+		},
 	},
 }
 

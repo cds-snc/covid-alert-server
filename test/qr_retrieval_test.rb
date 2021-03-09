@@ -90,6 +90,28 @@ class QRRetrieveTest < MiniTest::Test
     assert_locations(export, locations, date_number: dn)
   end
 
+  def test_missing_severity
+    start_time = time_in_date('10:00', today_utc.prev_day(8))
+    end_time = time_in_date('12:00', today_utc.prev_day(8))
+    @dbconn.prepare(<<~SQL)
+      INSERT INTO qr_outbreak_events
+      (location_id, originator, start_time, end_time, created)
+      VALUES (?, ?, ?, ?, ?)
+    SQL
+    .execute("ABCDEFGH", "ON", start_time.to_i, end_time.to_i, time_in_date('07:00', yesterday_utc))
+
+    dn = current_date_number - 1
+
+    resp = get_qr_date(dn)
+    export = assert_happy_zip_response(resp)
+    locations = [location(
+        start_time: start_time,
+        end_time: end_time,
+        severity: 0
+    )]
+    assert_locations(export, locations, date_number: dn)
+  end
+
   def test_all_keys
     start_time = time_in_date('10:00', today_utc.prev_day(8))
     end_time = time_in_date('12:00', today_utc.prev_day(8))
