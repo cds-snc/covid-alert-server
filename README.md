@@ -402,6 +402,32 @@ Les indicateurs peuvent être activés en définissant la variable `METRIC_PROVI
 Aussi bien `stdout` que `pretty enverront les indicateurs de sortie à `stdout`, mais leur mise en forme diffère. `stdout` imprimera les indicateurs en tant que JSON sur une seule ligne, tandis que `pretty` formatera le JSON de manière lisible pour les humains, avec une séparation sur plusieurs lignes.
 
 Si vous voulez utiliser Prometheus, veuillez consulter les exigences de configuration supplémentaires ci-dessous.
+Événements du serveur
+Le serveur fait le suivi des événements suivants de façon agrégée par jour ou par heure, et par desserveur (Bearer Token).
+
+#### OTKGenerated
+Assure le suivi du nombre de clés à usage unique (OTK) générées lorsque le point d’extrémité /new-key-claim est appelé.
+
+#### OTKClaimed
+Assure le suivi du nombre de clés à usage unique (OTK) générées lorsque le point d’extrémité /claim-key est appelé. Événement réalisé lorsqu’une clé à usage unique est entrée dans l’application par un citoyen.
+
+#### OTKUnclaimed
+Assure le suivi du nombre de clés à usage unique (OTK) qui n’ont pas été réclamées et dont le délai est en deçà de la valeur de configuration config.AppConstants.OneTimeCodeExpiryInMinutes.
+
+#### OTKExpired
+Assure le suivi du nombre de clés à usage unique (OTK) qui ont expiré dans la base de données. Une clé expire lorsqu’elle a été réclamée mais que son délai dépasse config.AppConstants.EncryptionKeyValidityDays.
+
+#### OTKExhausted
+Suivi du nombre de clés à usage unique (OTK) dont le champ remaining_keys est 0 dans le tableau encryption_keys.
+
+#### OTKRegenerated
+Suivi du nombre de fois où le point d’extrémité /new-key-claim est appelé avec un hashID existant. Lorsque cela se produit, la clé à usage unique existante est supprimée, et une nouvelle clé à usage unique est générée.
+
+#### OTKExpiredNoUploads
+Suivi du nombre de clés à usage unique (OTK) qui ont été réclamées et qui ont expiré sans que les clés d’exposition temporaires (temporary exposure keys) ne soient téléversées.
+
+#### OTKDurations
+Suivi de la durée pendant laquelle les clés à usage unique (OTK) sont non réclamées. Valeur en nombre d’heures, arrondie à la hausse.
 
 #### Prometheus 
 
