@@ -7,6 +7,7 @@ on:
 env:
   GITHUB_SHA: ${{ github.sha }}
   BRANCH: ${{ github.ref }}
+  ECS_CLUSTER_NAME: CovidShield
 
 jobs:
   deploy: 
@@ -91,7 +92,7 @@ jobs:
         with:
           task-definition: ${{ steps.taskdef.outputs.task-definition }}
           service: ${{ matrix.SERVICE_NAME }}
-          cluster: ${{ secrets.STAGING_ECS_CLUSTER_NAME }}
+          cluster: ${{ env.ECS_CLUSTER_NAME }}
           wait-for-service-stability: true
           codedeploy-appspec: ${{ github.workspace }}/${{ matrix.APPSPEC_FILE }}
 
