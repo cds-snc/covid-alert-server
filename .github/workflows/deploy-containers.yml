@@ -58,12 +58,6 @@ jobs:
         # v1 as of Jan 28 2021
         uses: aws-actions/amazon-ecr-login@b9c809dc38d74cd0fde3c13cc4fe4ac72ebecdae
 
-      - name: Get Cluster Name
-        if: steps.wait-for-build.outputs.conclusion == 'success'
-        id: cluster
-        run: |
-          echo "##[set-output name=name;]$(aws ecs list-clusters | jq -r '.clusterArns[0]' | cut -f 2 -d "/" )"
-
       - name: Download task definition
         if: steps.wait-for-build.outputs.conclusion == 'success'
         id: download-taskdef
@@ -97,7 +91,7 @@ jobs:
         with:
           task-definition: ${{ steps.taskdef.outputs.task-definition }}
           service: ${{ matrix.SERVICE_NAME }}
-          cluster: ${{ steps.cluster.outputs.name }}
+          cluster: ${{ secrets.STAGING_ECS_CLUSTER_NAME }}
           wait-for-service-stability: true
           codedeploy-appspec: ${{ github.workspace }}/${{ matrix.APPSPEC_FILE }}
 
