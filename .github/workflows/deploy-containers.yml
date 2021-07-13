@@ -2,7 +2,7 @@ name: Deploy to Staging
 
 on:
   push:
-    branches: [master]
+    branches: [main]
 
 env:
   GITHUB_SHA: ${{ github.sha }}
@@ -28,7 +28,7 @@ jobs:
             IMAGE_NAME: covid-server/key-submission
             APPSPEC_FILE: covidshield-submission.json
   
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Wait for container to be built and pushed
