@@ -63,7 +63,7 @@ All Terraform variables are defined in `config/terraform/aws/variables.tf` & the
 
 If you are using Terraform in Github actions the above can be set as Github secrets, and set as environment variables in your YAML file (see `.github/workflows/terraform.yml`).
 
-There is an optional Terraform variable that can be set to control which container to deploy. It should match a container tag that both Key Retrieval & Key Submission share. By default Terraform will deploy the latest commit on the master branch.
+There is an optional Terraform variable that can be set to control which container to deploy. It should match a container tag that both Key Retrieval & Key Submission share. By default Terraform will deploy the latest commit on the main branch.
 
 - `TF_VAR_github_sha`
 
@@ -77,7 +77,7 @@ To run manually:
 This section will demonstrate the following:
 
 - Continuous container builds on [new pull requests](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests)
-- Releasing new containers on a [successful merge](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/merging-a-pull-request) to the master branch
+- Releasing new containers on a [successful merge](https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/merging-a-pull-request) to the main branch
 - Integrating dependency management using [Dependabot](https://dependabot.com/)
 
 ### Getting started with GitHub Actions

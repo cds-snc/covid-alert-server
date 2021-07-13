@@ -66,7 +66,7 @@ func TestPresent(t *testing.T) {
 
 func TestVersion(t *testing.T) {
 
-	branch = "master"
+	branch = "main"
 	revision = "abcd"
 
 	servlet := NewServicesServlet()

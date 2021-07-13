@@ -40,7 +40,7 @@ The response is an 8-digit plain-text UTF-8/ASCII-encoded numeric code.
 
 Since you, the reader, are more likely to be in a position of having to implement a client for this
 endpoint yourself, we've provided examples of this in a handful of languages at
-[`examples/new-key-claim`](https://github.com/cds-snc/covid-alert-server/tree/master/examples/new-key-claim).
+[`examples/new-key-claim`](https://github.com/cds-snc/covid-alert-server/tree/main/examples/new-key-claim).
 
 When implementing this, please be cautious with your authorization token: it shouldn't be sent to
 the user's browser (i.e. please don't implement this workflow in client-side javascript).
@@ -148,7 +148,7 @@ recommended to mark the previous 168 periods as having already been fetched, imm
 run.
 
 An example sketch of this suggested implementation can be found at
-[examples/retrieval/app.rb](https://github.com/cds-snc/covid-alert-server/blob/master/examples/retrieval/app.rb).
+[examples/retrieval/app.rb](https://github.com/cds-snc/covid-alert-server/blob/main/examples/retrieval/app.rb).
 
 ## Who Built COVID Shield?
 
