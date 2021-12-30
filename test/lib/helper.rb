@@ -208,8 +208,8 @@ module Helper
     end
 
     def with_servers(&block)
-      with_server(KEY_RETRIEVAL_SERVER, RETRIEVAL_SERVER_ADDR) do |ret_conn|
-        with_server(KEY_SUBMISSION_SERVER, SUBMISSION_SERVER_ADDR) do |sub_conn|
+      with_server(KEY_SUBMISSION_SERVER, SUBMISSION_SERVER_ADDR) do |sub_conn|
+        with_server(KEY_RETRIEVAL_SERVER, RETRIEVAL_SERVER_ADDR) do |ret_conn|
           block.call(sub_conn, ret_conn)
         end
       end

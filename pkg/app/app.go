@@ -61,12 +61,11 @@ func checkEnvironmentVariable(key string) {
 }
 
 func (a *AppBuilder) WithSubmission() *AppBuilder {
-	migrateDB(DatabaseURL()) // This is a bit of a weird place for this but it works for now.
 
+	migrateDB(DatabaseURL()) // This is a bit of a weird place for this but it works for now.
 	a.defaultServerPort = config.AppConstants.DefaultSubmissionServerPort
 
 	a.components = append(a.components, newExpirationWorker(a.database))
-
 	a.servlets = append(a.servlets, server.NewUploadServlet(a.database))
 	a.servlets = append(a.servlets, server.NewKeyClaimServlet(a.database, lookup))
 	a.servlets = append(a.servlets, server.NewOutbreakEventServlet(a.database, lookup))
