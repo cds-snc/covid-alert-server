@@ -62,8 +62,10 @@ func checkEnvironmentVariable(key string) {
 
 func (a *AppBuilder) WithSubmission() *AppBuilder {
 
+	migrateDB(DatabaseURL()) // This is a bit of a weird place for this but it works for now.
 	a.defaultServerPort = config.AppConstants.DefaultSubmissionServerPort
 
+	a.components = append(a.components, newExpirationWorker(a.database))
 	a.servlets = append(a.servlets, server.NewUploadServlet(a.database))
 	a.servlets = append(a.servlets, server.NewKeyClaimServlet(a.database, lookup))
 	a.servlets = append(a.servlets, server.NewOutbreakEventServlet(a.database, lookup))
@@ -72,11 +74,8 @@ func (a *AppBuilder) WithSubmission() *AppBuilder {
 }
 
 func (a *AppBuilder) WithRetrieval() *AppBuilder {
-	migrateDB(DatabaseURL()) // This is a bit of a weird place for this but it works for now.
 
 	a.defaultServerPort = config.AppConstants.DefaultRetrievalServerPort
-
-	a.components = append(a.components, newExpirationWorker(a.database))
 
 	a.servlets = append(a.servlets, server.NewRetrieveServlet(a.database, retrieval.NewAuthenticator(), retrieval.NewSigner()))
 

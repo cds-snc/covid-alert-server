@@ -69,7 +69,7 @@ class ExpirationWorkerTest < MiniTest::Test
   def expire
     # this doesn't yield until the server returns ok, which doesn't happen
     # until after the first run of the expiration worker.
-    Helper.with_server(KEY_RETRIEVAL_SERVER, RETRIEVAL_SERVER_ADDR) { }
+    Helper.with_server(KEY_SUBMISSION_SERVER, SUBMISSION_SERVER_ADDR) { }
   end
 
   def expire_and_assert(encryption: nil, diagnosis: nil)
