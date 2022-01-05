@@ -68,7 +68,6 @@ func (a *AppBuilder) WithSubmission() *AppBuilder {
 	a.components = append(a.components, newExpirationWorker(a.database))
 	a.servlets = append(a.servlets, server.NewUploadServlet(a.database))
 	a.servlets = append(a.servlets, server.NewKeyClaimServlet(a.database, lookup))
-	a.servlets = append(a.servlets, server.NewOutbreakEventServlet(a.database, lookup))
 
 	return a
 }
@@ -83,8 +82,6 @@ func (a *AppBuilder) WithRetrieval() *AppBuilder {
 	checkEnvironmentVariable("METRICS_USERNAME")
 	checkEnvironmentVariable("METRICS_PASSWORD")
 	a.servlets = append(a.servlets, server.NewMetricsServlet(a.database, lookup))
-
-	a.servlets = append(a.servlets, server.NewQrRetrieveServlet(a.database, retrieval.NewAuthenticator(), retrieval.NewSigner()))
 
 	return a
 }
