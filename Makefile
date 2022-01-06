@@ -10,7 +10,7 @@ PROTO_RB    := $(patsubst proto/%.proto,test/lib/protocol/%_pb.rb,$(PROTO_FILES)
 RPC_RB      := $(patsubst proto/%.proto,test/lib/protocol/%_services_pb.rb,$(PROTO_FILES_WITH_RPC))
 
 GOFILES     := $(shell find . -type f -name '*.go')
-TEST_FILES  := $(shell find test -type f -name '*_test.rb')
+TEST_FILES  := $(shell find test -type f -name '*_test.rb' -not -name 'qr*_test.rb')
 
 RELEASE_BUILDS := $(patsubst %,build/release/%,$(CMDS))
 DEBUG_BUILDS   := $(patsubst %,build/debug/%,$(CMDS))
