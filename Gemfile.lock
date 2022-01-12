@@ -4,7 +4,7 @@ GEM
     faraday (1.0.1)
       multipart-post (>= 1.2, < 3)
     ffi (1.12.2)
-    google-protobuf (3.11.4)
+    google-protobuf (3.19.3)
     grpc-tools (1.28.0)
     metaclass (0.0.4)
     minitest (5.14.0)
