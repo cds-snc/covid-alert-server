@@ -2,6 +2,8 @@
 
 # COVID Alert Diagnosis Server
 
+> **COVID Alert is now retired**: For more information, visit the [Government of Canada COVID Alert home page](https://www.canada.ca/en/public-health/services/diseases/coronavirus-disease-covid-19/covid-alert.html).
+
 Adapted from <https://github.com/CovidShield/server>
 
 This repository implements a diagnosis server to use as a server for Apple/Google's [Exposure
@@ -267,6 +269,8 @@ This repository is being developed by the [Canadian Digital Service](https://dig
 ____
 
 # Serveur de diagnostic COVID Alert
+
+> **Alerte COVID a été mis hors service** : Pour en savoir davantage, visitez la [page d'accueil d’Alerte COVID du gouvernement du Canada](https://www.canada.ca/fr/sante-publique/services/maladies/maladie-coronavirus-covid-19/alerte-covid.html).
 
 Adapté à partir de <https://github.com/CovidShield/server> ([voir les modifications](https://github.com/cds-snc/covid-shield-server/blob/main/FORK.md))
 
